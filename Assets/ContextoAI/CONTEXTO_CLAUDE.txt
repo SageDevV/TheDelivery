@@ -1,0 +1,134 @@
+================================================================================
+THE DELIVERY — BRIEFING DE CONTINUIDADE DE SESSÃO (claude-cli)
+Última atualização: 2026-05-16
+================================================================================
+
+>>> COMO USAR ESTE ARQUIVO <<<
+Se você é um assistente Claude começando uma sessão NOVA neste projeto: leia
+este arquivo inteiro ANTES de responder qualquer coisa. Ele restabelece seu
+papel, as regras combinadas, o que já foi feito (e por quê) e o fio que ficou
+em aberto. Não recomece do zero nem contradiga decisões já tomadas abaixo.
+Se você é o usuário: cole/aponte este arquivo no início de um chat novo se a
+sessão se perder. Mantenha UM arquivo só (este) — atualizar > acumular cópias.
+(Obs: também existe memória persistente do claude-cli em
+~/.claude/projects/.../memory/ com MEMORY.md, project-status e
+apartment-coordinate-convention — este .txt é o espelho portável/visível na Unity.)
+
+--------------------------------------------------------------------------------
+1. SEU PAPEL (assistente) E REGRAS COMBINADAS
+--------------------------------------------------------------------------------
+Você é um PARCEIRO TÉCNICO SÊNIOR em Unity/C#, não um executor cego.
+Diretrizes (valem sempre):
+  1. Se algo gera dívida técnica ou estoura escopo, AVISE antes de fazer.
+  2. Pense em performance e escopo realista de projeto solo.
+  3. Todo código segue os padrões (seção 2).
+  4. Ao entregar um sistema, pense como ele integra com o resto.
+  5. Soluções nativas Unity antes de libraries externas.
+  6. Ajude a manter escopo controlado — terror é execução, não features.
+Estilo esperado: direto, concreto, calibrado para o tom de terror (movimento
+vulnerável, sem power fantasy), sinaliza trade-offs explicitamente.
+
+--------------------------------------------------------------------------------
+2. PROJETO + PADRÕES DE CÓDIGO
+--------------------------------------------------------------------------------
+The Delivery — terror 1ª pessoa (Fears to Fathom / Puppet Combo).
+Unity 6 LTS | URP 17.4.0 | Input System novo 1.19.0 | Win PC alvo.
+Solo, prazo dez/2026, ~3h/dia. 4 atos, locação única: apê de 1 quarto.
+Pilares: terror cotidiano, tensão constante, inevitabilidade trágica,
+violência mínima, voz interna em texto (sem dublagem).
+Padrões:
+  - Namespaces TheDelivery.<Modulo>; 1 script/arquivo; PascalCase.
+  - Eventos via C# event Action / UnityEvent (desacoplamento).
+  - ScriptableObjects para dados de config.
+  - SEM GameObject.Find() / SendMessage(); referências serializadas.
+  - Máquina de estados explícita para estados de jogo.
+  - Comentários em PORTUGUÊS, código (vars/métodos) em INGLÊS.
+
+--------------------------------------------------------------------------------
+3. O QUE JÁ FOI ENTREGUE (não refazer; não contradizer)
+--------------------------------------------------------------------------------
+[Player] Assets/_Project/Scripts/Player/PlayerController.cs
+  + Assets/_Project/Settings/TheDelivery_Controls.inputactions
+  CharacterController, walk/run/crouch, head bob, gravidade sem pulo,
+  pitch -85/+85, cursor lock. Props: IsMoving/IsRunning/IsCrouching; CanMove
+  (setter público p/ cutscenes). Input por referência ao InputActionAsset
+  (SEM classe gerada — decisão deliberada). Look detecta gamepad vs mouse.
+  Calibragem terror: walk1.6 run3.2 crouch0.9 mouseSens0.08 gravity-12.
+
+[Interação] _Project/Scripts/Interaction/{IInteractable,PlayerInteraction,Door}.cs
+  + _Project/Scripts/UI/InteractionPromptUI.cs (TMP)
+  IInteractable: InteractionPrompt / CanInteract / Interact(PlayerInteraction).
+  PlayerInteraction: SphereCast (anti-flicker), range 2.5m, layer Interactable,
+  GetComponentInParent, evento FocusChanged, prop Current, InteractionEnabled.
+  Door: rotação Y suave (coroutine+AnimationCurve), evento StateChanged, sons.
+  DECISÃO-CHAVE: "porta trancada" NÃO é CanInteract=false. CanInteract=false =
+  só não-reagir (cooldown/animação/roteiro). Trancada = estado interno,
+  CanInteract fica true e Interact() chacoalha a maçaneta (beat de tensão).
+
+[Pensamentos] _Project/Scripts/Narrative/{ThoughtData,ThoughtSystem,ThoughtTrigger}.cs
+  + _Project/Scripts/UI/ThoughtDisplayUI.cs (Text legado, SEM TMP de propósito)
+  ThoughtData (SO) = lista de ThoughtLine (text/duration/delay); 1=simples,
+  N=encadeado. ThoughtSystem: singleton, fila, Show(ThoughtData)/Show(string),
+  Interrupt/ShowImmediate (interrupção mata a coroutine inteira). Duração auto
+  se duration<=0. Assets em _Project/ScriptableObjects/Thoughts/ActX_.../.
+
+[Fase 1 Greybox] entregue como INSTRUÇÕES (sem código novo).
+  Convenção espacial FIXA (todos os atos usam):
+    origem(0,0,0)=centro do piso; piso Y=0; interior X[-2.5,+2.5]/Z[-3,+3]
+    (5x6m); pé-direito 2.6m; parede de entrada=Sul(Z=-3); parede 0.15m.
+    Cena: Assets/_Project/Scenes/Act1_Apartment.unity.
+    Layout: entrada Sul; sala (sofá/mesa/TV) Oeste/Norte; cozinha americana
+    parede Leste; janela parede Oeste (luz da lua).
+  Inclui passo a passo ProBuilder, móveis (cubos primitivos), luz noturna,
+  pós-proc URP (Vignette+Color Adjustments via Global Volume), porta+trigger
+  do pensamento "Finalmente.", e checklist do marco.
+
+--------------------------------------------------------------------------------
+4. GUARD-RAILS JÁ DECIDIDOS (não regredir sem o usuário pedir)
+--------------------------------------------------------------------------------
+- Sem stamina (contraria inevitabilidade; correr = desespero, não recurso).
+- Glyph do prompt no gamepad fica "E" (não troca p/ "A") — polish do Ato final.
+- Sem outline/highlight no objeto mirado (mata atmosfera).
+- Sem typewriter no pensamento por padrão (urgência errada p/ Atos 1-3).
+- Greybox descartável: sem UV/textura/bake; 1 material cinza; teto ~3h.
+- Door usa rotação Y; correr/gaveta = SlidingInteractable irmão (futuro).
+- Show(string) só p/ debug; pensamento real sempre via ThoughtData asset.
+
+--------------------------------------------------------------------------------
+5. BLOQUEIOS / PENDÊNCIAS
+--------------------------------------------------------------------------------
+- [BLOQUEIO] ProBuilder NÃO instalado (ausente no manifest.json). Instalar via
+  Package Manager > Unity Registry antes do greybox.
+- [PENDENTE] Validar in-engine o checklist do marco Fase 1 ("andar pelo apê e
+  abrir uma porta") antes de avançar.
+- [INFO] Assets/InputSystem_Actions.inputactions (template URP) ainda intacto;
+  pode deletar quando confirmar TheDelivery_Controls funcionando.
+- [INFO] Assets/Scenes/SampleScene.unity é template; cena real = Act1_Apartment.
+
+--------------------------------------------------------------------------------
+6. FIO EM ABERTO DA CONVERSA (retomar AQUI)
+--------------------------------------------------------------------------------
+O usuário relatou um problema usando o template de bug, MAS enviou o template
+SEM PREENCHER (placeholders literais). O assistente pediu os dados e está
+AGUARDANDO: (1) qual sistema; (2) mensagem completa do Console + stack trace;
+(3) esperado x ocorrido (concreto); (4) quando começou / o que mudou;
+(5) o que já tentou. Diagnóstico de causa raiz depende desses dados.
+=> Próxima resposta esperada do usuário: o bug preenchido. Se vier outra coisa,
+   seguir normalmente.
+
+--------------------------------------------------------------------------------
+7. PRÓXIMO PASSO COMBINADO (após Fase 1 validada)
+--------------------------------------------------------------------------------
+NavMesh + esqueleto da máquina de estados dos atos (base p/ IA do entregador e
+progressão narrativa). com.unity.ai.navigation já instalado.
+
+--------------------------------------------------------------------------------
+8. MANUTENÇÃO DESTE ARQUIVO
+--------------------------------------------------------------------------------
+Snapshot manual — NÃO se atualiza sozinho. Regerar ao fechar cada Fase/marco
+ou quando uma decisão grande mudar. Não regerar a cada prompt (apodrece).
+Recomendado versionar Assets/ContextoAI/ no Git (histórico de decisão, leve).
+
+================================================================================
+FIM
+================================================================================
