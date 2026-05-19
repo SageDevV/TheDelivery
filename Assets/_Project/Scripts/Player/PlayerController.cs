@@ -72,8 +72,17 @@ namespace TheDelivery.Player
         public bool IsRunning { get; private set; }
         public bool IsCrouching { get; private set; }
 
-        /// <summary>Trava completamente movimento e câmera. Setter público para cutscenes/cinematics.</summary>
-        public bool CanMove { get; set; } = true;
+        [Header("Controle Externo")]
+        [Tooltip("Desmarque para travar movimento e câmera (cutscenes, menus de pausa, momentos narrativos). A gravidade continua ativa para o player não flutuar.")]
+        [SerializeField] private bool canMove = true;
+
+        /// <summary>
+        /// Trava completamente movimento, look, crouch e head bob — a gravidade
+        /// continua ativa para o player não flutuar. Setter público para
+        /// cutscenes, menus de pausa e momentos narrativos. Exposto no Inspector
+        /// via campo de apoio <c>canMove</c>.
+        /// </summary>
+        public bool CanMove { get => canMove; set => canMove = value; }
 
         private CharacterController controller;
         private InputAction moveAction;
@@ -129,9 +138,19 @@ namespace TheDelivery.Player
         {
             float dt = Time.deltaTime;
 
+            // HandleMovement aplica a gravidade. Quando travado (!CanMove) o
+            // input de deslocamento já é zerado internamente, então só a
+            // gravidade continua atuando — o player não flutua nem desliza.
+            HandleMovement(dt);
+
+            // Trava narrativa (cutscenes, menus, momentos roteirizados): sai
+            // antes de look/crouch/head bob/câmera para o personagem ficar
+            // imóvel sem resetar a posição atual da câmera.
+            if (!CanMove)
+                return;
+
             HandleLook(dt);
             HandleCrouch(dt);
-            HandleMovement(dt);
             HandleHeadBob(dt);
             ApplyCameraTransform();
         }
