@@ -237,6 +237,12 @@ namespace TheDelivery.Player
 
         private void HandleMovement(float dt)
         {
+            // Sistemas externos (ex.: PlayerHiding) podem desabilitar o
+            // CharacterController para travar a física do player. Chamar Move
+            // nesse estado dispara warning a cada frame.
+            if (!controller.enabled)
+                return;
+
             Vector2 input = CanMove ? moveAction.ReadValue<Vector2>() : Vector2.zero;
 
             // Correr só em pé: agachado e correndo ao mesmo tempo não existe (vulnerabilidade).
