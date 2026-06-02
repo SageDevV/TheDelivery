@@ -3237,6 +3237,7 @@ GameObject:
   - component: {fileID: 298793799}
   - component: {fileID: 298793801}
   - component: {fileID: 298793802}
+  - component: {fileID: 298793803}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -3253,7 +3254,7 @@ Transform:
   m_GameObject: {fileID: 298793797}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.45, y: 0.06, z: 10.867}
+  m_LocalPosition: {x: -0.037, y: 0.018, z: 0.985}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3364,6 +3365,22 @@ MonoBehaviour:
   exitForwardOffset: 0.5
   lookSensitivity: 0.08
   gamepadLookSensitivity: 140
+--- !u!114 &298793803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298793797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef12960c7d20de74dbc5ca3454d48120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Player.PlayerNoise
+  crouchNoiseRadius: 0
+  walkNoiseRadius: 3
+  runNoiseRadius: 8
+  showNoiseGizmo: 1
 --- !u!1 &321494934
 GameObject:
   m_ObjectHideFlags: 0
@@ -18688,6 +18705,8 @@ GameObject:
   - component: {fileID: 1235924996}
   - component: {fileID: 1235924997}
   - component: {fileID: 1235924998}
+  - component: {fileID: 1235924999}
+  - component: {fileID: 1235925000}
   m_Layer: 9
   m_Name: Antagonist
   m_TagString: Untagged
@@ -18780,6 +18799,45 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   showVisionGizmos: 1
+--- !u!114 &1235924999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235924994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d88d5dfda700c8408d93797146989c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.AIHearing
+  showHearingGizmo: 1
+--- !u!114 &1235925000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235924994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ea9ab96fbb2c7140a915ab1dcd649a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.AntagonistAI
+  agent: {fileID: 1235924996}
+  patrol: {fileID: 1235924997}
+  vision: {fileID: 1235924998}
+  hearing: {fileID: 1235924999}
+  patrolSpeed: 2
+  suspiciousSpeed: 2.5
+  chaseSpeed: 3.5
+  investigationLookTime: 3
+  searchDuration: 8
+  chaseMemory: 4
+  arrivalThreshold: 0.5
+  attackRange: 2
+  searchRadius: 4
+  showStateInConsole: 1
 --- !u!1 &1238277469
 GameObject:
   m_ObjectHideFlags: 0
