@@ -54,6 +54,12 @@ namespace TheDelivery.Player
         [Tooltip("Sensibilidade do analógico enquanto escondido. Deve casar com o PlayerController.")]
         [SerializeField] private float gamepadLookSensitivity = 140f;
 
+        [Header("Detecção")]
+        [Tooltip("Sensor de visão do antagonista. Se vazio, busca pela tag 'Antagonist' no Start.")]
+        [SerializeField] private AIVision antagonistVision;
+        [Tooltip("FSM do antagonista. Se vazio, busca pela tag 'Antagonist' no Start.")]
+        [SerializeField] private AntagonistAI antagonistAI;
+
         /// <summary>True enquanto o player está dentro de um esconderijo.</summary>
         public bool IsHidden { get; private set; }
 
@@ -106,6 +112,21 @@ namespace TheDelivery.Player
             interactAction = map.FindAction(InteractActionName, throwIfNotFound: true);
         }
 
+        private void Start()
+        {
+            // Resolve as referências do antagonista (a regra do esconderijo comprometido
+            // precisa saber se ele estava vendo o player no instante da entrada).
+            if (antagonistVision == null || antagonistAI == null)
+            {
+                GameObject antagonist = GameObject.FindGameObjectWithTag("Antagonist");
+                if (antagonist != null)
+                {
+                    if (antagonistVision == null) antagonistVision = antagonist.GetComponent<AIVision>();
+                    if (antagonistAI == null) antagonistAI = antagonist.GetComponent<AntagonistAI>();
+                }
+            }
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)
@@ -134,6 +155,10 @@ namespace TheDelivery.Player
             if (hide == null)
                 return;
 
+            // Captura a visibilidade ANTES de IsHidden virar true — depois disso o
+            // AIVision passa a ignorar o player e CanSeePlayer cairia para false.
+            bool wasSeenEntering = antagonistVision != null && antagonistVision.CanSeePlayer;
+
             CurrentHideSpot = spot;
             IsHidden = true;
             currentCameraOnly = spot.CameraOnlyMode;
@@ -151,6 +176,10 @@ namespace TheDelivery.Player
                 EnterCameraOnly(hide);
             else
                 EnterPlayerTeleport(hide);
+
+            // Esconderijo comprometido: o antagonista viu o player entrar e virá tirá-lo daqui.
+            if (wasSeenEntering && antagonistAI != null)
+                antagonistAI.OnPlayerHidWhileSeen(spot);
         }
 
         public void ExitHideSpot()

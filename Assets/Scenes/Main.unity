@@ -3238,6 +3238,7 @@ GameObject:
   - component: {fileID: 298793801}
   - component: {fileID: 298793802}
   - component: {fileID: 298793803}
+  - component: {fileID: 298793804}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -3365,6 +3366,8 @@ MonoBehaviour:
   exitForwardOffset: 0.5
   lookSensitivity: 0.08
   gamepadLookSensitivity: 140
+  antagonistVision: {fileID: 0}
+  antagonistAI: {fileID: 0}
 --- !u!114 &298793803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3381,6 +3384,22 @@ MonoBehaviour:
   walkNoiseRadius: 3
   runNoiseRadius: 8
   showNoiseGizmo: 1
+--- !u!114 &298793804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298793797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d6404c929779024a8b4558547fd6ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Player.CameraLean
+  cameraTransform: {fileID: 330585546}
+  inputActions: {fileID: -944628639613478452, guid: 9a3bc710b543c384fb11b24ded91c164, type: 3}
+  leanAngle: 15
+  leanSpeed: 8
 --- !u!1 &321494934
 GameObject:
   m_ObjectHideFlags: 0
@@ -18709,7 +18728,7 @@ GameObject:
   - component: {fileID: 1235925000}
   m_Layer: 9
   m_Name: Antagonist
-  m_TagString: Untagged
+  m_TagString: Antagonist
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -1,4 +1,5 @@
 {
+    "version": 1,
     "name": "TheDelivery_Controls",
     "maps": [
         {
@@ -45,7 +46,25 @@
                     "name": "Interact",
                     "type": "Button",
                     "id": "a1b2c3d4-0000-4000-8000-000000000105",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "LeanLeft",
+                    "type": "Button",
+                    "id": "681cf11b-0956-40ee-b858-1f4db0afcf17",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "LeanRight",
+                    "type": "Button",
+                    "id": "423be4c2-6946-4a05-adf4-a96003fbb16a",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -187,7 +206,7 @@
                 {
                     "name": "",
                     "id": "a1b2c3d4-0000-4000-8000-000000000601",
-                    "path": "<Keyboard>/e",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
@@ -203,6 +222,28 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0e0a96f5-ea3b-412b-aa44-fcf8bbec9ae8",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "LeanLeft",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "88090eb6-47fa-43aa-971f-e28d52d7e5ec",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "LeanRight",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

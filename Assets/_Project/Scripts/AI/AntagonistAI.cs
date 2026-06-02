@@ -22,8 +22,10 @@ namespace TheDelivery.AI
     /// </list>
     ///
     /// Visão tem prioridade sobre audição. A FSM apenas CONSOME as properties dos
-    /// sensores — não os modifica. A lógica de "te viu entrando no esconderijo" e a
-    /// cena de morte real ficam para etapas futuras.
+    /// sensores — não os modifica. Se o player se esconde sendo visto, o
+    /// <see cref="PlayerHiding"/> avisa via <see cref="OnPlayerHidWhileSeen"/> e o
+    /// esconderijo fica comprometido (caça direta ao spot). A cena de morte real
+    /// fica para etapas futuras.
     /// </summary>
     [RequireComponent(typeof(NavMeshAgent))]
     [RequireComponent(typeof(PatrolBehavior))]
@@ -88,6 +90,11 @@ namespace TheDelivery.AI
         private bool reachedTarget;         // já chegou ao destino do estado atual?
         private Vector3 investigationPoint; // ponto de investigação / centro da busca
         private Vector3 lastSetDestination; // último destino enviado ao agent (evita SetDestination redundante)
+
+        // Esconderijo comprometido: o antagonista viu o player entrar, então SABE onde
+        // ele está e vai tirá-lo de lá — ignorando a proteção normal de IsHidden.
+        private HideSpot compromisedHideSpot;
+        private bool huntingCompromisedSpot;
 
         // Limiar mínimo de deslocamento do alvo para reemitir SetDestination (otimização).
         private const float DestinationRefreshThreshold = 0.5f;
@@ -205,7 +212,13 @@ namespace TheDelivery.AI
 
         private void HandleChase()
         {
-            Debug.Log($"CHASE ativo. CanSeePlayer = {vision.CanSeePlayer}");
+            // Esconderijo comprometido tem prioridade: ele viu o player entrar e vai
+            // direto ao spot, ignorando que CanSeePlayer agora é false (IsHidden bloqueia).
+            if (huntingCompromisedSpot)
+            {
+                HandleCompromisedHunt();
+                return;
+            }
 
             if (vision.CanSeePlayer)
             {
@@ -218,15 +231,7 @@ namespace TheDelivery.AI
 
                     // Alcançou o player (e ele não está escondido) → ataque.
                     bool hidden = PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden;
-
-                    // Distância apenas no plano horizontal (ignora diferença de altura)
-                    Vector3 flatAntagonist = new Vector3(transform.position.x, 0f, transform.position.z);
-                    Vector3 flatPlayer = new Vector3(playerPos.x, 0f, playerPos.z);
-                    float horizontalDist = Vector3.Distance(flatAntagonist, flatPlayer);
-
-                    Debug.Log($"CHASE: distância horizontal = {horizontalDist:F2}m (attackRange = {attackRange})");
-
-                    if (!hidden && horizontalDist <= attackRange)
+                    if (!hidden && HorizontalDistance(transform.position, playerPos) <= attackRange)
                     {
                         TransitionTo(AIState.Attack);
                     }
@@ -236,13 +241,42 @@ namespace TheDelivery.AI
 
             // Perdeu de vista: continua indo à última posição conhecida por um tempo.
             chaseLostTimer += Time.deltaTime;
-            SetDestination(vision.LastKnownPlayerPosition, force: true);  
+            SetDestination(vision.LastKnownPlayerPosition, force: true);
 
             if (chaseLostTimer >= chaseMemory)
             {
                 investigationPoint = vision.LastKnownPlayerPosition;
                 TransitionTo(AIState.Search);
             }
+        }
+
+        /// <summary>
+        /// Caça a um esconderijo comprometido: vai direto à posição do hide spot e,
+        /// ao alcançá-la, captura o player mesmo escondido (ele foi visto entrando).
+        /// Se o player sair do esconderijo antes de ser alcançado, a caça é cancelada
+        /// e o Chase normal volta a decidir o comportamento.
+        /// </summary>
+        private void HandleCompromisedHunt()
+        {
+            // O player saiu do spot (ou o spot sumiu): a "certeza" acabou, volta ao normal.
+            bool stillHidingHere = compromisedHideSpot != null
+                && PlayerHiding.Instance != null
+                && PlayerHiding.Instance.IsHidden
+                && PlayerHiding.Instance.CurrentHideSpot == compromisedHideSpot;
+
+            if (!stillHidingHere)
+            {
+                huntingCompromisedSpot = false;
+                compromisedHideSpot = null;
+                chaseLostTimer = 0f; // dá fôlego ao Chase normal antes de cair em Search
+                return;
+            }
+
+            Vector3 spotPos = GetCompromisedSpotPosition();
+            SetDestination(spotPos, force: true);
+
+            if (HorizontalDistance(transform.position, spotPos) <= attackRange)
+                TransitionTo(AIState.Attack);
         }
 
         private void HandleAttack()
@@ -292,6 +326,8 @@ namespace TheDelivery.AI
                     break;
 
                 case AIState.Attack:
+                    huntingCompromisedSpot = false;
+                    compromisedHideSpot = null;
                     patrol.PausePatrol();
                     StopAgent();
                     if (playerController != null)
@@ -309,6 +345,22 @@ namespace TheDelivery.AI
         public void OnPlayerCaught()
         {
             // Intencionalmente vazio por enquanto.
+        }
+
+        /// <summary>
+        /// Chamado pelo <see cref="PlayerHiding"/> quando o player se esconde ENQUANTO
+        /// o antagonista o estava vendo. O esconderijo fica "comprometido": o antagonista
+        /// sabe exatamente onde o player está e vai tirá-lo de lá, ignorando IsHidden.
+        /// </summary>
+        public void OnPlayerHidWhileSeen(HideSpot spot)
+        {
+            if (spot == null)
+                return;
+
+            compromisedHideSpot = spot;
+            huntingCompromisedSpot = true;
+            investigationPoint = GetCompromisedSpotPosition();
+            TransitionTo(AIState.Chase);
         }
 
         // --- Controle do agente --------------------------------------------
@@ -362,6 +414,24 @@ namespace TheDelivery.AI
             if (!agent.isOnNavMesh || agent.pathPending)
                 return false;
             return agent.remainingDistance <= agent.stoppingDistance + arrivalThreshold;
+        }
+
+        /// <summary>Distância no plano horizontal (XZ), ignorando diferença de altura.</summary>
+        private static float HorizontalDistance(Vector3 a, Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
+        }
+
+        /// <summary>Posição mundial do esconderijo comprometido (fallback no próprio transform).</summary>
+        private Vector3 GetCompromisedSpotPosition()
+        {
+            if (compromisedHideSpot == null)
+                return transform.position;
+
+            Transform hide = compromisedHideSpot.GetHidePosition();
+            return hide != null ? hide.position : compromisedHideSpot.transform.position;
         }
 
         /// <summary>Sorteia um ponto válido no NavMesh dentro de <see cref="searchRadius"/> do centro de busca.</summary>
