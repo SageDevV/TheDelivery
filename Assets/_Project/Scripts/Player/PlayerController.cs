@@ -84,6 +84,28 @@ namespace TheDelivery.Player
         /// </summary>
         public bool CanMove { get => canMove; set => canMove = value; }
 
+        /// <summary>
+        /// Transform do CameraHolder (filho do Player, pai da Main Camera).
+        /// Exposto para que sequências narrativas controlem a câmera diretamente
+        /// (pitch + altura) enquanto <see cref="CanMove"/> está em false — nesse
+        /// estado o PlayerController não toca na câmera, evitando conflito.
+        /// </summary>
+        public Transform CameraHolder => cameraHolder;
+
+        /// <summary>
+        /// Reinjeta o estado interno da câmera (pitch acumulado + altura do olho)
+        /// para um ponto conhecido. Usado por sequências que controlam a câmera
+        /// por fora (ex.: levantar da cama no Act4Director) antes de devolver o
+        /// controle: sem isso, o primeiro frame de <see cref="ApplyCameraTransform"/>
+        /// faria a câmera "saltar" para o pitch/altura antigos.
+        /// </summary>
+        public void SyncCameraState(float pitch, float eyeHeight)
+        {
+            this.pitch = pitch;
+            currentEyeHeight = eyeHeight;
+            crouchToggled = false;
+        }
+
         private CharacterController controller;
         private InputAction moveAction;
         private InputAction lookAction;

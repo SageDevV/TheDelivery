@@ -15,6 +15,9 @@ namespace TheDelivery.Narrative
     {
         public static ThoughtSystem Instance { get; private set; }
 
+        /// <summary>True enquanto há pensamento sendo exibido ou na fila.</summary>
+        public bool IsShowing => runner != null;
+
         [Header("Referências")]
         [SerializeField] private ThoughtDisplayUI display;
 
