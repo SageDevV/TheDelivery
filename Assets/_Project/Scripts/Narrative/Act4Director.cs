@@ -44,8 +44,16 @@ namespace TheDelivery.Narrative
         [SerializeField] private PlayerController playerController;
         [Tooltip("Overlay preto fullscreen (CanvasGroup). alpha=1 = tela preta. Pode reusar o da cutscene de abertura.")]
         [SerializeField] private CanvasGroup blackScreen;
-        [Tooltip("AudioSource para sons scriptados (placeholder por enquanto).")]
+        [Tooltip("AudioSource para sons scriptados (placeholder por enquanto). NÃO marque \"Play On Awake\".")]
         [SerializeField] private AudioSource audioSource;
+
+        [Header("Audio Fade")]
+        [Tooltip("Duração (s) do fade in dos sons tocados com fade.")]
+        [SerializeField] private float audioFadeInDuration = 0.4f;
+        [Tooltip("Duração (s) do fade out dos sons tocados com fade.")]
+        [SerializeField] private float audioFadeOutDuration = 0.6f;
+        [Tooltip("Volume alvo (pico) dos sons tocados com fade.")]
+        [SerializeField] private float audioTargetVolume = 1f;
 
         [Header("Beat 1 - Awakening")]
         [Tooltip("Som de passos abafados na cozinha (placeholder, opcional).")]
@@ -99,6 +107,36 @@ namespace TheDelivery.Narrative
         [Tooltip("Espera após o segundo pensamento antes de avançar para o Beat 3.")]
         [SerializeField] private float investigationThought2Hold = 3f;
 
+        [Header("Beat 3 - Cutscene do vulto")]
+        [Tooltip("Ponto que o player deve encarar ao virar (direção do corredor/vulto). O corpo gira até olhar pra cá.")]
+        [SerializeField] private Transform lookAtCorridorTarget;
+        [Tooltip("Duração da virada suave de 180° (s).")]
+        [SerializeField] private float turnToCorridorDuration = 1f;
+
+        [Header("Beat 3 - Discovery")]
+        [Tooltip("Objeto do 'vulto' que cruza o corredor (pode ser uma cápsula/silhueta simples, separada do Antagonist real).")]
+        [SerializeField] private GameObject shadowFigure;
+        [Tooltip("Ponto inicial do vulto (uma ponta do corredor).")]
+        [SerializeField] private Transform shadowStartPoint;
+        [Tooltip("Ponto final do vulto (outra ponta do corredor).")]
+        [SerializeField] private Transform shadowEndPoint;
+        [Tooltip("Velocidade da caminhada do vulto (m/s, lenta).")]
+        [SerializeField] private float shadowWalkSpeed = 1.2f;
+        [Tooltip("Som/sting de tensão quando o vulto cruza (placeholder).")]
+        [SerializeField] private AudioClip tensionStingSound;
+
+        [Tooltip("Zona onde o vulto estava — player precisa chegar aqui pra disparar a virada.")]
+        [SerializeField] private Transform discoveryTriggerZone;
+        [Tooltip("Som alto que ecoa no ponto de virada (placeholder).")]
+        [SerializeField] private AudioClip loudEchoSound;
+        [Tooltip("Prompt de instrução 'Esconda-se' (UI). Some quando o player se esconde.")]
+        [SerializeField] private GameObject hidePrompt;
+
+        [Tooltip("O GameObject do Antagonist real (FSM da Fase 2). Começa desativado, é ativado no ponto de virada.")]
+        [SerializeField] private GameObject antagonist;
+        [Tooltip("Posição distante onde o antagonista é ativado (dá tempo de reagir).")]
+        [SerializeField] private Transform antagonistActivationPoint;
+
         [Header("Debug")]
         [Tooltip("Beat em que a sequência começa. Permite testar um beat específico sem jogar do início.")]
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
@@ -112,6 +150,12 @@ namespace TheDelivery.Narrative
         // avanço cancele limpa o beat anterior antes de iniciar o próximo.
         private Coroutine beatRoutine;
 
+        // Fade de áudio em andamento. Como há um único AudioSource, um novo som
+        // com fade cancela o anterior (sobrepor faria duas coroutines disputarem
+        // o mesmo volume). Os beats atuais não tocam sons sobrepostos, mas isso
+        // mantém o comportamento determinístico se vierem a tocar.
+        private Coroutine audioFadeRoutine;
+
         // CharacterController do player — desabilitado durante o despertar para
         // teleportar e congelar a gravidade (a câmera deitada não pode derivar).
         private CharacterController characterController;
@@ -123,7 +167,32 @@ namespace TheDelivery.Narrative
 
             characterController = playerController.GetComponent<CharacterController>();
 
+            EnsureAudioSource();
+
             AdvanceToBeat(startBeat);
+        }
+
+        /// <summary>
+        /// Garante um AudioSource utilizável para os sons scriptados. Se nenhum foi
+        /// atribuído no Inspector, reaproveita um já presente no GameObject ou cria
+        /// um na hora — configurado para narrativa: 2D (<c>spatialBlend = 0</c>, sempre
+        /// audível, independente da posição/distância do listener), sem Play On Awake
+        /// e sem loop. Sem isso, <see cref="PlaySoundFaded"/> abortaria com aviso e
+        /// nenhum som tocaria (causa do "sting não dispara": o campo estava vazio).
+        /// </summary>
+        private void EnsureAudioSource()
+        {
+            if (audioSource == null)
+                audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                Debug.Log("[Act4Director] AudioSource ausente; criado automaticamente (2D, sem Play On Awake).", this);
+            }
+
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
+            audioSource.spatialBlend = 0f; // 2D: o clip é importado como 3D, mas sons narrativos devem ser sempre audíveis.
         }
 
         private void Update()
@@ -179,10 +248,11 @@ namespace TheDelivery.Narrative
                     beatRoutine = StartCoroutine(BeatInvestigation());
                     break;
 
-                // Beats 3-9: a implementar nas próximas semanas.
                 case Act4Beat.Discovery:
-                    Debug.Log("[Act4Director] BEAT 3 - Discovery (a implementar)");
+                    beatRoutine = StartCoroutine(BeatDiscovery());
                     break;
+
+                // Beats 4-9: a implementar nas próximas semanas.
                 case Act4Beat.DeadPhone:
                     Debug.Log("[Act4Director] BEAT 4 - DeadPhone (a implementar)");
                     break;
@@ -514,6 +584,181 @@ namespace TheDelivery.Narrative
             AdvanceToBeat(Act4Beat.Discovery);
         }
 
+        // --- BEAT 3: Discovery --------------------------------------------
+
+        /// <summary>
+        /// Descoberta: o "vulto" (silhueta scriptada, separada do antagonista real)
+        /// atravessa o corredor ao fundo com um sting de tensão e some na outra
+        /// ponta. O player anda livre até a zona-gatilho (onde o vulto passou); ao
+        /// chegar, um som alto ecoa, o prompt "Esconda-se" aparece e o antagonista
+        /// REAL (FSM) é ativado numa posição distante para dar tempo de reagir. A
+        /// partir daí o gameplay de perseguição/hiding da Fase 2 governa; quando o
+        /// player se esconde pela primeira vez, o prompt some. O avanço para o
+        /// Beat 4 será disparado depois (trigger narrativo), não aqui.
+        /// </summary>
+        private IEnumerator BeatDiscovery()
+        {
+            // Estado inicial: player TRAVADO para a cutscene, prompt oculto,
+            // antagonista real inativo. Travar com CanMove=false impede movimento
+            // E olhar de uma vez: o Update do PlayerController dá early-return antes
+            // de HandleLook quando CanMove==false (mesmo mecanismo do despertar/
+            // Beat 1) — não há nem é preciso um CanLook separado. Como o
+            // PlayerController não toca na câmera nesse estado, o Director controla
+            // corpo+câmera diretamente durante a virada.
+            playerController.CanMove = false;
+            if (hidePrompt != null)
+                hidePrompt.SetActive(false);
+            if (antagonist != null)
+                antagonist.SetActive(false);
+
+            // 1. Cutscene: vira o corpo ~180° suave para encarar o corredor.
+            yield return TurnToFaceCorridor();
+
+            // 2. O vulto cruza o corredor (movimento scriptado, NÃO a FSM). O
+            //    player permanece travado, apenas assistindo.
+            if (shadowFigure != null && shadowStartPoint != null && shadowEndPoint != null)
+            {
+                shadowFigure.transform.position = shadowStartPoint.position;
+                FaceTowards(shadowFigure.transform, shadowEndPoint.position);
+                shadowFigure.SetActive(true);
+
+                // Sting de tensão que SUSTENTA enquanto o vulto cruza (loop + fade
+                // in, em paralelo para não travar a caminhada). Será parado com fade
+                // out no instante em que o vulto chegar ao endpoint.
+                PlaySoundFadedLoop(tensionStingSound);
+                Debug.Log("[Act4Director] SOM: sting de tensão (vulto cruzando)");
+
+                Vector3 target = shadowEndPoint.position;
+                while ((shadowFigure.transform.position - target).sqrMagnitude > 0.05f * 0.05f)
+                {
+                    shadowFigure.transform.position = Vector3.MoveTowards(
+                        shadowFigure.transform.position, target, shadowWalkSpeed * Time.deltaTime);
+                    yield return null;
+                }
+
+                // Chegou ao endpoint: para o sting suavemente (fade out) e o vulto some.
+                StopSoundWithFade();
+                shadowFigure.SetActive(false);
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] shadowFigure/pontos não atribuídos; pulando a passagem do vulto.", this);
+            }
+
+            // 3. Fim da cutscene: devolve o controle. SyncCameraState com o pitch
+            //    e a altura ATUAIS da câmera evita "snap" quando o PlayerController
+            //    reassume o controle de look/câmera no próximo frame.
+            Transform releaseCam = playerController.CameraHolder;
+            if (releaseCam != null)
+            {
+                float releasePitch = Mathf.DeltaAngle(0f, releaseCam.localEulerAngles.x);
+                playerController.SyncCameraState(releasePitch, releaseCam.localPosition.y);
+            }
+            playerController.CanMove = true;
+
+            // 4. Espera o player chegar na zona-gatilho (onde o vulto estava).
+            if (discoveryTriggerZone != null)
+                yield return new WaitUntil(() => PlayerInZone(discoveryTriggerZone));
+            else
+                Debug.LogWarning("[Act4Director] discoveryTriggerZone não atribuída; disparando a virada imediatamente.", this);
+
+            // 5. O ponto de virada: som alto que ecoa + prompt "Esconda-se".
+            //    Em paralelo (PlaySoundFaded) para não bloquear o resto do beat.
+            PlaySoundFaded(loudEchoSound);
+            Debug.Log("[Act4Director] SOM ALTO: eco (ponto de virada)");
+
+            if (hidePrompt != null)
+                hidePrompt.SetActive(true);
+
+            // 6. Ativa o antagonista REAL (FSM) numa posição distante. Basta o
+            //    SetActive(true): o Start do AntagonistAI resolve as referências,
+            //    define a velocidade e entra em Patrol; o PatrolBehavior inicia
+            //    sua própria rotina no Start dele. Posiciona ANTES de ativar.
+            if (antagonist != null)
+            {
+                if (antagonistActivationPoint != null)
+                    antagonist.transform.position = antagonistActivationPoint.position;
+                else
+                    Debug.LogWarning("[Act4Director] antagonistActivationPoint não atribuído; antagonista ativa na posição atual.", this);
+
+                antagonist.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] antagonist não atribuído; a caçada não será iniciada.", this);
+            }
+
+            // 7. Quando o player se esconde pela primeira vez, esconde o prompt.
+            yield return new WaitUntil(() => PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden);
+            if (hidePrompt != null)
+                hidePrompt.SetActive(false);
+
+            // A partir daqui o gameplay de perseguição governa. O avanço para o
+            // Beat 4 (DeadPhone) virá de um trigger narrativo, definido depois.
+            Debug.Log("[Act4Director] Beat 3: caçada iniciada, gameplay no controle");
+        }
+
+        /// <summary>
+        /// Virada da cutscene: gira o CORPO do player (yaw, pois é onde mora o yaw —
+        /// ver <c>HandleLook</c> do PlayerController, que faz <c>transform.Rotate</c>)
+        /// suavemente até encarar <see cref="lookAtCorridorTarget"/> na horizontal,
+        /// enquanto nivela o pitch da câmera para 0. Roda com CanMove==false, então
+        /// o PlayerController não disputa o controle da câmera. Se o alvo não estiver
+        /// atribuído (ou estiver praticamente sobre o player), apenas avisa e sai sem
+        /// girar — nunca trava a sequência.
+        /// </summary>
+        private IEnumerator TurnToFaceCorridor()
+        {
+            if (lookAtCorridorTarget == null)
+            {
+                Debug.LogWarning("[Act4Director] lookAtCorridorTarget não atribuído; pulando a virada da cutscene.", this);
+                yield break;
+            }
+
+            Transform body = playerController.transform;
+            Transform cam = playerController.CameraHolder;
+
+            Vector3 dir = lookAtCorridorTarget.position - body.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.0001f)
+            {
+                Debug.LogWarning("[Act4Director] lookAtCorridorTarget praticamente sobre o player; nada a virar.", this);
+                yield break;
+            }
+
+            Quaternion fromRot = body.rotation;
+            Quaternion toRot = Quaternion.LookRotation(dir, Vector3.up);
+            float fromPitch = cam != null ? Mathf.DeltaAngle(0f, cam.localEulerAngles.x) : 0f;
+
+            float dur = Mathf.Max(0.0001f, turnToCorridorDuration);
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / dur));
+                body.rotation = Quaternion.Slerp(fromRot, toRot, t);
+                if (cam != null)
+                    cam.localRotation = Quaternion.Euler(Mathf.Lerp(fromPitch, 0f, t), 0f, 0f);
+                yield return null;
+            }
+
+            body.rotation = toRot;
+            if (cam != null)
+                cam.localRotation = Quaternion.identity;
+        }
+
+        /// <summary>
+        /// Orienta um transform para olhar na direção horizontal de um alvo (ignora
+        /// diferença de altura). Usado para apontar o vulto na direção da caminhada.
+        /// </summary>
+        private static void FaceTowards(Transform t, Vector3 target)
+        {
+            Vector3 dir = target - t.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+                t.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        }
+
         /// <summary>
         /// Verdadeiro quando o player está dentro do <see cref="zoneTriggerRadius"/>
         /// do ponto de referência. Distância no plano XZ — a altura não conta,
@@ -537,11 +782,185 @@ namespace TheDelivery.Narrative
                 ThoughtSystem.Instance.Show(thought);
         }
 
-        /// <summary>Toca um clip via PlayOneShot apenas se source e clip existirem.</summary>
+        /// <summary>
+        /// Toca um clip via PlayOneShot (sem controle de volume/fade) apenas se
+        /// source e clip existirem. Mantido para sons simples (ex.: passos do
+        /// Beat 1). Loga um aviso de diagnóstico se algo estiver faltando.
+        /// </summary>
         private void PlaySound(AudioClip clip)
         {
+            if (audioSource == null)
+                Debug.LogWarning("[Act4Director] PlaySound: audioSource não atribuído.", this);
+            if (clip == null)
+                Debug.LogWarning("[Act4Director] PlaySound: clip nulo.", this);
+
             if (audioSource != null && clip != null)
                 audioSource.PlayOneShot(clip);
+        }
+
+        /// <summary>
+        /// Dispara <see cref="PlaySoundWithFade"/> em paralelo (não bloqueia o
+        /// beat), cancelando qualquer fade anterior — há um único AudioSource, e
+        /// duas coroutines disputando o mesmo <c>volume</c> dariam glitch. Use este
+        /// atalho nos beats em vez de <c>StartCoroutine</c> direto.
+        /// </summary>
+        private void PlaySoundFaded(AudioClip clip)
+        {
+            if (audioFadeRoutine != null)
+            {
+                StopCoroutine(audioFadeRoutine);
+                audioFadeRoutine = null;
+            }
+            audioFadeRoutine = StartCoroutine(PlaySoundWithFade(clip));
+        }
+
+        /// <summary>
+        /// Toca um clip com fade in e fade out de volume. Como PlayOneShot não
+        /// permite controlar o volume ao longo do tempo, usa
+        /// <c>audioSource.clip</c> + <c>Play()</c> e interpola o volume. Se o clip
+        /// for curto demais para os dois fades configurados, eles são reduzidos
+        /// proporcionalmente (sem hold). Toca em paralelo: o chamador não espera.
+        /// </summary>
+        private IEnumerator PlaySoundWithFade(AudioClip clip)
+        {
+            if (audioSource == null)
+                Debug.LogWarning("[Act4Director] PlaySoundWithFade: audioSource não atribuído.", this);
+            if (clip == null)
+                Debug.LogWarning("[Act4Director] PlaySoundWithFade: clip nulo.", this);
+            if (audioSource == null || clip == null)
+                yield break;
+
+            float fadeIn = Mathf.Max(0f, audioFadeInDuration);
+            float fadeOut = Mathf.Max(0f, audioFadeOutDuration);
+
+            // Clip curto demais: encolhe os fades proporcionalmente para caberem
+            // na duração do clip, sem tempo de sustentação no volume de pico.
+            float total = fadeIn + fadeOut;
+            if (total > clip.length && total > 0f)
+            {
+                float scale = clip.length / total;
+                fadeIn *= scale;
+                fadeOut *= scale;
+            }
+
+            audioSource.clip = clip;
+            audioSource.volume = 0f;
+            audioSource.Play();
+
+            // Fade in.
+            float elapsed = 0f;
+            while (elapsed < fadeIn)
+            {
+                elapsed += Time.deltaTime;
+                audioSource.volume = Mathf.Lerp(0f, audioTargetVolume, elapsed / fadeIn);
+                yield return null;
+            }
+            audioSource.volume = audioTargetVolume;
+
+            // Sustenta no pico até faltar exatamente o fade out para o fim do clip.
+            float holdTime = clip.length - fadeIn - fadeOut;
+            if (holdTime > 0f)
+                yield return new WaitForSeconds(holdTime);
+
+            // Fade out.
+            elapsed = 0f;
+            float startVol = audioSource.volume;
+            while (elapsed < fadeOut)
+            {
+                elapsed += Time.deltaTime;
+                audioSource.volume = Mathf.Lerp(startVol, 0f, elapsed / fadeOut);
+                yield return null;
+            }
+            audioSource.volume = 0f;
+            audioSource.Stop();
+
+            audioFadeRoutine = null;
+        }
+
+        /// <summary>
+        /// Toca um clip em LOOP, com fade in, e o SUSTENTA no volume de pico até que
+        /// <see cref="StopSoundWithFade"/> seja chamado. Diferente de
+        /// <see cref="PlaySoundFaded"/> (cujo fade out é cronometrado pela duração do
+        /// clip), aqui o fim é controlado externamente — usado quando o som deve
+        /// durar enquanto uma ação acontece (ex.: o vulto cruzando) e parar no
+        /// instante exato em que a ação termina. Toca em paralelo: não bloqueia.
+        /// </summary>
+        private void PlaySoundFadedLoop(AudioClip clip)
+        {
+            if (audioFadeRoutine != null)
+            {
+                StopCoroutine(audioFadeRoutine);
+                audioFadeRoutine = null;
+            }
+            audioFadeRoutine = StartCoroutine(FadeInAndSustain(clip));
+        }
+
+        private IEnumerator FadeInAndSustain(AudioClip clip)
+        {
+            if (audioSource == null)
+                Debug.LogWarning("[Act4Director] PlaySoundFadedLoop: audioSource não atribuído.", this);
+            if (clip == null)
+                Debug.LogWarning("[Act4Director] PlaySoundFadedLoop: clip nulo.", this);
+            if (audioSource == null || clip == null)
+                yield break;
+
+            audioSource.clip = clip;
+            audioSource.loop = true; // sustenta enquanto a ação dura; resetado no StopSoundWithFade.
+            audioSource.volume = 0f;
+            audioSource.Play();
+
+            float fadeIn = Mathf.Max(0f, audioFadeInDuration);
+            float elapsed = 0f;
+            while (elapsed < fadeIn)
+            {
+                elapsed += Time.deltaTime;
+                audioSource.volume = Mathf.Lerp(0f, audioTargetVolume, elapsed / fadeIn);
+                yield return null;
+            }
+            audioSource.volume = audioTargetVolume;
+
+            // Fade in terminou; o som sustenta em loop até StopSoundWithFade.
+            audioFadeRoutine = null;
+        }
+
+        /// <summary>
+        /// Para suavemente o som em andamento: cancela qualquer fade ativo e
+        /// interpola o volume atual até 0 ao longo de <see cref="audioFadeOutDuration"/>,
+        /// depois faz <c>Stop()</c> e zera o <c>loop</c> (para não afetar sons
+        /// posteriores). Seguro de chamar mesmo se nada estiver tocando.
+        /// </summary>
+        private void StopSoundWithFade()
+        {
+            if (audioFadeRoutine != null)
+            {
+                StopCoroutine(audioFadeRoutine);
+                audioFadeRoutine = null;
+            }
+            audioFadeRoutine = StartCoroutine(FadeOutAndStop(audioFadeOutDuration));
+        }
+
+        private IEnumerator FadeOutAndStop(float duration)
+        {
+            if (audioSource == null || !audioSource.isPlaying)
+            {
+                audioFadeRoutine = null;
+                yield break;
+            }
+
+            float dur = Mathf.Max(0.0001f, duration);
+            float startVol = audioSource.volume;
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                audioSource.volume = Mathf.Lerp(startVol, 0f, elapsed / dur);
+                yield return null;
+            }
+            audioSource.volume = 0f;
+            audioSource.Stop();
+            audioSource.loop = false; // reseta o loop ligado pelo FadeInAndSustain.
+
+            audioFadeRoutine = null;
         }
 
         /// <summary>
@@ -604,6 +1023,28 @@ namespace TheDelivery.Narrative
             Gizmos.color = Color.yellow;
             if (kitchenZone != null)
                 Gizmos.DrawWireSphere(kitchenZone.position, zoneTriggerRadius);
+
+            // Beat 3: zona-gatilho da descoberta e o trajeto do vulto.
+            Gizmos.color = Color.red;
+            if (discoveryTriggerZone != null)
+                Gizmos.DrawWireSphere(discoveryTriggerZone.position, zoneTriggerRadius);
+            if (shadowStartPoint != null && shadowEndPoint != null)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(shadowStartPoint.position, shadowEndPoint.position);
+                Gizmos.DrawWireSphere(shadowStartPoint.position, 0.2f);
+                Gizmos.DrawWireSphere(shadowEndPoint.position, 0.2f);
+            }
+            if (antagonistActivationPoint != null)
+            {
+                Gizmos.color = new Color(1f, 0.5f, 0f); // laranja
+                Gizmos.DrawWireSphere(antagonistActivationPoint.position, 0.3f);
+            }
+            if (lookAtCorridorTarget != null)
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawWireCube(lookAtCorridorTarget.position, Vector3.one * 0.25f);
+            }
         }
 #endif
     }
