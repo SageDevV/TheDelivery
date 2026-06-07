@@ -11656,7 +11656,7 @@ Transform:
   m_GameObject: {fileID: 786260147}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.577, y: 0, z: 3.06}
+  m_LocalPosition: {x: 1.834, y: 0, z: 4.488}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12437,6 +12437,9 @@ MonoBehaviour:
   playerController: {fileID: 298793799}
   blackScreen: {fileID: 715360866}
   audioSource: {fileID: 0}
+  audioFadeInDuration: 0.4
+  audioFadeOutDuration: 0.6
+  audioTargetVolume: 1
   footstepsSound: {fileID: 0}
   awakeningThought: {fileID: 11400000, guid: d0d96aa639f6ab04284fe9a8f361c5ce, type: 2}
   blackScreenDuration: 2

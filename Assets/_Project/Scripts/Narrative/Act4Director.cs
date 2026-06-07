@@ -127,6 +127,8 @@ namespace TheDelivery.Narrative
 
         [Tooltip("Zona onde o vulto estava — player precisa chegar aqui pra disparar a virada.")]
         [SerializeField] private Transform discoveryTriggerZone;
+        [Tooltip("Raio (m) específico da zona de descoberta. Menor que o das outras zonas para exigir que o player chegue bem perto do ponto antes da virada.")]
+        [SerializeField] private float discoveryTriggerRadius = 0.5f;
         [Tooltip("Som alto que ecoa no ponto de virada (placeholder).")]
         [SerializeField] private AudioClip loudEchoSound;
         [Tooltip("Prompt de instrução 'Esconda-se' (UI). Some quando o player se esconde.")]
@@ -658,7 +660,7 @@ namespace TheDelivery.Narrative
 
             // 4. Espera o player chegar na zona-gatilho (onde o vulto estava).
             if (discoveryTriggerZone != null)
-                yield return new WaitUntil(() => PlayerInZone(discoveryTriggerZone));
+                yield return new WaitUntil(() => PlayerInZone(discoveryTriggerZone, discoveryTriggerRadius));
             else
                 Debug.LogWarning("[Act4Director] discoveryTriggerZone não atribuída; disparando a virada imediatamente.", this);
 
@@ -764,13 +766,19 @@ namespace TheDelivery.Narrative
         /// do ponto de referência. Distância no plano XZ — a altura não conta,
         /// já que o ponto pode estar no chão e a câmera/player na altura dos olhos.
         /// </summary>
-        private bool PlayerInZone(Transform zone)
+        private bool PlayerInZone(Transform zone) => PlayerInZone(zone, zoneTriggerRadius);
+
+        /// <summary>
+        /// Igual ao <see cref="PlayerInZone(Transform)"/>, mas com um raio explícito,
+        /// para zonas que precisam de uma tolerância diferente da padrão.
+        /// </summary>
+        private bool PlayerInZone(Transform zone, float radius)
         {
             Vector3 p = playerController.transform.position;
             Vector3 z = zone.position;
             float dx = p.x - z.x;
             float dz = p.z - z.z;
-            return (dx * dx + dz * dz) <= zoneTriggerRadius * zoneTriggerRadius;
+            return (dx * dx + dz * dz) <= radius * radius;
         }
 
         // --- Helpers -------------------------------------------------------
@@ -1027,7 +1035,7 @@ namespace TheDelivery.Narrative
             // Beat 3: zona-gatilho da descoberta e o trajeto do vulto.
             Gizmos.color = Color.red;
             if (discoveryTriggerZone != null)
-                Gizmos.DrawWireSphere(discoveryTriggerZone.position, zoneTriggerRadius);
+                Gizmos.DrawWireSphere(discoveryTriggerZone.position, discoveryTriggerRadius);
             if (shadowStartPoint != null && shadowEndPoint != null)
             {
                 Gizmos.color = Color.magenta;

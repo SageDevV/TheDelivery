@@ -220,6 +220,19 @@ namespace TheDelivery.AI
                 return;
             }
 
+            // Checagem de ataque PRIMEIRO, independente do cone de visão. Se o player
+            // está dentro do attackRange (mesmo colado/ultrapassado, fora do cone),
+            // o ataque dispara. A proteção !hidden mantém o esconderijo furtivo seguro.
+            if (vision.PlayerTransform != null)
+            {
+                bool hidden = PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden;
+                if (!hidden && HorizontalDistance(transform.position, vision.PlayerTransform.position) <= attackRange)
+                {
+                    TransitionTo(AIState.Attack);
+                    return;
+                }
+            }
+
             if (vision.CanSeePlayer)
             {
                 chaseLostTimer = 0f;
@@ -228,13 +241,6 @@ namespace TheDelivery.AI
                 {
                     Vector3 playerPos = vision.PlayerTransform.position;
                     SetDestination(playerPos, force: true);
-
-                    // Alcançou o player (e ele não está escondido) → ataque.
-                    bool hidden = PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden;
-                    if (!hidden && HorizontalDistance(transform.position, playerPos) <= attackRange)
-                    {
-                        TransitionTo(AIState.Attack);
-                    }
                 }
                 return;
             }
