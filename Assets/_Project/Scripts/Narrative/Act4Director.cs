@@ -168,6 +168,22 @@ namespace TheDelivery.Narrative
         [Tooltip("Pausa de respiro após o antagonista sumir, antes do lembrete do celular.")]
         [SerializeField] private float respiroDuration = 3f;
 
+        [Header("Beat 5 - Run To Landline")]
+        [Tooltip("Pensamento que aponta pro fixo: \"O telefone fixo. Na sala.\"")]
+        [SerializeField] private ThoughtData landlineReminderThought;
+        [Tooltip("Objeto do telefone fixo (precisa do componente Landline).")]
+        [SerializeField] private GameObject landlineObject;
+        [Tooltip("Zona ao redor do fixo: ao entrar, dispara a pontada de tensão.")]
+        [SerializeField] private Transform landlineApproachZone;
+        [Tooltip("Raio da zona de aproximação do fixo.")]
+        [SerializeField] private float landlineApproachRadius = 3f;
+        [Tooltip("Som distante do antagonista (passos/batida) ao se aproximar do fixo.")]
+        [SerializeField] private AudioClip distantAntagonistSound;
+
+        [Header("Beat 5 - Som 3D da porta")]
+        [Tooltip("AudioSource 3D posicionado na porta da frente. Toca o som distante do antagonista vindo daquela direção. Configurar: spatialBlend = 1 (3D), Play On Awake OFF, Max Distance suficiente para alcançar a sala.")]
+        [SerializeField] private AudioSource doorAudioSource;
+
         [Header("Debug")]
         [Tooltip("Beat em que a sequência começa. Permite testar um beat específico sem jogar do início.")]
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
@@ -211,6 +227,10 @@ namespace TheDelivery.Narrative
         // True a partir do instante em que a saída do antagonista (respiro enganoso)
         // começa. Garante que a sequência de saída dispare uma única vez.
         private bool leavingScene;
+
+        // True após o pensamento do fixo (Beat 5): só então o Landline aceita
+        // interação. Consumido em OnLandlinePickedUp para evitar disparo duplo.
+        private bool landlineArmed;
 
         private void Start()
         {
@@ -317,10 +337,11 @@ namespace TheDelivery.Narrative
                     beatRoutine = StartCoroutine(BeatDeadPhone());
                     break;
 
-                // Beats 5-9: a implementar nas próximas semanas.
                 case Act4Beat.RunToLandline:
-                    Debug.Log("[Act4Director] BEAT 5 - RunToLandline (a implementar)");
+                    beatRoutine = StartCoroutine(BeatRunToLandline());
                     break;
+
+                // Beats 6-9: a implementar nas próximas semanas.
                 case Act4Beat.TheCall:
                     Debug.Log("[Act4Director] BEAT 6 - TheCall (a implementar)");
                     break;
@@ -959,6 +980,80 @@ namespace TheDelivery.Narrative
             AdvanceToBeat(Act4Beat.RunToLandline);
         }
 
+        // --- BEAT 5: Run To Landline --------------------------------------
+
+        /// <summary>
+        /// Beat 5: o celular está morto, então um pensamento redireciona o player
+        /// para o telefone fixo da sala ("O telefone fixo. Na sala."). Após o
+        /// pensamento sumir, ARMA o fixo (componente <see cref="Landline"/>) para
+        /// aceitar interação. O player anda livre até lá; ao se APROXIMAR (entrar na
+        /// <see cref="landlineApproachZone"/>), dispara uma única pontada de tensão —
+        /// um som distante do antagonista (ele NÃO volta de verdade aqui, só se
+        /// anuncia). O avanço para o Beat 6 é dirigido pela interação
+        /// (<see cref="OnLandlinePickedUp"/>), não encadeado aqui.
+        /// </summary>
+        private IEnumerator BeatRunToLandline()
+        {
+            landlineArmed = false;
+            playerController.CanMove = true;
+
+            // Pensamento aponta pro fixo. Espera ele sumir antes de armar, para o
+            // player associar o pensamento ao objeto (mesmo padrão do Beat 4).
+            ShowThought(landlineReminderThought);
+            yield return null;
+            yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+
+            // Arma o fixo: só agora o componente Landline aceita interação.
+            if (landlineObject != null)
+            {
+                Landline ll = landlineObject.GetComponent<Landline>()
+                    ?? landlineObject.GetComponentInChildren<Landline>();
+                if (ll != null)
+                {
+                    ll.Arm(this);
+                    landlineArmed = true;
+                }
+                else
+                {
+                    Debug.LogError("[Act4Director] landlineObject sem componente Landline; o fixo não ficará interativo.", this);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] landlineObject não atribuído; o Beat 5 não tem fixo para usar.", this);
+            }
+
+            // Pontada de tensão: ao se aproximar do fixo, um som distante do
+            // antagonista (passos/batida) toca uma única vez — ele está voltando.
+            if (landlineApproachZone != null)
+            {
+                yield return new WaitUntil(() => PlayerInZone(landlineApproachZone, landlineApproachRadius));
+                PlayDistantDoorSound(distantAntagonistSound);
+                Debug.Log("[Act4Director] SOM 3D (porta): passos distantes do antagonista voltando");
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] landlineApproachZone não atribuída; pulando a pontada de tensão.", this);
+            }
+
+            // O resto do beat é dirigido pela interação do player (OnLandlinePickedUp).
+            Debug.Log("[Act4Director] Beat 5: fixo armado, aguardando interação");
+        }
+
+        /// <summary>
+        /// Chamado pelo <see cref="Landline"/> quando o player interage com o
+        /// telefone fixo (F). Só responde com o fixo armado (após o pensamento) e
+        /// uma única vez. Avança para o Beat 6 (TheCall).
+        /// </summary>
+        public void OnLandlinePickedUp()
+        {
+            if (!landlineArmed)
+                return;
+            landlineArmed = false; // consome: evita reentrância/duplo disparo.
+
+            AdvanceToBeat(Act4Beat.TheCall);
+        }
+
         /// <summary>
         /// Virada da cutscene: gira o CORPO do player (yaw, pois é onde mora o yaw —
         /// ver <c>HandleLook</c> do PlayerController, que faz <c>transform.Rotate</c>)
@@ -1082,19 +1177,38 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// Toca um clip com fade in e fade out de volume. Como PlayOneShot não
-        /// permite controlar o volume ao longo do tempo, usa
-        /// <c>audioSource.clip</c> + <c>Play()</c> e interpola o volume. Se o clip
-        /// for curto demais para os dois fades configurados, eles são reduzidos
-        /// proporcionalmente (sem hold). Toca em paralelo: o chamador não espera.
+        /// Wrapper do AudioSource 2D padrão (<see cref="audioSource"/>): roda o fade
+        /// compartilhado (<see cref="PlaySoundWithFadeOn"/>) e, ao terminar, libera
+        /// <see cref="audioFadeRoutine"/> — o bookkeeping do "single-source 2D" (um
+        /// novo som cancela o anterior) é responsabilidade deste caminho, não da
+        /// lógica de fade em si.
         /// </summary>
         private IEnumerator PlaySoundWithFade(AudioClip clip)
         {
-            if (audioSource == null)
-                Debug.LogWarning("[Act4Director] PlaySoundWithFade: audioSource não atribuído.", this);
+            yield return PlaySoundWithFadeOn(audioSource, clip);
+            audioFadeRoutine = null;
+        }
+
+        /// <summary>
+        /// Lógica de fade in/out reutilizável, parametrizada pelo AudioSource alvo.
+        /// Toca <paramref name="clip"/> em <paramref name="src"/> via <c>clip</c> +
+        /// <c>Play()</c> interpolando o volume (PlayOneShot não permite controlar o
+        /// volume ao longo do tempo): fade in (<see cref="audioFadeInDuration"/>),
+        /// sustentação no pico e fade out (<see cref="audioFadeOutDuration"/>); se o
+        /// clip for curto demais para os dois fades, eles encolhem proporcionalmente
+        /// (sem hold). NÃO faz bookkeeping de <see cref="audioFadeRoutine"/> — isso
+        /// fica a cargo do chamador (o caminho 2D usa o wrapper
+        /// <see cref="PlaySoundWithFade"/>; o caminho 3D da porta dispara direto, num
+        /// AudioSource separado que não compete pelo mesmo controle). Toca em
+        /// paralelo: o chamador não espera.
+        /// </summary>
+        private IEnumerator PlaySoundWithFadeOn(AudioSource src, AudioClip clip)
+        {
+            if (src == null)
+                Debug.LogWarning("[Act4Director] PlaySoundWithFadeOn: AudioSource nulo.", this);
             if (clip == null)
-                Debug.LogWarning("[Act4Director] PlaySoundWithFade: clip nulo.", this);
-            if (audioSource == null || clip == null)
+                Debug.LogWarning("[Act4Director] PlaySoundWithFadeOn: clip nulo.", this);
+            if (src == null || clip == null)
                 yield break;
 
             float fadeIn = Mathf.Max(0f, audioFadeInDuration);
@@ -1110,19 +1224,19 @@ namespace TheDelivery.Narrative
                 fadeOut *= scale;
             }
 
-            audioSource.clip = clip;
-            audioSource.volume = 0f;
-            audioSource.Play();
+            src.clip = clip;
+            src.volume = 0f;
+            src.Play();
 
             // Fade in.
             float elapsed = 0f;
             while (elapsed < fadeIn)
             {
                 elapsed += Time.deltaTime;
-                audioSource.volume = Mathf.Lerp(0f, audioTargetVolume, elapsed / fadeIn);
+                src.volume = Mathf.Lerp(0f, audioTargetVolume, elapsed / fadeIn);
                 yield return null;
             }
-            audioSource.volume = audioTargetVolume;
+            src.volume = audioTargetVolume;
 
             // Sustenta no pico até faltar exatamente o fade out para o fim do clip.
             float holdTime = clip.length - fadeIn - fadeOut;
@@ -1131,17 +1245,36 @@ namespace TheDelivery.Narrative
 
             // Fade out.
             elapsed = 0f;
-            float startVol = audioSource.volume;
+            float startVol = src.volume;
             while (elapsed < fadeOut)
             {
                 elapsed += Time.deltaTime;
-                audioSource.volume = Mathf.Lerp(startVol, 0f, elapsed / fadeOut);
+                src.volume = Mathf.Lerp(startVol, 0f, elapsed / fadeOut);
                 yield return null;
             }
-            audioSource.volume = 0f;
-            audioSource.Stop();
+            src.volume = 0f;
+            src.Stop();
+        }
 
-            audioFadeRoutine = null;
+        /// <summary>
+        /// Toca o som distante do antagonista em 3D, a partir do
+        /// <see cref="doorAudioSource"/> (posicionado na porta da frente), para que o
+        /// som venha DAQUELA direção — o sinal de que ele está voltando (Beat 5).
+        /// Usa a mesma lógica de fade (<see cref="PlaySoundWithFadeOn"/>), mas num
+        /// AudioSource separado do 2D, então NÃO interfere no <see cref="audioSource"/>
+        /// nem em <see cref="audioFadeRoutine"/>. Sem <c>doorAudioSource</c> atribuído,
+        /// cai no caminho 2D (<see cref="PlaySoundFaded"/>) como fallback.
+        /// </summary>
+        private void PlayDistantDoorSound(AudioClip clip)
+        {
+            if (doorAudioSource == null)
+            {
+                Debug.LogWarning("[Act4Director] doorAudioSource não atribuído; tocando em 2D como fallback.", this);
+                PlaySoundFaded(clip);
+                return;
+            }
+
+            StartCoroutine(PlaySoundWithFadeOn(doorAudioSource, clip));
         }
 
         /// <summary>
@@ -1311,6 +1444,13 @@ namespace TheDelivery.Narrative
             {
                 Gizmos.color = Color.white;
                 Gizmos.DrawWireCube(lookAtCorridorTarget.position, Vector3.one * 0.25f);
+            }
+
+            // Beat 5: zona de aproximação do telefone fixo.
+            if (landlineApproachZone != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(landlineApproachZone.position, landlineApproachRadius);
             }
         }
 #endif
