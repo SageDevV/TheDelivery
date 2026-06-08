@@ -1,5 +1,8 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
+using TheDelivery.AI;
+using TheDelivery.Interaction;
 using TheDelivery.Player;
 
 namespace TheDelivery.Narrative
@@ -139,6 +142,32 @@ namespace TheDelivery.Narrative
         [Tooltip("Posição distante onde o antagonista é ativado (dá tempo de reagir).")]
         [SerializeField] private Transform antagonistActivationPoint;
 
+        [Header("Beat 4 - Dead Phone")]
+        [Tooltip("Segundos de caçada antes do celular poder ser lembrado.")]
+        [SerializeField] private float deadPhoneDelay = 30f;
+        [Tooltip("De quanto em quanto tempo (s) a condição de gatilho do Beat 4 é reavaliada.")]
+        [SerializeField] private float deadPhoneCheckInterval = 0.25f;
+        [Tooltip("Pensamento que lembra do celular: \"O celular.\"")]
+        [SerializeField] private ThoughtData phoneReminderThought;
+        [Tooltip("Objeto interativo do celular na mesa de cabeceira (precisa do componente DeadPhone).")]
+        [SerializeField] private GameObject phoneObject;
+        [Tooltip("Overlay UI do celular com tela morta (imagem fullscreen ou parcial).")]
+        [SerializeField] private GameObject deadPhoneOverlay;
+        [Tooltip("Tempo (s) \"olhando\" o celular antes do pensamento de desespero.")]
+        [SerializeField] private float deadPhoneLookDuration = 0.8f;
+        [Tooltip("Pensamento de desespero ao ver o celular morto.")]
+        [SerializeField] private ThoughtData deadPhoneThought;
+
+        [Header("Beat 4 - Saída do antagonista (respiro)")]
+        [Tooltip("Ponto na porta da frente para onde o antagonista caminha ao ir embora.")]
+        [SerializeField] private Transform frontDoorPoint;
+        [Tooltip("Velocidade do antagonista ao ir embora (caminhada).")]
+        [SerializeField] private float leaveWalkSpeed = 2f;
+        [Tooltip("Distância para considerar que chegou à porta.")]
+        [SerializeField] private float doorArrivalThreshold = 0.5f;
+        [Tooltip("Pausa de respiro após o antagonista sumir, antes do lembrete do celular.")]
+        [SerializeField] private float respiroDuration = 3f;
+
         [Header("Debug")]
         [Tooltip("Beat em que a sequência começa. Permite testar um beat específico sem jogar do início.")]
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
@@ -161,6 +190,27 @@ namespace TheDelivery.Narrative
         // CharacterController do player — desabilitado durante o despertar para
         // teleportar e congelar a gravidade (a câmera deitada não pode derivar).
         private CharacterController characterController;
+
+        // --- Estado do Beat 4 (Dead Phone) --------------------------------
+        // Componente FSM do antagonista, resolvido ao ativá-lo no Beat 3.
+        // Usado por PlayerIsSafe para saber se o player está sob perseguição.
+        private AntagonistAI antagonistAI;
+
+        // Instante (Time.time) em que a caçada começou (FSM ativada no Beat 3).
+        // O Beat 4 só pode ser lembrado depois de deadPhoneDelay a partir daqui.
+        private float huntStartTime;
+
+        // Coroutine que vigia a condição composta (tempo + segurança) do Beat 4.
+        // Roda em paralelo ao gameplay de perseguição; cancelada em AdvanceToBeat.
+        private Coroutine deadPhoneMonitor;
+
+        // True após o lembrete "O celular": só então o DeadPhone aceita interação.
+        // Consumido em OnPhonePickedUp para evitar disparo duplo.
+        private bool phoneArmed;
+
+        // True a partir do instante em que a saída do antagonista (respiro enganoso)
+        // começa. Garante que a sequência de saída dispare uma única vez.
+        private bool leavingScene;
 
         private void Start()
         {
@@ -239,6 +289,15 @@ namespace TheDelivery.Narrative
                 beatRoutine = null;
             }
 
+            // O monitor do Beat 4 roda fora do beatRoutine (em paralelo à caçada).
+            // Qualquer transição de beat o cancela para não disparar tarde demais
+            // nem duas vezes (ex.: salto de debug ou o próprio avanço para DeadPhone).
+            if (deadPhoneMonitor != null)
+            {
+                StopCoroutine(deadPhoneMonitor);
+                deadPhoneMonitor = null;
+            }
+
             CurrentBeat = beat;
 
             switch (beat)
@@ -254,10 +313,11 @@ namespace TheDelivery.Narrative
                     beatRoutine = StartCoroutine(BeatDiscovery());
                     break;
 
-                // Beats 4-9: a implementar nas próximas semanas.
                 case Act4Beat.DeadPhone:
-                    Debug.Log("[Act4Director] BEAT 4 - DeadPhone (a implementar)");
+                    beatRoutine = StartCoroutine(BeatDeadPhone());
                     break;
+
+                // Beats 5-9: a implementar nas próximas semanas.
                 case Act4Beat.RunToLandline:
                     Debug.Log("[Act4Director] BEAT 5 - RunToLandline (a implementar)");
                     break;
@@ -684,20 +744,219 @@ namespace TheDelivery.Narrative
                     Debug.LogWarning("[Act4Director] antagonistActivationPoint não atribuído; antagonista ativa na posição atual.", this);
 
                 antagonist.SetActive(true);
+
+                // Referência à FSM para PlayerIsSafe (Beat 4) consultar o estado.
+                // GetComponentInChildren: o AntagonistAI pode estar num filho do GO.
+                antagonistAI = antagonist.GetComponent<AntagonistAI>()
+                    ?? antagonist.GetComponentInChildren<AntagonistAI>();
+                if (antagonistAI == null)
+                    Debug.LogWarning("[Act4Director] AntagonistAI não encontrado no antagonist; PlayerIsSafe usará só o estado de esconderijo.", this);
             }
             else
             {
                 Debug.LogWarning("[Act4Director] antagonist não atribuído; a caçada não será iniciada.", this);
             }
 
+            // Marca o início da caçada: o Beat 4 (DeadPhone) só pode ser lembrado
+            // depois de deadPhoneDelay segundos a partir daqui.
+            huntStartTime = Time.time;
+
             // 7. Quando o player se esconde pela primeira vez, esconde o prompt.
             yield return new WaitUntil(() => PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden);
             if (hidePrompt != null)
                 hidePrompt.SetActive(false);
 
-            // A partir daqui o gameplay de perseguição governa. O avanço para o
-            // Beat 4 (DeadPhone) virá de um trigger narrativo, definido depois.
+            // A partir daqui o gameplay de perseguição governa. O Beat 4 não é
+            // encadeado direto: ele é MONITORADO (tempo de caçada + player seguro)
+            // por uma coroutine paralela, fora do beatRoutine, que avança sozinha
+            // quando a condição composta for satisfeita.
             Debug.Log("[Act4Director] Beat 3: caçada iniciada, gameplay no controle");
+            deadPhoneMonitor = StartCoroutine(MonitorDeadPhoneTrigger());
+        }
+
+        // --- BEAT 4: Dead Phone -------------------------------------------
+
+        /// <summary>
+        /// Vigia a condição composta que destrava o Beat 4: passou
+        /// <see cref="deadPhoneDelay"/> desde o início da caçada E o player está
+        /// seguro agora (<see cref="PlayerIsSafe"/>). Roda em paralelo ao gameplay
+        /// de perseguição (não é o beatRoutine) e, ao satisfazer ambos, avança para
+        /// <see cref="Act4Beat.DeadPhone"/>. Cancelada por <see cref="AdvanceToBeat"/>
+        /// em qualquer transição, então não dispara duas vezes nem tarde demais.
+        /// </summary>
+        private IEnumerator MonitorDeadPhoneTrigger()
+        {
+            var wait = new WaitForSeconds(Mathf.Max(0.05f, deadPhoneCheckInterval));
+
+            // Espera o respiro: tempo mínimo de caçada E um instante seguro.
+            while (Time.time - huntStartTime < deadPhoneDelay || !PlayerIsSafe())
+                yield return wait;
+
+            // Dispara uma única vez: o break do while já garante isso, mas o flag
+            // deixa a intenção explícita e protege contra reentrância acidental.
+            if (leavingScene)
+                yield break;
+            leavingScene = true;
+
+            // Respiro enganoso: ANTES do lembrete do celular, o antagonista sai de
+            // cena (caminha até a porta e some). Roda como continuação deste mesmo
+            // monitor (mesmo Coroutine tracker em deadPhoneMonitor), então um salto
+            // de beat o cancela junto. Só ao fim a sequência avança para o Beat 4.
+            yield return AntagonistLeaveRoutine();
+
+            // Importante zerar antes de avançar: AdvanceToBeat tentaria parar esta
+            // mesma coroutine (que já está terminando) — nulo evita o StopCoroutine
+            // redundante sobre uma referência morta.
+            deadPhoneMonitor = null;
+            AdvanceToBeat(Act4Beat.DeadPhone);
+        }
+
+        /// <summary>
+        /// "Respiro enganoso": com a condição do Beat 4 satisfeita, o Director assume
+        /// o controle direto do NavMeshAgent e leva o antagonista até a porta da frente,
+        /// onde ele desaparece (SetActive false — vai voltar no clímax). NÃO usa a FSM
+        /// para mover: ela é suspensa antes (<see cref="AntagonistAI.SuspendForDirector"/>)
+        /// para não disputar o agente. Após sumir, segura <see cref="respiroDuration"/>
+        /// de silêncio. Não avança o beat — quem chama (o monitor) faz isso ao retornar.
+        /// </summary>
+        private IEnumerator AntagonistLeaveRoutine()
+        {
+            // 1. Suspende a FSM: para de perseguir, pausa a patrulha e libera o agente.
+            if (antagonistAI != null)
+                antagonistAI.SuspendForDirector();
+
+            // 2. Caminha até a porta sob controle direto do NavMeshAgent.
+            NavMeshAgent agent = antagonist != null ? antagonist.GetComponent<NavMeshAgent>() : null;
+            if (agent != null && agent.isOnNavMesh && frontDoorPoint != null)
+            {
+                agent.speed = leaveWalkSpeed;
+                agent.isStopped = false;
+                agent.ResetPath();
+                agent.SetDestination(frontDoorPoint.position);
+
+                // Espera o caminho ser calculado e o agente chegar perto da porta.
+                yield return new WaitUntil(() =>
+                    !agent.pathPending && agent.remainingDistance <= doorArrivalThreshold);
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] Saída do antagonista: NavMeshAgent/frontDoorPoint ausente ou agente fora do NavMesh; pulando a caminhada.", this);
+            }
+
+            // 3. Some: "saiu do apartamento". Reativado num beat futuro (clímax).
+            if (antagonist != null)
+                antagonist.SetActive(false);
+            Debug.Log("[Act4Director] Antagonista saiu de cena (respiro enganoso)");
+
+            // 4. Pausa de respiro (silêncio) antes do lembrete do celular.
+            yield return new WaitForSeconds(Mathf.Max(0f, respiroDuration));
+        }
+
+        /// <summary>
+        /// Player "seguro" o bastante para lembrar do celular: ou está escondido,
+        /// ou o antagonista não está em perseguição/ataque. Evita que o lembrete
+        /// (e o respiro narrativo) caia no meio de uma fuga ativa.
+        /// </summary>
+        private bool PlayerIsSafe()
+        {
+            bool hidden = PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden;
+
+            bool notBeingChased = true;
+            if (antagonistAI != null)
+            {
+                AntagonistAI.AIState s = antagonistAI.CurrentState;
+                notBeingChased = s != AntagonistAI.AIState.Chase && s != AntagonistAI.AIState.Attack;
+            }
+
+            return hidden || notBeingChased;
+        }
+
+        /// <summary>
+        /// Beat 4: dispara o lembrete "O celular." e ARMA o celular interativo na
+        /// mesa de cabeceira. A partir daqui o player tem o controle: precisa ir até
+        /// a mesa e interagir (F). A interação chama <see cref="OnPhonePickedUp"/>,
+        /// que roda <see cref="PickUpPhoneRoutine"/> (overlay + desespero + avanço).
+        /// A caçada continua existindo — o antagonista NÃO é desativado.
+        /// </summary>
+        private IEnumerator BeatDeadPhone()
+        {
+            phoneArmed = false;
+
+            // Lembrete. Espera ele sumir antes de armar o celular, para o player
+            // associar o pensamento ao objeto e não interagir "no escuro".
+            ShowThought(phoneReminderThought);
+            yield return null;
+            yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+
+            // Arma o celular: só agora o componente DeadPhone aceita interação.
+            if (phoneObject != null)
+            {
+                DeadPhone phone = phoneObject.GetComponent<DeadPhone>()
+                    ?? phoneObject.GetComponentInChildren<DeadPhone>();
+                if (phone != null)
+                {
+                    phone.Arm(this);
+                    phoneArmed = true;
+                }
+                else
+                {
+                    Debug.LogError("[Act4Director] phoneObject sem componente DeadPhone; o celular não ficará interativo.", this);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] phoneObject não atribuído; o Beat 4 não tem celular para pegar.", this);
+            }
+
+            // O resto do beat é dirigido pela interação do player (OnPhonePickedUp).
+            Debug.Log("[Act4Director] Beat 4: celular lembrado e armado, aguardando interação");
+        }
+
+        /// <summary>
+        /// Chamado pelo <see cref="DeadPhone"/> quando o player interage com o
+        /// celular (F). Só responde com o celular armado (após o lembrete) e uma
+        /// única vez. Dá início à <see cref="PickUpPhoneRoutine"/>.
+        /// </summary>
+        public void OnPhonePickedUp()
+        {
+            if (!phoneArmed)
+                return;
+            phoneArmed = false; // consome: evita reentrância/duplo disparo.
+
+            // Reusa o slot de beatRoutine: AdvanceToBeat o cancelaria de qualquer
+            // forma, mas aqui a transição para o Beat 5 sai de dentro da rotina.
+            beatRoutine = StartCoroutine(PickUpPhoneRoutine());
+        }
+
+        /// <summary>
+        /// Pega o celular: trava o player, mostra o OVERLAY de UI (tela morta) —
+        /// sem mexer na câmera 3D — segura um instante, dispara o pensamento de
+        /// desespero, espera ele sumir, fecha o overlay, devolve o controle e avança
+        /// para o Beat 5 (RunToLandline).
+        /// </summary>
+        private IEnumerator PickUpPhoneRoutine()
+        {
+            // CanMove==false já trava também o olhar (HandleLook dá early-return),
+            // então não há CanLook separado a desligar — mesmo padrão dos outros beats.
+            playerController.CanMove = false;
+
+            if (deadPhoneOverlay != null)
+                deadPhoneOverlay.SetActive(true);
+
+            // Pequena pausa "olhando" o celular antes do baque.
+            yield return new WaitForSeconds(Mathf.Max(0f, deadPhoneLookDuration));
+
+            // "Não... deixei carregando a noite toda."
+            ShowThought(deadPhoneThought);
+            yield return null;
+            yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+
+            // Fecha o overlay e devolve o controle.
+            if (deadPhoneOverlay != null)
+                deadPhoneOverlay.SetActive(false);
+            playerController.CanMove = true;
+
+            AdvanceToBeat(Act4Beat.RunToLandline);
         }
 
         /// <summary>

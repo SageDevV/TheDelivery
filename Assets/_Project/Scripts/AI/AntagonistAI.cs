@@ -395,6 +395,22 @@ namespace TheDelivery.AI
         }
 
         /// <summary>
+        /// Suspende a FSM para que um sistema externo (ex.: o Act4Director) assuma o
+        /// controle direto do NavMeshAgent — usado no "respiro enganoso" do Beat 4,
+        /// em que o Director conduz o antagonista para fora de cena. Pausa a patrulha
+        /// (senão o <see cref="PatrolBehavior"/> continuaria emitindo SetDestination e
+        /// disputaria o agente) e desliga o Update da FSM. O NavMeshAgent permanece
+        /// ATIVO: quem assume deve fazer <c>agent.isStopped = false</c> e SetDestination.
+        /// Reabilite com <c>enabled = true</c> quando a FSM precisar voltar (clímax).
+        /// </summary>
+        public void SuspendForDirector()
+        {
+            if (patrol != null)
+                patrol.PausePatrol();
+            enabled = false;
+        }
+
+        /// <summary>
         /// Define o destino do agente evitando chamadas redundantes: quando
         /// <paramref name="force"/> é false, só reemite se o alvo se moveu além de
         /// <see cref="DestinationRefreshThreshold"/> desde o último SetDestination.
