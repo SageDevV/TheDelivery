@@ -49,6 +49,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private CanvasGroup blackScreen;
         [Tooltip("AudioSource para sons scriptados (placeholder por enquanto). NÃO marque \"Play On Awake\".")]
         [SerializeField] private AudioSource audioSource;
+        [Tooltip("AudioSource 2D dedicado a one-shots (ex.: o 'baque' das luzes). Volume FIXO, independente do fade do audioSource principal — assim um PlayOneShot não sai com o volume escalado por um fade em andamento. Auto-criado se vazio. NÃO marque \"Play On Awake\".")]
+        [SerializeField] private AudioSource sfxAudioSource;
 
         [Header("Audio Fade")]
         [Tooltip("Duração (s) do fade in dos sons tocados com fade.")]
@@ -184,6 +186,26 @@ namespace TheDelivery.Narrative
         [Tooltip("AudioSource 3D posicionado na porta da frente. Toca o som distante do antagonista vindo daquela direção. Configurar: spatialBlend = 1 (3D), Play On Awake OFF, Max Distance suficiente para alcançar a sala.")]
         [SerializeField] private AudioSource doorAudioSource;
 
+        [Header("Beat 6 - The Call")]
+        [Tooltip("ThoughtData multi-linha com o diálogo da ligação (falas da atendente e do protagonista).")]
+        [SerializeField] private ThoughtData callDialogueThought;
+        [Tooltip("Som da linha caindo / tom de ocupado (placeholder).")]
+        [SerializeField] private AudioClip deadLineSound;
+        [Tooltip("Pausa de silêncio após a linha cair, antes de avançar pro Beat 7.")]
+        [SerializeField] private float deadLineSilence = 2f;
+
+        [Header("Beat 6 - Luzes piscando")]
+        [Tooltip("Luzes dos cômodos que piscam e apagam após o telefonema. NÃO incluir as luzes do luar (que ficam acesas).")]
+        [SerializeField] private Light[] roomLights;
+        [Tooltip("Número de piscadas erráticas antes de apagar de vez.")]
+        [SerializeField] private int flickerCount = 6;
+        [Tooltip("Intervalo mínimo (s) entre estados do piscar errático.")]
+        [SerializeField] private float flickerMinInterval = 0.04f;
+        [Tooltip("Intervalo máximo (s) entre estados do piscar errático.")]
+        [SerializeField] private float flickerMaxInterval = 0.18f;
+        [Tooltip("Som tocado no instante em que as luzes terminam de piscar e apagam de vez.")]
+        [SerializeField] private AudioClip lightsOutSound;
+
         [Header("Debug")]
         [Tooltip("Beat em que a sequência começa. Permite testar um beat específico sem jogar do início.")]
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
@@ -265,6 +287,21 @@ namespace TheDelivery.Narrative
             audioSource.playOnAwake = false;
             audioSource.loop = false;
             audioSource.spatialBlend = 0f; // 2D: o clip é importado como 3D, mas sons narrativos devem ser sempre audíveis.
+
+            // Canal de one-shots separado: o audioSource principal tem o volume
+            // dirigido pelos fades (PlaySoundFaded), e PlayOneShot é escalado AO VIVO
+            // por esse volume — um "baque" disparado durante um fade sairia fraco.
+            // Este source mantém volume fixo, então o one-shot toca no volume certo.
+            if (sfxAudioSource == null)
+            {
+                sfxAudioSource = gameObject.AddComponent<AudioSource>();
+                Debug.Log("[Act4Director] sfxAudioSource ausente; criado automaticamente (2D, sem Play On Awake).", this);
+            }
+
+            sfxAudioSource.playOnAwake = false;
+            sfxAudioSource.loop = false;
+            sfxAudioSource.spatialBlend = 0f;
+            sfxAudioSource.volume = audioTargetVolume;
         }
 
         private void Update()
@@ -341,10 +378,11 @@ namespace TheDelivery.Narrative
                     beatRoutine = StartCoroutine(BeatRunToLandline());
                     break;
 
-                // Beats 6-9: a implementar nas próximas semanas.
                 case Act4Beat.TheCall:
-                    Debug.Log("[Act4Director] BEAT 6 - TheCall (a implementar)");
+                    beatRoutine = StartCoroutine(BeatTheCall());
                     break;
+
+                // Beats 7-9: a implementar nas próximas semanas.
                 case Act4Beat.FinalHiding:
                     Debug.Log("[Act4Director] BEAT 7 - FinalHiding (a implementar)");
                     break;
@@ -1052,6 +1090,90 @@ namespace TheDelivery.Narrative
             landlineArmed = false; // consome: evita reentrância/duplo disparo.
 
             AdvanceToBeat(Act4Beat.TheCall);
+        }
+
+        // --- BEAT 6: The Call ---------------------------------------------
+
+        /// <summary>
+        /// Beat 6: a ligação. Trava o player ("ao telefone", parado) e roda o
+        /// diálogo da emergência — um único ThoughtData multi-linha
+        /// (<see cref="callDialogueThought"/>) cujas falas o ThoughtSystem encadeia
+        /// com fade e lineGap; o ritmo lento/tenso vem das durations das linhas (não
+        /// há lógica de ritmo aqui). Após a última fala ("está—"), a linha cai:
+        /// toca <see cref="deadLineSound"/> e segura <see cref="deadLineSilence"/> de
+        /// silêncio antes de devolver o controle e avançar para o Beat 7. A FSM do
+        /// antagonista NÃO é reativada aqui (isso é o FinalHiding).
+        /// </summary>
+        private IEnumerator BeatTheCall()
+        {
+            // Trava o player: ele está ao telefone, parado (CanMove==false também
+            // trava o olhar, mesmo padrão dos outros beats — sem CanLook separado).
+            playerController.CanMove = false;
+
+            // Roda o diálogo (ThoughtData multi-linha). Espera 1 frame pra garantir
+            // que o runner do ThoughtSystem iniciou, depois aguarda o diálogo INTEIRO
+            // terminar (todas as falas encadeadas) antes da linha cair.
+            ShowThought(callDialogueThought);
+            yield return null;
+            yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+
+            // A linha cai: silêncio súbito + som de linha morta.
+            PlaySoundFaded(deadLineSound);
+            Debug.Log("[Act4Director] A linha caiu (o antagonista voltou)");
+
+            // As luzes dos cômodos piscam erraticamente e apagam de vez (o luar fica).
+            yield return FlickerAndKillLights();
+
+            // Pequeno silêncio tenso antes de avançar.
+            yield return new WaitForSeconds(Mathf.Max(0f, deadLineSilence));
+
+            // Devolve o controle (o player vai precisar correr/se esconder no Beat 7).
+            playerController.CanMove = true;
+
+            AdvanceToBeat(Act4Beat.FinalHiding);
+        }
+
+        /// <summary>
+        /// Efeito de "queda de energia" após o telefonema: as <see cref="roomLights"/>
+        /// (luzes dos cômodos) piscam erraticamente — a cada passo, cada luz recebe um
+        /// estado aleatório (on/off) e o intervalo até o próximo passo varia entre
+        /// <see cref="flickerMinInterval"/> e <see cref="flickerMaxInterval"/>, dando um
+        /// piscar orgânico/irregular — e depois APAGAM de vez (enabled=false),
+        /// permanentemente (não são religadas no resto do Ato 4). As luzes do luar NÃO
+        /// entram no array, então permanecem acesas. Seguro com o array vazio/nulo.
+        /// </summary>
+        private IEnumerator FlickerAndKillLights()
+        {
+            if (roomLights == null || roomLights.Length == 0)
+                yield break;
+
+            // Piscar errático: cada luz pisca de forma independente a cada passo.
+            for (int i = 0; i < flickerCount; i++)
+            {
+                foreach (Light l in roomLights)
+                {
+                    if (l != null)
+                        l.enabled = Random.value > 0.5f;
+                }
+                yield return new WaitForSeconds(Random.Range(flickerMinInterval, flickerMaxInterval));
+            }
+
+            // Apaga de vez: todas desligadas, permanente.
+            foreach (Light l in roomLights)
+            {
+                if (l != null)
+                    l.enabled = false;
+            }
+
+            // Som do "baque" da energia caindo, no instante exato do apagar. Toca no
+            // sfxAudioSource (volume fixo), e NÃO no audioSource principal: este tem o
+            // volume dirigido pelo fade do deadLineSound ainda em andamento, e um
+            // PlayOneShot ali sairia escalado por esse volume (fraco/inconsistente).
+            // Em sources separados os dois sons se sobrepõem sem disputar volume.
+            if (sfxAudioSource != null && lightsOutSound != null)
+                sfxAudioSource.PlayOneShot(lightsOutSound);
+            else
+                Debug.LogWarning("[Act4Director] FlickerAndKillLights: sfxAudioSource ou lightsOutSound ausente.", this);
         }
 
         /// <summary>

@@ -12938,15 +12938,6 @@ MonoBehaviour:
   callDialogueThought: {fileID: 11400000, guid: 0c4381d6500b36746a5c81dc1e507cf1, type: 2}
   deadLineSound: {fileID: 8300000, guid: f71c4fc24724f884b8dfa513bf41c66f, type: 3}
   deadLineSilence: 2
-  roomLights:
-  - {fileID: 1971377258}
-  - {fileID: 1162905776}
-  - {fileID: 392023956}
-  - {fileID: 1868268996}
-  flickerCount: 6
-  flickerMinInterval: 0.04
-  flickerMaxInterval: 0.18
-  lightsOutSound: {fileID: 8300000, guid: 86be4cf2be7f25649815d18fa58aa11e, type: 3}
   startBeat: 1
   debugMode: 0
 --- !u!4 &819793243

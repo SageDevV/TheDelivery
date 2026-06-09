@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc1bbe7721639454fa2821a8498c7e74, type: 3}
+  m_Name: Thought_Act4-7
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.ThoughtData
+  lines:
+  - text: "[Atendente] \"Emerg\xEAncia, qual a sua emerg\xEAncia?\""
+    duration: 2.5
+    delay: 2
+  - text: "Tem algu\xE9m dentro da minha casa. Por favor."
+    duration: 2.5
+    delay: 2
+  - text: "[Atendente] \"Certo, mantenha a calma. Qual o seu endere\xE7o?\""
+    duration: 2.5
+    delay: 2
+  - text: "[Atendente] \"Certo, mantenha a calma. Qual o seu endere\xE7o?\""
+    duration: 2.5
+    delay: 2
+  - text: "Rua [...], apartamento [...]. Ele est\xE1 aqui. Eu vi ele."
+    duration: 2.5
+    delay: 2
+  - text: "[Atendente] \"J\xE1 estou enviando uma viatura. Voc\xEA consegue se manter
+      em seguran\xE7a?\""
+    duration: 0
+    delay: 2
+  - text: Eu... eu vou tentar.
+    duration: 0
+    delay: 2
+  - text: "[Atendente] \"Fique na linha comigo. A viatura est\xE1 a caminho, est\xE1
+      me ouvindo? Est\xE1\u2014\""
+    duration: 0
+    delay: 2
