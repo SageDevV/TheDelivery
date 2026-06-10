@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using TheDelivery.AI;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
@@ -206,6 +208,86 @@ namespace TheDelivery.Narrative
         [Tooltip("Som tocado no instante em que as luzes terminam de piscar e apagam de vez.")]
         [SerializeField] private AudioClip lightsOutSound;
 
+        [Header("Beat 7 - Final Hiding")]
+        [Tooltip("Pensamento que direciona ao banheiro.")]
+        [SerializeField] private ThoughtData hideInBathroomThought;
+        [Tooltip("Pensamento que incentiva o box se o player se esconde em outro lugar.")]
+        [SerializeField] private ThoughtData wrongHideSpotThought;
+        [Tooltip("HideSpot do box do banheiro (HideSpot_ShowerBox).")]
+        [SerializeField] private HideSpot showerBoxSpot;
+        [Tooltip("Folga fixa (s) após as luzes apagarem, antes da FSM voltar a caçar.")]
+        [SerializeField] private float graceBeforeHunt = 5f;
+        [Tooltip("Tempo (s) escondido em spot errado antes do pensamento incentivar o box.")]
+        [SerializeField] private float wrongSpotHintDelay = 6f;
+        [Tooltip("NÃO USADO: por design, os passos do killer só soam quando ele VAI EMBORA (Beat 8 / footstepsLeavingSound). Mantido como reserva; a fase 7 agora é uma pausa silenciosa.")]
+        [SerializeField] private AudioClip footstepsApproachSound;
+        [Tooltip("Usado agora só para dimensionar a PAUSA silenciosa de tensão antes da morte (approachSteps × approachStepInterval). Não dispara mais som.")]
+        [SerializeField] private int approachSteps = 6;
+        [Tooltip("Usado agora só para dimensionar a PAUSA silenciosa de tensão antes da morte (approachSteps × approachStepInterval). Não dispara mais som.")]
+        [SerializeField] private float approachStepInterval = 0.9f;
+
+        [Header("Beat 8 - Death")]
+        [Tooltip("Som dos passos do killer se AFASTANDO (indo embora - falso alívio).")]
+        [SerializeField] private AudioClip footstepsLeavingSound;
+        [Tooltip("Quantos passos de afastamento.")]
+        [SerializeField] private int leavingSteps = 5;
+        [Tooltip("Intervalo entre os passos de afastamento (s).")]
+        [SerializeField] private float leavingStepInterval = 0.8f;
+        [Tooltip("Pausa de silêncio após o killer se afastar, antes das sirenes.")]
+        [SerializeField] private float reliefPause = 2f;
+        [Tooltip("Sirene de polícia ao fundo (placeholder).")]
+        [SerializeField] private AudioClip policeSirenSound;
+        [Tooltip("Crossfade (s) entre repetições da sirene: o fim de uma se sobrepõe ao início da próxima, eliminando o 'buraco' do loop. ~0.5-1.5s.")]
+        [SerializeField] private float sirenCrossfade = 0.8f;
+        [Tooltip("Comprimento efetivo (s) de cada repetição da sirene. 0 = usa o clip inteiro. Defina MENOR que o clip para PULAR o silêncio do fim que causa o 'intervalo grande' no loop.")]
+        [SerializeField] private float sirenLoopLength = 0f;
+        [Tooltip("Fade in (s) da sirene ao entrar pela primeira vez.")]
+        [SerializeField] private float sirenFadeIn = 1f;
+        [Tooltip("Fade out (s) da sirene ao encerrar (no fim do tempo no chão, antes da tela preta).")]
+        [SerializeField] private float sirenFadeOut = 1.5f;
+        [Tooltip("Pensamento que incentiva o player a sair: \"Ele foi embora?\"")]
+        [SerializeField] private ThoughtData heFoiEmboraThought;
+        [Tooltip("Zona no corredor (indo pra sala) que dispara a porrada.")]
+        [SerializeField] private Transform ambushZone;
+        [Tooltip("Raio da zona de emboscada.")]
+        [SerializeField] private float ambushRadius = 1.5f;
+        [Tooltip("Som da batida na cabeça (placeholder).")]
+        [SerializeField] private AudioClip headHitSound;
+        [Tooltip("Tempo (s) de tela preta após a porrada, antes do epílogo.")]
+        [SerializeField] private float blackoutDuration = 4f;
+
+        [Header("Beat 8 - Caído (post-processing)")]
+        [Tooltip("Global Volume (URP) com Depth of Field + Vignette. A 'visão turva' da porrada é aplicada aqui. Opcional: sem ele, a porrada só faz som + tela preta súbita.")]
+        [SerializeField] private Volume postProcessVolume;
+        [Tooltip("Duração (s) da subida da visão turva (blur + vinheta) na porrada, antes do preto.")]
+        [SerializeField] private float blurInDuration = 0.5f;
+        [Tooltip("Intensidade alvo da vinheta na porrada (0-1).")]
+        [SerializeField] private float vignetteTargetIntensity = 0.55f;
+        [Tooltip("DoF Gaussian: valor alvo de 'End' (m) — quanto menor, mais borra (Start vai a 0).")]
+        [SerializeField] private float dofGaussianEndTarget = 1f;
+        [Tooltip("DoF Bokeh: valor alvo de 'Focus Distance' (m) — quanto menor, mais borra o longe.")]
+        [SerializeField] private float dofBokehFocusTarget = 0.3f;
+
+        [Header("Beat 8 - Queda no chão (câmera)")]
+        [Tooltip("Duração (s) da queda da câmera ao chão após a porrada (a cabeça desabando).")]
+        [SerializeField] private float collapseDuration = 1.5f;
+        [Tooltip("Altura local da câmera caída no chão (olhos quase no piso).")]
+        [SerializeField] private float collapseFloorHeight = 0.25f;
+        [Tooltip("Pitch (graus) da câmera caída — leve inclinação olhando o chão/parede.")]
+        [SerializeField] private float collapsePitch = 12f;
+        [Tooltip("Roll (graus) da câmera caída — tombamento lateral da cabeça no chão.")]
+        [SerializeField] private float collapseRoll = 75f;
+        [Tooltip("Tempo (s) com a visão turva no chão (groggy) antes da tela apagar. Ideal 10-20s.")]
+        [SerializeField] private float groggyOnFloorDuration = 14f;
+        [Tooltip("Amplitude do balanço de POSIÇÃO da câmera no chão (m) — respiração/deriva sutil. 0 desliga.")]
+        [SerializeField] private float groggySwayAmount = 0.02f;
+        [Tooltip("Amplitude do balanço de ROTAÇÃO da câmera no chão (graus) — cabeça pesada oscilando. 0 desliga.")]
+        [SerializeField] private float groggySwayAngle = 1.2f;
+        [Tooltip("Velocidade do balanço groggy (rad/s aprox). Baixo = lento/cansado.")]
+        [SerializeField] private float groggySwaySpeed = 1.1f;
+        [Tooltip("Duração (s) do fade para preto após o tempo de visão turva no chão (perda final de consciência).")]
+        [SerializeField] private float blackoutFadeDuration = 2.5f;
+
         [Header("Debug")]
         [Tooltip("Beat em que a sequência começa. Permite testar um beat específico sem jogar do início.")]
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
@@ -228,6 +310,13 @@ namespace TheDelivery.Narrative
         // CharacterController do player — desabilitado durante o despertar para
         // teleportar e congelar a gravidade (a câmera deitada não pode derivar).
         private CharacterController characterController;
+
+        // Loop da sirene (Beat 8) com crossfade: dois AudioSources se revezam, o fim
+        // de uma repetição sobreposto ao início da próxima, para um loop contínuo sem
+        // o "buraco" do loop simples. Auto-criados em EnsureSirenSources.
+        private AudioSource sirenSourceA;
+        private AudioSource sirenSourceB;
+        private Coroutine sirenLoopRoutine;
 
         // --- Estado do Beat 4 (Dead Phone) --------------------------------
         // Componente FSM do antagonista, resolvido ao ativá-lo no Beat 3.
@@ -382,13 +471,15 @@ namespace TheDelivery.Narrative
                     beatRoutine = StartCoroutine(BeatTheCall());
                     break;
 
-                // Beats 7-9: a implementar nas próximas semanas.
                 case Act4Beat.FinalHiding:
-                    Debug.Log("[Act4Director] BEAT 7 - FinalHiding (a implementar)");
+                    beatRoutine = StartCoroutine(BeatFinalHiding());
                     break;
+
                 case Act4Beat.Death:
-                    Debug.Log("[Act4Director] BEAT 8 - Death (a implementar)");
+                    beatRoutine = StartCoroutine(BeatDeath());
                     break;
+
+                // Beat 9: a implementar nas próximas semanas.
                 case Act4Beat.Epilogue:
                     Debug.Log("[Act4Director] BEAT 9 - Epilogue (a implementar)");
                     break;
@@ -1176,6 +1267,442 @@ namespace TheDelivery.Narrative
                 Debug.LogWarning("[Act4Director] FlickerAndKillLights: sfxAudioSource ou lightsOutSound ausente.", this);
         }
 
+        // --- BEAT 7: Final Hiding -----------------------------------------
+
+        /// <summary>
+        /// Beat 7 (clímax): vindo do Beat 6 (luzes apagadas, casa no escuro só com
+        /// luar), um pensamento direciona o player ao banheiro e o prompt "Esconda-se"
+        /// (o mesmo do Beat 3) reaparece. Há uma FOLGA FIXA de <see cref="graceBeforeHunt"/>
+        /// segundos para o player se orientar no escuro ANTES de a caçada recomeçar —
+        /// a FSM só volta ao FIM da folga, mesmo que o player já tenha se escondido.
+        /// Encerrada a folga, o prompt some e o antagonista volta na porta da frente
+        /// (<see cref="frontDoorPoint"/>) com a FSM religada (<see cref="AntagonistAI.ResumeFromDirector"/>).
+        ///
+        /// A caçada real (sistemas da Fase 2) governa até o player se esconder no BOX
+        /// (<see cref="showerBoxSpot"/>): só ali dispara o final scriptado. Em outro
+        /// esconderijo furtivo, após <see cref="wrongSpotHintDelay"/>, um pensamento
+        /// (uma única vez) incentiva o box; se for visto entrando, a captura é tratada
+        /// pela própria FSM (Attack → OnPlayerCaught), não aqui. No box, a FSM é
+        /// suspensa (<see cref="AntagonistAI.SuspendForDirector"/>) e os passos do
+        /// antagonista se aproximam scriptados (tensão máxima) antes do Beat 8 (morte).
+        /// </summary>
+        private IEnumerator BeatFinalHiding()
+        {
+            playerController.CanMove = true;
+
+            // 1. Direciona ao banheiro. Espera o pensamento sumir antes do prompt.
+            ShowThought(hideInBathroomThought);
+            yield return null;
+            yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+
+            // 2. Prompt "Esconda-se" reaparece (reutiliza o do Beat 3).
+            if (hidePrompt != null)
+                hidePrompt.SetActive(true);
+
+            // 3. Folga FIXA: o player se orienta/esconde no escuro antes da caçada.
+            //    Espera fixa de propósito — a FSM só liga ao fim dos graceBeforeHunt.
+            yield return new WaitForSeconds(Mathf.Max(0f, graceBeforeHunt));
+
+            // 4. Fim da folga: esconde o prompt e o antagonista VOLTA caçando.
+            if (hidePrompt != null)
+                hidePrompt.SetActive(false);
+
+            if (antagonist != null)
+            {
+                // Reposiciona ANTES de ativar (mesmo padrão do Beat 3).
+                if (frontDoorPoint != null)
+                    antagonist.transform.position = frontDoorPoint.position;
+                else
+                    Debug.LogWarning("[Act4Director] frontDoorPoint não atribuído; antagonista volta na posição atual.", this);
+
+                antagonist.SetActive(true);
+
+                if (antagonistAI == null)
+                    antagonistAI = antagonist.GetComponent<AntagonistAI>()
+                        ?? antagonist.GetComponentInChildren<AntagonistAI>();
+
+                if (antagonistAI != null)
+                    antagonistAI.ResumeFromDirector(); // religa a FSM suspensa no Beat 4.
+                else
+                    Debug.LogWarning("[Act4Director] AntagonistAI não encontrado; a caçada final não terá FSM.", this);
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] antagonist não atribuído; a caçada final não será iniciada.", this);
+            }
+
+            // 5. Loop da caçada até o player se esconder no BOX. Em outro spot furtivo,
+            //    incentiva o box (uma vez). A captura fora do box (spot comprometido) é
+            //    tratada pela própria FSM (Attack → OnPlayerCaught) — não duplicar aqui.
+            bool reachedBox = false;
+            float wrongSpotTimer = 0f;
+            bool hintShown = false;
+
+            while (!reachedBox)
+            {
+                bool hidden = PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden;
+
+                if (hidden)
+                {
+                    if (PlayerHiding.Instance.CurrentHideSpot == showerBoxSpot)
+                    {
+                        reachedBox = true;
+                        break;
+                    }
+
+                    // Spot errado: após o atraso, incentiva o box (uma única vez).
+                    wrongSpotTimer += Time.deltaTime;
+                    if (!hintShown && wrongSpotTimer >= wrongSpotHintDelay)
+                    {
+                        ShowThought(wrongHideSpotThought);
+                        hintShown = true;
+                    }
+                }
+                else
+                {
+                    // Saiu/não está escondido: zera para reavaliar no próximo esconderijo.
+                    wrongSpotTimer = 0f;
+                    hintShown = false;
+                }
+
+                yield return null;
+            }
+
+            // 6. FINAL SCRIPTADO: player no box. Suspende a FSM para a aproximação
+            //    roteirizada — ela NÃO pode disputar o agente nem matar aqui (a morte
+            //    é o Beat 8).
+            if (antagonistAI != null)
+                antagonistAI.SuspendForDirector();
+
+            // 7. Tensão máxima: o player, escondido e imóvel no box, espera no escuro.
+            //    Os passos do killer NÃO soam aqui — por design, os passos só são
+            //    ouvidos quando ele VAI EMBORA do apartamento (Beat 8). Esta é uma
+            //    pausa de pavor SILENCIOSA antes da morte; sua duração reaproveita
+            //    approachSteps × approachStepInterval (que antes ritmavam os passos).
+            yield return new WaitForSeconds(Mathf.Max(0f, approachSteps * approachStepInterval));
+
+            // 8. Pico -> morte (Beat 8).
+            AdvanceToBeat(Act4Beat.Death);
+        }
+
+        // --- BEAT 8: Death ------------------------------------------------
+
+        /// <summary>
+        /// Beat 8 (a morte — dupla reviravolta trágica, violência mínima). Vindo do
+        /// Beat 7 com o player ESCONDIDO no box e a FSM suspensa: os passos do killer
+        /// se AFASTAM (falso alívio — ele "vai embora"), seguidos de um silêncio. As
+        /// sirenes de polícia entram ao fundo (a ajuda do telefonema chegou — esperança)
+        /// e PERMANECEM tocando, conectando com o epílogo. Um pensamento
+        /// (<see cref="heFoiEmboraThought"/>) incentiva o player a sair; ele sai do box
+        /// manualmente (F → <see cref="PlayerHiding.ExitHideSpot"/>, que devolve CanMove)
+        /// e anda livre rumo à sala. Ao entrar na <see cref="ambushZone"/> do corredor,
+        /// a emboscada dispara: uma batida na cabeça (só som, sem gore), tela preta
+        /// súbita e um blecaute sustentado antes do Beat 9. A FSM NÃO é reativada — a
+        /// morte é inteiramente scriptada; o killer nunca foi embora, só esperou.
+        /// </summary>
+        private IEnumerator BeatDeath()
+        {
+            // 1. O killer "vai embora": passos se afastando (falso alívio).
+            for (int i = 0; i < leavingSteps; i++)
+            {
+                PlayStep(footstepsLeavingSound);
+                Debug.Log($"[Act4Director] Passos se afastando {i + 1}/{leavingSteps} (falso alívio)");
+                yield return new WaitForSeconds(Mathf.Max(0f, leavingStepInterval));
+            }
+
+            // Espera o ÚLTIMO passo terminar de SOAR: o loop acima só aguarda o
+            // intervalo ENTRE passos, não o fim do clip do último — sem isso, o áudio
+            // do passo final ainda estaria tocando quando a sirene/pensamento entrassem.
+            // A sirene e o "Ele foi embora" só podem disparar DEPOIS que os passos
+            // realmente acabaram E o killer saiu (senão o falso alívio se sobrepõe ao
+            // som da saída).
+            yield return new WaitWhile(() => sfxAudioSource != null && sfxAudioSource.isPlaying);
+
+            // O antagonista SOME de cena: terminou de sair do apartamento. A partir
+            // daqui ele NÃO pode mais ser visto dentro do apê. A FSM foi suspensa no
+            // Beat 7 (enabled=false), mas o GameObject seguia ATIVO e ficaria congelado
+            // e VISÍVEL (sintoma: o player o via ao sair do box rumo ao corredor). A
+            // emboscada final é 100% scriptada (só som), então o GameObject não precisa
+            // estar ativo — narrativamente ele "saiu", mas na verdade espera a porrada.
+            if (antagonist != null)
+                antagonist.SetActive(false);
+
+            // 2. Pausa de alívio (silêncio real - "ele foi?"), já sem passos tocando.
+            yield return new WaitForSeconds(Mathf.Max(0f, reliefPause));
+
+            // 3. Sirenes ao fundo (a polícia chegou - esperança). SÓ AGORA, com o
+            //    killer fora e os passos cessados. Loop com CROSSFADE (StartSirenLoop):
+            //    duas instâncias se revezam sobrepondo o fim de uma no início da próxima,
+            //    para um loop contínuo e natural — sem o "buraco" do loop simples.
+            //    Permanece tocando, conectando com o epílogo.
+            StartSirenLoop(policeSirenSound);
+            Debug.Log("[Act4Director] Sirenes de polícia ao fundo (loop com crossfade)");
+
+            // 4. Pensamento incentiva sair.
+            ShowThought(heFoiEmboraThought);
+            yield return null;
+            yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+
+            // 5. Libera a saída. O player está escondido no box: ele sai MANUALMENTE
+            //    com F (PlayerHiding.Update → ExitHideSpot, que ao final devolve
+            //    CanMove=true). NÃO forço CanMove aqui enquanto ele está escondido —
+            //    isso faria o PlayerController disputar a câmera com o PlayerHiding
+            //    durante o hide. Só forço quando ele NÃO está escondido (ex.: salto
+            //    de debug direto pro Beat 8), e então espero ele de fato sair do box.
+            if (PlayerHiding.Instance == null || !PlayerHiding.Instance.IsHidden)
+                playerController.CanMove = true;
+            else
+                yield return new WaitUntil(() => PlayerHiding.Instance == null || !PlayerHiding.Instance.IsHidden);
+
+            // 6. Espera o player entrar na zona de emboscada (corredor indo pra sala).
+            //    Como ele acabou de sair do box, só chega aqui ao andar até o corredor.
+            if (ambushZone != null)
+                yield return new WaitUntil(() => PlayerInZone(ambushZone, ambushRadius));
+            else
+                Debug.LogWarning("[Act4Director] ambushZone não atribuída; a emboscada dispara imediatamente.", this);
+
+            // 7. A PORRADA: trava o player, som da batida. Toca no sfxAudioSource
+            //    (volume FIXO), e NÃO via PlaySound (audioSource principal): o volume
+            //    do audioSource ficou em 0 após o fade out do deadLineSound (Beat 6) e
+            //    não é mais reerguido aqui (a sirene migrou para sources próprios), então
+            //    um PlayOneShot ali sairia MUDO. Mesmo canal/razão do "baque" das luzes.
+            playerController.CanMove = false;
+            if (sfxAudioSource != null && headHitSound != null)
+                sfxAudioSource.PlayOneShot(headHitSound);
+            else
+                Debug.LogWarning("[Act4Director] PORRADA: sfxAudioSource ou headHitSound ausente; sem som da batida.", this);
+            Debug.Log("[Act4Director] PORRADA - player cai inconsciente");
+
+            // Visão turva (blur + vinheta) E queda da câmera ao chão acontecem JUNTAS:
+            // o blur sobe em paralelo enquanto a câmera tomba e desce até o piso (o
+            // protagonista desabando). Null-safe: sem volume, o blur é pulado e a
+            // porrada continua só com a queda + som + preto.
+            StartCoroutine(BlurVisionOnImpact());
+            yield return CollapseCameraToFloor();
+
+            // 8. Visão turva SUSTENTADA no chão (groggy) por um tempo longo (10-20s)
+            //    ANTES do apagão — o protagonista fica caído, consciência se esvaindo
+            //    aos poucos. Com um sway sutil (respiração + cabeça pesada) para a
+            //    imagem não ficar congelada/morta durante a espera.
+            yield return GroggyOnFloor(groggyOnFloorDuration);
+
+            // 9. A sirene ACABA (fade out): o som da esperança se esvai junto com a
+            //    consciência. Logo em cima vem a tela preta para encerrar.
+            yield return StopSirenLoop();
+
+            // 10. Só então a tela apaga, num fade mais lento (perda final de consciência).
+            yield return FadeBlackScreen(0f, 1f, blackoutFadeDuration);
+            if (blackScreen != null)
+                blackScreen.blocksRaycasts = true;
+
+            // Segura a tela preta um tempo (inconsciente), agora em silêncio (a sirene
+            // já se encerrou antes do apagão).
+            yield return new WaitForSeconds(Mathf.Max(0f, blackoutDuration));
+
+            // 11. Epílogo.
+            AdvanceToBeat(Act4Beat.Epilogue);
+        }
+
+        /// <summary>
+        /// "Visão turva" da porrada: intensifica progressivamente o Depth of Field
+        /// (desfoque) e a Vignette (escurecimento das bordas) do <see cref="postProcessVolume"/>
+        /// ao longo de <see cref="blurInDuration"/>, simulando a perda de consciência
+        /// antes do apagão. Usa <c>volume.profile</c> (instância de runtime), então NÃO
+        /// altera o asset do profile em disco. Detecta o MODO do DoF em runtime e anima
+        /// o parâmetro certo: Gaussian → reduz <c>gaussianEnd</c> (com <c>gaussianStart</c>
+        /// em 0, borra tudo além de ~alvo); Bokeh → reduz <c>focusDistance</c>. Cada
+        /// peça é tratada com null-check independente: se o Volume, o override de DoF ou
+        /// o de Vignette faltar, apenas avisa e segue (a porrada nunca trava por isso).
+        /// </summary>
+        private IEnumerator BlurVisionOnImpact()
+        {
+            if (postProcessVolume == null)
+            {
+                Debug.LogWarning("[Act4Director] postProcessVolume não atribuído; pulando a visão turva (porrada continua só com som + preto).", this);
+                yield break;
+            }
+
+            VolumeProfile profile = postProcessVolume.profile; // runtime instance: não toca no asset.
+
+            // --- Vignette ---
+            float vignetteFrom = 0f;
+            Vignette vignette;
+            bool hasVignette = profile.TryGet(out vignette);
+            if (hasVignette)
+            {
+                vignette.active = true;
+                vignette.intensity.overrideState = true;
+                vignetteFrom = vignette.intensity.value;
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] Volume sem override de Vignette; a vinheta da porrada não será aplicada.", this);
+            }
+
+            // --- Depth of Field (modo detectado em runtime) ---
+            float dofFrom = 0f, dofTo = 0f;
+            DepthOfField dof;
+            DepthOfFieldMode dofMode = DepthOfFieldMode.Off;
+            bool hasDof = profile.TryGet(out dof);
+            if (hasDof)
+            {
+                dof.active = true;
+                dofMode = dof.mode.value;
+                switch (dofMode)
+                {
+                    case DepthOfFieldMode.Gaussian:
+                        dof.gaussianStart.overrideState = true;
+                        dof.gaussianEnd.overrideState = true;
+                        dof.gaussianStart.value = 0f; // foco começa coladinho: tudo além de gaussianEnd borra.
+                        dofFrom = dof.gaussianEnd.value;
+                        dofTo = dofGaussianEndTarget;
+                        Debug.Log($"[Act4Director] DoF detectado: Gaussian (gaussianEnd {dofFrom:0.##} -> {dofTo:0.##}).");
+                        break;
+                    case DepthOfFieldMode.Bokeh:
+                        dof.focusDistance.overrideState = true;
+                        dofFrom = dof.focusDistance.value;
+                        dofTo = dofBokehFocusTarget;
+                        Debug.Log($"[Act4Director] DoF detectado: Bokeh (focusDistance {dofFrom:0.##} -> {dofTo:0.##}).");
+                        break;
+                    default:
+                        Debug.LogWarning("[Act4Director] DoF com Mode = Off; defina Gaussian ou Bokeh no profile para a visão turva borrar.", this);
+                        break;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] Volume sem override de Depth of Field; o desfoque da porrada não será aplicado.", this);
+            }
+
+            bool animateDof = hasDof && dofMode != DepthOfFieldMode.Off;
+
+            // --- Ramp suave (SmoothStep) até os alvos ---
+            float dur = Mathf.Max(0.0001f, blurInDuration);
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsed / dur);
+
+                if (hasVignette)
+                    vignette.intensity.value = Mathf.Lerp(vignetteFrom, vignetteTargetIntensity, t);
+
+                if (animateDof)
+                    SetDofBlur(dof, dofMode, Mathf.Lerp(dofFrom, dofTo, t));
+
+                yield return null;
+            }
+
+            // Garante os alvos exatos no fim.
+            if (hasVignette)
+                vignette.intensity.value = vignetteTargetIntensity;
+            if (animateDof)
+                SetDofBlur(dof, dofMode, dofTo);
+        }
+
+        /// <summary>
+        /// Queda da câmera ao chão após a porrada: a câmera TOMBA lateralmente (roll)
+        /// e DESCE da altura dos olhos em pé até <see cref="collapseFloorHeight"/> ao
+        /// longo de <see cref="collapseDuration"/>, simulando o protagonista desabando
+        /// no piso. Roda com CanMove==false, então o PlayerController não disputa a
+        /// câmera (Update dá early-return antes de HandleLook — mesmo mecanismo das
+        /// outras cutscenes). Anima a localPosition/localRotation do CameraHolder
+        /// direto, preservando o yaw atual e aplicando pitch/roll de "cabeça no chão".
+        /// Null-safe: sem CameraHolder, apenas avisa e segue.
+        /// </summary>
+        private IEnumerator CollapseCameraToFloor()
+        {
+            Transform cam = playerController.CameraHolder;
+            if (cam == null)
+            {
+                Debug.LogWarning("[Act4Director] CameraHolder nulo; pulando a queda da câmera.", this);
+                yield break;
+            }
+
+            Vector3 fromPos = cam.localPosition;
+            Quaternion fromRot = cam.localRotation;
+            float yaw = fromRot.eulerAngles.y;
+
+            Vector3 toPos = new Vector3(fromPos.x, collapseFloorHeight, fromPos.z);
+            Quaternion toRot = Quaternion.Euler(collapsePitch, yaw, collapseRoll);
+
+            float dur = Mathf.Max(0.0001f, collapseDuration);
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / dur));
+                cam.localPosition = Vector3.Lerp(fromPos, toPos, t);
+                cam.localRotation = Quaternion.Slerp(fromRot, toRot, t);
+                yield return null;
+            }
+
+            cam.localPosition = toPos;
+            cam.localRotation = toRot;
+        }
+
+        /// <summary>
+        /// Mantém a câmera caída no chão por <paramref name="duration"/> segundos com um
+        /// SWAY sutil — respiração (leve sobe/desce em Y + deriva lateral mínima) e
+        /// cabeça pesada oscilando (micro pitch/roll) — para a visão turva não ficar
+        /// uma imagem totalmente congelada/morta durante a longa espera groggy. Parte
+        /// da pose ATUAL da câmera (a pose caída deixada por <see cref="CollapseCameraToFloor"/>)
+        /// como base e aplica offsets senoidais por cima, com fases dessincronizadas
+        /// para não parecer mecânico. Roda com CanMove==false (o PlayerController não
+        /// disputa a câmera). Ao fim, restaura a pose-base exata. Null-safe: sem
+        /// CameraHolder ou com amplitudes 0, apenas espera o tempo sem mexer na câmera.
+        /// </summary>
+        private IEnumerator GroggyOnFloor(float duration)
+        {
+            float dur = Mathf.Max(0f, duration);
+
+            Transform cam = playerController.CameraHolder;
+            if (cam == null)
+            {
+                yield return new WaitForSeconds(dur);
+                yield break;
+            }
+
+            Vector3 basePos = cam.localPosition;
+            Quaternion baseRot = cam.localRotation;
+
+            // Fases iniciais aleatórias: posição e rotação não batem o mesmo ciclo.
+            float phaseA = Random.value * Mathf.PI * 2f;
+            float phaseB = Random.value * Mathf.PI * 2f;
+
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float w = elapsed * groggySwaySpeed;
+
+                // Respiração: sobe/desce leve em Y; deriva lateral ainda menor e mais lenta.
+                float bob = Mathf.Sin(w + phaseA) * groggySwayAmount;
+                float drift = Mathf.Sin(w * 0.5f + phaseB) * groggySwayAmount * 0.5f;
+                cam.localPosition = basePos + new Vector3(drift, bob, 0f);
+
+                // Cabeça pesada: micro-oscilação de pitch e roll, ciclos diferentes.
+                float pitchSway = Mathf.Sin(w * 0.7f + phaseB) * groggySwayAngle;
+                float rollSway = Mathf.Sin(w + phaseA) * groggySwayAngle;
+                cam.localRotation = baseRot * Quaternion.Euler(pitchSway, 0f, rollSway);
+
+                yield return null;
+            }
+
+            // Restaura a pose-base exata antes do apagão.
+            cam.localPosition = basePos;
+            cam.localRotation = baseRot;
+        }
+
+        /// <summary>Aplica o valor de desfoque no parâmetro certo conforme o modo do DoF.</summary>
+        private static void SetDofBlur(DepthOfField dof, DepthOfFieldMode mode, float value)
+        {
+            if (mode == DepthOfFieldMode.Gaussian)
+                dof.gaussianEnd.value = value;
+            else if (mode == DepthOfFieldMode.Bokeh)
+                dof.focusDistance.value = value;
+        }
+
         /// <summary>
         /// Virada da cutscene: gira o CORPO do player (yaw, pois é onde mora o yaw —
         /// ver <c>HandleLook</c> do PlayerController, que faz <c>transform.Rotate</c>)
@@ -1280,6 +1807,34 @@ namespace TheDelivery.Narrative
 
             if (audioSource != null && clip != null)
                 audioSource.PlayOneShot(clip);
+        }
+
+        /// <summary>
+        /// Toca um "passo" garantindo que NÃO se sobreponha ao anterior: usa o
+        /// <see cref="sfxAudioSource"/> (volume fixo, separado dos fades) e o reinicia
+        /// a cada passo (<c>Stop</c> + <c>clip</c> + <c>Play</c>), cortando qualquer
+        /// passo ainda soando. Diferente de <see cref="PlaySound"/> (PlayOneShot), que
+        /// EMPILHA instâncias e, com o clip mais longo que o intervalo entre passos,
+        /// soava "borrado"/sobreposto na aproximação e no afastamento finais. Fallback
+        /// para <see cref="PlaySound"/> se o sfxAudioSource não existir.
+        /// </summary>
+        private void PlayStep(AudioClip clip)
+        {
+            if (sfxAudioSource == null)
+            {
+                Debug.LogWarning("[Act4Director] PlayStep: sfxAudioSource ausente; usando PlayOneShot.", this);
+                PlaySound(clip);
+                return;
+            }
+            if (clip == null)
+            {
+                Debug.LogWarning("[Act4Director] PlayStep: clip nulo.", this);
+                return;
+            }
+
+            sfxAudioSource.Stop();      // corta o passo anterior ainda soando.
+            sfxAudioSource.clip = clip;
+            sfxAudioSource.Play();
         }
 
         /// <summary>
@@ -1483,6 +2038,109 @@ namespace TheDelivery.Narrative
             audioSource.loop = false; // reseta o loop ligado pelo FadeInAndSustain.
 
             audioFadeRoutine = null;
+        }
+
+        /// <summary>
+        /// Inicia o loop contínuo da sirene (Beat 8) com crossfade entre repetições.
+        /// Cancela um loop anterior, garante os dois AudioSources e dispara
+        /// <see cref="SirenLoop"/>. Sem clip, apenas avisa.
+        /// </summary>
+        private void StartSirenLoop(AudioClip clip)
+        {
+            if (clip == null)
+            {
+                Debug.LogWarning("[Act4Director] StartSirenLoop: clip nulo (sirene não tocará).", this);
+                return;
+            }
+
+            EnsureSirenSources();
+
+            if (sirenLoopRoutine != null)
+                StopCoroutine(sirenLoopRoutine);
+            sirenLoopRoutine = StartCoroutine(SirenLoop(clip));
+        }
+
+        /// <summary>
+        /// Garante os dois AudioSources dedicados ao crossfade da sirene, criados sob
+        /// demanda e configurados para narrativa: 2D (sempre audível), sem Play On
+        /// Awake e sem loop nativo (o revezamento/loop é feito por <see cref="SirenLoop"/>,
+        /// não pelo loop do AudioSource).
+        /// </summary>
+        private void EnsureSirenSources()
+        {
+            if (sirenSourceA == null)
+                sirenSourceA = gameObject.AddComponent<AudioSource>();
+            if (sirenSourceB == null)
+                sirenSourceB = gameObject.AddComponent<AudioSource>();
+
+            foreach (AudioSource s in new[] { sirenSourceA, sirenSourceB })
+            {
+                s.playOnAwake = false;
+                s.loop = false;       // o loop é manual (crossfade entre as duas).
+                s.spatialBlend = 0f;  // 2D: sirene de fundo sempre audível.
+                s.volume = 0f;
+            }
+        }
+
+        /// <summary>
+        /// Loop contínuo da sirene com CROSSFADE: duas instâncias se revezam, e cada
+        /// nova repetição começa <see cref="sirenCrossfade"/> segundos ANTES da atual
+        /// terminar — durante a sobreposição, a que sai faz fade out enquanto a que
+        /// entra faz fade in, eliminando o "buraco" do loop simples (silêncio no fim
+        /// do clip ou ponto de loop que não casa). <see cref="sirenLoopLength"/> permite
+        /// usar só um trecho do clip (pulando silêncio no fim que causa o intervalo
+        /// grande); 0 usa o clip inteiro. A primeira entrada usa <see cref="sirenFadeIn"/>.
+        /// Roda indefinidamente (a sirene sustenta até o epílogo) — cancelada apenas se
+        /// um novo <see cref="StartSirenLoop"/> for chamado.
+        /// </summary>
+        private IEnumerator SirenLoop(AudioClip clip)
+        {
+            float len = sirenLoopLength > 0f ? Mathf.Min(sirenLoopLength, clip.length) : clip.length;
+            float xfade = Mathf.Clamp(sirenCrossfade, 0.01f, len * 0.5f);
+            float period = len - xfade; // intervalo entre os inícios de repetições sucessivas.
+
+            bool useA = true;
+            bool first = true;
+
+            while (true)
+            {
+                AudioSource cur = useA ? sirenSourceA : sirenSourceB;
+                AudioSource prev = useA ? sirenSourceB : sirenSourceA;
+
+                cur.clip = clip;
+                cur.time = 0f;
+                cur.volume = 0f;
+                cur.Play();
+
+                // Sobe a atual; se a anterior ainda toca, desce junto (crossfade).
+                float fadeIn = first ? Mathf.Max(0.01f, sirenFadeIn) : xfade;
+                float prevStartVol = prev.isPlaying ? prev.volume : 0f;
+                float t = 0f;
+                while (t < fadeIn)
+                {
+                    t += Time.deltaTime;
+                    float k = Mathf.Clamp01(t / fadeIn);
+                    cur.volume = Mathf.Lerp(0f, audioTargetVolume, k);
+                    if (prev.isPlaying)
+                        prev.volume = Mathf.Lerp(prevStartVol, 0f, k);
+                    yield return null;
+                }
+                cur.volume = audioTargetVolume;
+                if (prev.isPlaying)
+                {
+                    prev.Stop();
+                    prev.volume = 0f;
+                }
+
+                // Sustenta no pico até a hora de iniciar a próxima repetição (que
+                // sobreporá xfade segundos). Subtrai o tempo já gasto no fade in.
+                float sustain = period - fadeIn;
+                if (sustain > 0f)
+                    yield return new WaitForSeconds(sustain);
+
+                first = false;
+                useA = !useA;
+            }
         }
 
         /// <summary>

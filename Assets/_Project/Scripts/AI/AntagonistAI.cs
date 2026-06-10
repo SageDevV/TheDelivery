@@ -411,6 +411,23 @@ namespace TheDelivery.AI
         }
 
         /// <summary>
+        /// Reverte <see cref="SuspendForDirector"/> e devolve o controle à FSM —
+        /// usado no clímax (Beat 7), quando o antagonista volta à cena e precisa
+        /// voltar a caçar. Reabilita o Update (que <c>SuspendForDirector</c> havia
+        /// desligado com <c>enabled = false</c>) e reentra em <see cref="AIState.Patrol"/>
+        /// via <see cref="TransitionTo"/>, que rearma o agente (ResumeAgent), a
+        /// velocidade e a patrulha. A partir daí o Update escala sozinho para
+        /// Suspicious/Chase assim que os sensores perceberem o player. Necessário
+        /// porque, após <c>SetActive(false)→SetActive(true)</c>, nem o <c>Start</c>
+        /// roda de novo nem o <c>enabled</c> volta a true sozinho.
+        /// </summary>
+        public void ResumeFromDirector()
+        {
+            enabled = true;
+            TransitionTo(AIState.Patrol);
+        }
+
+        /// <summary>
         /// Define o destino do agente evitando chamadas redundantes: quando
         /// <paramref name="force"/> é false, só reemite se o alvo se moveu além de
         /// <see cref="DestinationRefreshThreshold"/> desde o último SetDestination.

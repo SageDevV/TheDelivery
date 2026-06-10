@@ -5174,6 +5174,37 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &412476781
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 412476782}
+  m_Layer: 0
+  m_Name: AmbushZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &412476782
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 412476781}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.278, y: -0.012, z: 2.219}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1583950619}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &413994589
 Mesh:
   m_ObjectHideFlags: 0
@@ -12880,6 +12911,7 @@ MonoBehaviour:
   playerController: {fileID: 298793799}
   blackScreen: {fileID: 715360866}
   audioSource: {fileID: 0}
+  sfxAudioSource: {fileID: 0}
   audioFadeInDuration: 0.4
   audioFadeOutDuration: 0.6
   audioTargetVolume: 1
@@ -12932,7 +12964,7 @@ MonoBehaviour:
   landlineReminderThought: {fileID: 11400000, guid: 9d574a1ea95780e4298e7fbcc9e6e919, type: 2}
   landlineObject: {fileID: 1123343852}
   landlineApproachZone: {fileID: 350857576}
-  landlineApproachRadius: 1
+  landlineApproachRadius: 2
   distantAntagonistSound: {fileID: 8300000, guid: 52cc29260f4cde14fba73d631b9dab39, type: 3}
   doorAudioSource: {fileID: 759974722}
   callDialogueThought: {fileID: 11400000, guid: 0c4381d6500b36746a5c81dc1e507cf1, type: 2}
@@ -12947,8 +12979,43 @@ MonoBehaviour:
   flickerMinInterval: 0.04
   flickerMaxInterval: 0.18
   lightsOutSound: {fileID: 8300000, guid: 86be4cf2be7f25649815d18fa58aa11e, type: 3}
+  hideInBathroomThought: {fileID: 11400000, guid: 1cad546db58f48b49acafed7db3132e4, type: 2}
+  wrongHideSpotThought: {fileID: 11400000, guid: 66cdc29d51852a645b1019fef0de4596, type: 2}
+  showerBoxSpot: {fileID: 1436550915}
+  graceBeforeHunt: 5
+  wrongSpotHintDelay: 6
+  footstepsApproachSound: {fileID: 8300000, guid: e45b6906e0b80c048b1ad372d0c64240, type: 3}
+  approachSteps: 6
+  approachStepInterval: 0.9
+  footstepsLeavingSound: {fileID: 8300000, guid: e45b6906e0b80c048b1ad372d0c64240, type: 3}
+  leavingSteps: 5
+  leavingStepInterval: 0.8
+  reliefPause: 2
+  policeSirenSound: {fileID: 8300000, guid: 2509e0eed4d7ced4093f72cdc429491a, type: 3}
+  sirenCrossfade: 0.8
+  sirenLoopLength: 0
+  sirenFadeIn: 1
+  heFoiEmboraThought: {fileID: 11400000, guid: 79255bb37c02e8d4f8731ec8aa042943, type: 2}
+  ambushZone: {fileID: 412476782}
+  ambushRadius: 1.2
+  headHitSound: {fileID: 8300000, guid: f2457988029a3dd499e9f95cfe3e541e, type: 3}
+  blackoutDuration: 4
+  postProcessVolume: {fileID: 832575518}
+  blurInDuration: 0.5
+  vignetteTargetIntensity: 0.55
+  dofGaussianEndTarget: 1
+  dofBokehFocusTarget: 0.3
+  collapseDuration: 1.5
+  collapseFloorHeight: 0.25
+  collapsePitch: 12
+  collapseRoll: 75
+  groggyOnFloorDuration: 14
+  groggySwayAmount: 0.02
+  groggySwayAngle: 1.2
+  groggySwaySpeed: 1.1
+  blackoutFadeDuration: 2.5
   startBeat: 1
-  debugMode: 0
+  debugMode: 1
 --- !u!4 &819793243
 Transform:
   m_ObjectHideFlags: 0
@@ -23870,6 +23937,38 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!1 &1583950618
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1583950619}
+  m_Layer: 0
+  m_Name: Act4_Beat_8
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1583950619
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1583950618}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.425, y: 0.31533, z: 2.70163}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 412476782}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1597371915
 GameObject:
   m_ObjectHideFlags: 0
@@ -33966,3 +34065,4 @@ SceneRoots:
   - {fileID: 1264459689}
   - {fileID: 1637231504}
   - {fileID: 1516774399}
+  - {fileID: 1583950619}
