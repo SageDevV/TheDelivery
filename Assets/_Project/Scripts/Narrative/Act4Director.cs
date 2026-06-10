@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering;
@@ -288,6 +289,40 @@ namespace TheDelivery.Narrative
         [Tooltip("Duração (s) do fade para preto após o tempo de visão turva no chão (perda final de consciência).")]
         [SerializeField] private float blackoutFadeDuration = 2.5f;
 
+        [Header("Beat 9 - Epilogue")]
+        [Tooltip("Duração (s) do fade da visão turva pro preto total. Vindo do Beat 8 a tela já está preta (vira um respiro); num pulo de debug direto faz o fade real.")]
+        [SerializeField] private float epilogueFadeToBlack = 3f;
+        [Tooltip("Texto do epílogo (TextMeshProUGUI) sobre a tela preta. Centralizado, branco, ACIMA do blackScreen na ordem do Canvas. Começa invisível/desativado.")]
+        [SerializeField] private TextMeshProUGUI epilogueText;
+        [Tooltip("As linhas do epílogo, exibidas em sequência com fade. Destino ambíguo — não revelar o que houve.")]
+        [SerializeField, TextArea(2, 4)] private string[] epilogueLines = new string[]
+        {
+            "A viatura chegou às 3h47.",
+            "Não encontraram ninguém.",
+            "A porta estava trancada por dentro.",
+            "Marina ligou de volta às 11:47 da manhã do dia seguinte.",
+            "O telefone tocou seis vezes.",
+            "Ninguém atendeu."
+        };
+        [Tooltip("Duração (s) do fade in de cada linha.")]
+        [SerializeField] private float lineFadeIn = 1.5f;
+        [Tooltip("Tempo (s) que cada linha permanece antes do fade out.")]
+        [SerializeField] private float lineHold = 2.5f;
+        [Tooltip("Duração (s) do fade out de cada linha.")]
+        [SerializeField] private float lineFadeOut = 1.5f;
+        [Tooltip("Pausa extra (s) após a linha indicada por pauseAfterLineIndex (separação dramática).")]
+        [SerializeField] private float midPause = 2f;
+        [Tooltip("Índice (0-based) após o qual inserir a pausa maior (ex.: 2 = após a 3ª linha).")]
+        [SerializeField] private int pauseAfterLineIndex = 2;
+        [Tooltip("Texto do título final.")]
+        [SerializeField] private string titleText = "THE DELIVERY";
+        [Tooltip("Duração (s) do fade in do título.")]
+        [SerializeField] private float titleFadeIn = 3f;
+        [Tooltip("Respiro (s) no preto antes da 1ª linha do epílogo.")]
+        [SerializeField] private float epilogueIntroPause = 1f;
+        [Tooltip("Respiro (s) após a última linha, antes do título.")]
+        [SerializeField] private float epilogueBeforeTitlePause = 1.5f;
+
         [Header("Debug")]
         [Tooltip("Beat em que a sequência começa. Permite testar um beat específico sem jogar do início.")]
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
@@ -479,9 +514,8 @@ namespace TheDelivery.Narrative
                     beatRoutine = StartCoroutine(BeatDeath());
                     break;
 
-                // Beat 9: a implementar nas próximas semanas.
                 case Act4Beat.Epilogue:
-                    Debug.Log("[Act4Director] BEAT 9 - Epilogue (a implementar)");
+                    beatRoutine = StartCoroutine(BeatEpilogue());
                     break;
 
                 case Act4Beat.None:
@@ -1503,6 +1537,116 @@ namespace TheDelivery.Narrative
             AdvanceToBeat(Act4Beat.Epilogue);
         }
 
+        // --- BEAT 9: Epilogue (ÚLTIMO beat) -------------------------------
+
+        /// <summary>
+        /// Beat 9 (desfecho, fim do Ato 4). Vindo do Beat 8 (player caído, tela já
+        /// preta e sirene já encerrada): garante o preto total, confirma o silêncio da
+        /// sirene (defensivo, p/ pulo de debug direto) e exibe uma sequência de frases
+        /// de epílogo sobre a tela preta — fade lento e pausado, desfecho INDIRETO e de
+        /// destino ambíguo — seguidas do título do jogo. Termina estático: o gameplay
+        /// NÃO volta. Usa um TextMeshProUGUI dedicado (<see cref="epilogueText"/>), e
+        /// NÃO o ThoughtSystem (que é a "voz interna" do gameplay, estilo diferente).
+        /// </summary>
+        private IEnumerator BeatEpilogue()
+        {
+            playerController.CanMove = false;
+
+            // 1. Garante o preto total. Vindo do Beat 8 a tela já está preta (vira um
+            //    respiro de epilogueFadeToBlack no preto); num pulo de debug direto pro
+            //    9, faz o fade de verdade a partir do alpha atual.
+            float startAlpha = blackScreen != null ? blackScreen.alpha : 0f;
+            if (blackScreen != null)
+                blackScreen.blocksRaycasts = true;
+            yield return FadeBlackScreen(startAlpha, 1f, epilogueFadeToBlack);
+
+            // 2. Garante o silêncio da sirene. No fluxo normal o Beat 8 já a encerrou;
+            //    StopSirenLoop é idempotente (cobre o pulo de debug direto pro Beat 9).
+            //    NÃO usar StopSoundWithFade: aquele só afeta o audioSource 2D (sting do
+            //    Beat 3), não os sources dedicados da sirene (sirenSourceA/B).
+            yield return StopSirenLoop();
+
+            // 3. Texto do epílogo começa invisível, sobre o preto.
+            if (epilogueText != null)
+            {
+                epilogueText.gameObject.SetActive(true);
+                SetTextAlpha(epilogueText, 0f);
+            }
+            else
+            {
+                Debug.LogWarning("[Act4Director] epilogueText não atribuído; o epílogo não terá texto na tela.", this);
+            }
+
+            // Respiro no preto antes da 1ª linha.
+            yield return new WaitForSeconds(Mathf.Max(0f, epilogueIntroPause));
+
+            // 4. Cada linha: fade in -> hold -> fade out. Pausa dramática extra após
+            //    a linha indicada (pauseAfterLineIndex).
+            if (epilogueText != null && epilogueLines != null)
+            {
+                for (int i = 0; i < epilogueLines.Length; i++)
+                {
+                    epilogueText.text = epilogueLines[i];
+                    yield return FadeText(epilogueText, 0f, 1f, lineFadeIn);
+                    yield return new WaitForSeconds(Mathf.Max(0f, lineHold));
+                    yield return FadeText(epilogueText, 1f, 0f, lineFadeOut);
+
+                    if (i == pauseAfterLineIndex)
+                        yield return new WaitForSeconds(Mathf.Max(0f, midPause));
+                }
+            }
+
+            // Respiro antes do título.
+            yield return new WaitForSeconds(Mathf.Max(0f, epilogueBeforeTitlePause));
+
+            // 5. Título final, que permanece na tela.
+            if (epilogueText != null)
+            {
+                epilogueText.text = titleText;
+                yield return FadeText(epilogueText, 0f, 1f, titleFadeIn);
+            }
+
+            // 6. Fim. Permanece estático nesta tela — o gameplay não retorna.
+            Debug.Log("[Act4Director] FIM - Ato 4 completo");
+        }
+
+        /// <summary>Define o alpha (transparência) da cor de um TextMeshProUGUI.</summary>
+        private static void SetTextAlpha(TextMeshProUGUI t, float a)
+        {
+            if (t == null)
+                return;
+            Color c = t.color;
+            c.a = a;
+            t.color = c;
+        }
+
+        /// <summary>
+        /// Interpola o alpha de um TextMeshProUGUI de <paramref name="from"/> a
+        /// <paramref name="to"/> ao longo de <paramref name="duration"/> segundos,
+        /// garantindo o alpha final exato. Usado nos fades das linhas do epílogo.
+        /// </summary>
+        private IEnumerator FadeText(TextMeshProUGUI t, float from, float to, float duration)
+        {
+            if (t == null)
+                yield break;
+
+            if (duration <= 0f)
+            {
+                SetTextAlpha(t, to);
+                yield break;
+            }
+
+            float elapsed = 0f;
+            SetTextAlpha(t, from);
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                SetTextAlpha(t, Mathf.Lerp(from, to, elapsed / duration));
+                yield return null;
+            }
+            SetTextAlpha(t, to);
+        }
+
         /// <summary>
         /// "Visão turva" da porrada: intensifica progressivamente o Depth of Field
         /// (desfoque) e a Vignette (escurecimento das bordas) do <see cref="postProcessVolume"/>
@@ -2141,6 +2285,41 @@ namespace TheDelivery.Narrative
                 first = false;
                 useA = !useA;
             }
+        }
+
+        /// <summary>
+        /// Encerra o loop da sirene: para a coroutine de revezamento e faz fade out
+        /// (<see cref="sirenFadeOut"/>) dos dois AudioSources que possam estar tocando,
+        /// terminando ambos em silêncio. Usado no fim do Beat 8 — quando a sirene
+        /// "acaba", a tela preta entra logo em cima para encerrar. Seguro de chamar
+        /// mesmo se nada estiver tocando.
+        /// </summary>
+        private IEnumerator StopSirenLoop()
+        {
+            if (sirenLoopRoutine != null)
+            {
+                StopCoroutine(sirenLoopRoutine);
+                sirenLoopRoutine = null;
+            }
+
+            float aFrom = sirenSourceA != null ? sirenSourceA.volume : 0f;
+            float bFrom = sirenSourceB != null ? sirenSourceB.volume : 0f;
+
+            float dur = Mathf.Max(0.0001f, sirenFadeOut);
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float k = 1f - Mathf.Clamp01(elapsed / dur);
+                if (sirenSourceA != null && sirenSourceA.isPlaying)
+                    sirenSourceA.volume = aFrom * k;
+                if (sirenSourceB != null && sirenSourceB.isPlaying)
+                    sirenSourceB.volume = bFrom * k;
+                yield return null;
+            }
+
+            if (sirenSourceA != null) { sirenSourceA.Stop(); sirenSourceA.volume = 0f; }
+            if (sirenSourceB != null) { sirenSourceB.Stop(); sirenSourceB.volume = 0f; }
         }
 
         /// <summary>
