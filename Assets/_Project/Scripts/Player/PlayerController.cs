@@ -85,6 +85,17 @@ namespace TheDelivery.Player
         public bool CanMove { get => canMove; set => canMove = value; }
 
         /// <summary>
+        /// Quando true, permite o olhar (HandleLook + reaplicação da câmera) MESMO
+        /// com <see cref="CanMove"/> == false. Começa false: assim o comportamento
+        /// legado (CanMove trava tudo, inclusive cutscenes do Ato 4) é preservado —
+        /// como nada além do Act1Director seta isto, o Ato 4 continua com olhar
+        /// travado. Usado em momentos onde o jogador deve poder olhar mas não andar
+        /// (ex.: despertar sentado na cafeteria do Ato 1). O MOVIMENTO continua
+        /// travado só por <see cref="CanMove"/>; este override é só do olhar.
+        /// </summary>
+        public bool CanLookOverride { get; set; } = false;
+
+        /// <summary>
         /// Transform do CameraHolder (filho do Player, pai da Main Camera).
         /// Exposto para que sequências narrativas controlem a câmera diretamente
         /// (pitch + altura) enquanto <see cref="CanMove"/> está em false — nesse
@@ -165,23 +176,37 @@ namespace TheDelivery.Player
             // gravidade continua atuando — o player não flutua nem desliza.
             HandleMovement(dt);
 
-            // Trava narrativa (cutscenes, menus, momentos roteirizados): sai
-            // antes de look/crouch/head bob/câmera para o personagem ficar
-            // imóvel sem resetar a posição atual da câmera.
-            if (!CanMove)
-                return;
+            // O olhar é liberado por CanMove OU pelo override CanLookOverride
+            // (que libera só a câmera mesmo com o movimento travado — ex.:
+            // despertar sentado no Ato 1). Com ambos false (cutscenes do Ato 4)
+            // o comportamento é o legado: nada de look nem de reaplicar câmera,
+            // deixando a câmera onde a sequência narrativa a posicionou.
+            bool canLook = CanMove || CanLookOverride;
 
-            HandleLook(dt);
-            HandleCrouch(dt);
-            HandleHeadBob(dt);
-            ApplyCameraTransform();
+            if (canLook)
+                HandleLook(dt);
+
+            // Crouch e head bob são parte do "andar": seguem só CanMove. Não
+            // rodam no override de olhar — senão o crouch puxaria a altura do
+            // olho sentado de volta para a de pé.
+            if (CanMove)
+            {
+                HandleCrouch(dt);
+                HandleHeadBob(dt);
+            }
+
+            // Reaplica a câmera sempre que o olhar está liberado, para o pitch/
+            // altura refletirem na transform mesmo com o movimento travado.
+            if (canLook)
+                ApplyCameraTransform();
         }
 
         // --- Olhar ---------------------------------------------------------
 
         private void HandleLook(float dt)
         {
-            if (!CanMove)
+            // Olhar liberado por CanMove OU pelo override (olhar sem andar).
+            if (!CanMove && !CanLookOverride)
                 return;
 
             Vector2 input = lookAction.ReadValue<Vector2>();

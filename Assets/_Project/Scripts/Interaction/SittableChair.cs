@@ -43,6 +43,14 @@ namespace TheDelivery.Interaction
         /// <summary>True enquanto a Clear está sentada (após a transição terminar).</summary>
         public bool IsSeated { get; private set; }
 
+        /// <summary>
+        /// Quando false, o jogador NÃO levanta com Espaço (o <see cref="Update"/>
+        /// ignora o input). O Act1Director pode travar isso durante a conversa para
+        /// a Clear não se levantar no meio do diálogo. NÃO afeta o <see cref="StandUp"/>
+        /// chamado diretamente pelo director (que força o levantar de propósito).
+        /// </summary>
+        public bool CanStandUp { get; set; } = true;
+
         // Player resolvido no primeiro Interact (a partir do PlayerInteraction).
         private PlayerController player;
         // Estado salvo da câmera antes de desparentar, para restaurar exatamente.
@@ -52,6 +60,31 @@ namespace TheDelivery.Interaction
 
         private Coroutine transition;
         private Action onSeated;
+
+        // --- Levantar por tecla dedicada (Espaço) -------------------------
+
+        /// <summary>
+        /// Lê o Espaço DIRETAMENTE, sem depender do foco/raycast do PlayerInteraction
+        /// — que deixa de mirar a cadeira quando o movimento trava ao sentar (causa do
+        /// bug de "não conseguir levantar"). Só levanta se sentada e se
+        /// <see cref="CanStandUp"/> permitir; o <see cref="StandUp"/> já protege contra
+        /// re-disparo (checa a transição em andamento). Mesmo gesto do despertar
+        /// (Espaço levanta), sem conflito: durante o Awakening <see cref="IsSeated"/>
+        /// é false (a Clear nunca SENTOU nesta cadeira), então este Update ignora o
+        /// Espaço daquele beat.
+        /// </summary>
+        private void Update()
+        {
+            if (IsSeated && CanStandUp && SpacePressed())
+                StandUp();
+        }
+
+        /// <summary>True no frame em que a barra de Espaço é pressionada.</summary>
+        private static bool SpacePressed()
+        {
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            return kb != null && kb.spaceKey.wasPressedThisFrame;
+        }
 
         // --- IInteractable -------------------------------------------------
 
