@@ -23,6 +23,10 @@ namespace TheDelivery.Narrative
         [Tooltip("Texto da legenda (TextMeshProUGUI).")]
         [SerializeField] private TextMeshProUGUI subtitleText;
 
+        [Header("Áudio")]
+        [Tooltip("AudioSource 2D para os sons por linha (ex: sting de suspense). Auto-criado se vazio. NÃO marque \"Play On Awake\".")]
+        [SerializeField] private AudioSource audioSource;
+
         [Header("Timing")]
         [Tooltip("Tempo base (s) que toda fala fica visível, independente do tamanho.")]
         [SerializeField] private float baseTime = 1.2f;
@@ -44,9 +48,28 @@ namespace TheDelivery.Narrative
             }
             Instance = this;
 
+            EnsureAudioSource();
+
             // Começa escondida.
             if (subtitleGroup != null)
                 subtitleGroup.alpha = 0f;
+        }
+
+        /// <summary>
+        /// Garante um AudioSource 2D utilizável para os sons por linha. Reaproveita
+        /// um já presente no GameObject ou cria na hora — 2D (sempre audível), sem
+        /// Play On Awake e sem loop. Espelha o padrão dos diretores.
+        /// </summary>
+        private void EnsureAudioSource()
+        {
+            if (audioSource == null)
+                audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+                audioSource = gameObject.AddComponent<AudioSource>();
+
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
+            audioSource.spatialBlend = 0f; // 2D: som narrativo sempre audível.
         }
 
         private void OnDestroy()
@@ -62,6 +85,13 @@ namespace TheDelivery.Narrative
         {
             if (dialogue == null || dialogue.lines == null || dialogue.lines.Length == 0)
                 return;
+
+            // Diálogo tem prioridade sobre a voz interna: ao entrar uma conversa,
+            // qualquer pensamento em exibição/fila é interrompido (fade out rápido),
+            // para os dois sistemas não competirem pela atenção na tela.
+            if (ThoughtSystem.Instance != null)
+                ThoughtSystem.Instance.Interrupt();
+
             if (runner != null)
                 StopCoroutine(runner);
             runner = StartCoroutine(RunDialogue(dialogue));
@@ -79,6 +109,11 @@ namespace TheDelivery.Narrative
                     : $"<b>{line.speaker}:</b> {line.text}";
                 if (subtitleText != null)
                     subtitleText.text = display;
+
+                // Som opcional desta fala (ex: sting de suspense), no instante em
+                // que ela aparece. PlayOneShot para não cortar nada anterior.
+                if (line.sfx != null && audioSource != null)
+                    audioSource.PlayOneShot(line.sfx);
 
                 // Fade in.
                 yield return Fade(subtitleGroup, 1f, fadeDuration);

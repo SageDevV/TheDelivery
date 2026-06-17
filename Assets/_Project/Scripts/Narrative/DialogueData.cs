@@ -22,6 +22,9 @@ namespace TheDelivery.Narrative
 
             [Tooltip("Tempo extra (s) somado ao tempo proporcional desta fala (0 = nenhum).")]
             public float extraHold;
+
+            [Tooltip("Som opcional disparado quando ESTA fala aparece (ex: sting de suspense). Vazio = nenhum.")]
+            public AudioClip sfx;
         }
 
         [Tooltip("As falas da conversa, em ordem.")]

@@ -1108,8 +1108,8 @@ MonoBehaviour:
   salaDoor: {fileID: 404622202}
   zeladorTransform: {fileID: 294259578}
   somDoSusto: {fileID: 8300000, guid: 64410fbb444fa2148847749192d775c0, type: 3}
-  slideDuration: 0.3
-  slideDistance: 0.6
+  lungeDuration: 0.3
+  lungeDistanceFromCamera: 1.2
   scareFreezeDuration: 0.8
   zeladorDialogue: {fileID: 11400000, guid: 3498ff3d963303b4ba789672b2d6db87, type: 2}
   elevadorZone: {fileID: 1668099937}

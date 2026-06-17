@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5dff2e1582e6f4458683d70c6288f41, type: 3}
+  m_Name: Dialogue_Act2-1
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.DialogueData
+  lines:
+  - speaker: Jef
+    text: "Ah... voc\xEA assustou. Desculpa. N\xE3o esperava ningu\xE9m a essa hora."
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Clear
+    text: "Tudo bem. Eu que me assustei. Onde est\xE1 o Seu Jorge? Ele n\xE3o est\xE1
+      na portaria."
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Jef
+    text: O Jorge? Pediu pra eu cobrir hoje. Disse que precisava resolver uma coisa.
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Clear
+    text: "Ele n\xE3o costuma faltar."
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Jef
+    text: "Pois \xE9. Mas a gente nunca sabe o que passa na cabe\xE7a dos outros,
+      n\xE9? \xC0s vezes a pessoa some e... ningu\xE9m percebe direito."
+    extraHold: 5
+    sfx: {fileID: 8300000, guid: 53d84c3793b8f264d9e0102bd44f748c, type: 3}
+  - speaker: Clear
+    text: ...
+    extraHold: 1
+    sfx: {fileID: 0}
+  - speaker: Jef
+    text: Sobe tranquila. Eu fico de olho em tudo daqui. Sempre fico.
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Clear
+    text: Obrigada. Acho.
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Jef
+    text: Boa noite, Clear.
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Clear
+    text: "...eu n\xE3o disse meu nome."
+    extraHold: 0
+    sfx: {fileID: 0}

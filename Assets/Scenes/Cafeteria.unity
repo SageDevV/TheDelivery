@@ -165,7 +165,7 @@ GameObject:
   - component: {fileID: 16471953}
   - component: {fileID: 16471952}
   m_Layer: 0
-  m_Name: MarinaChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -521,7 +521,7 @@ GameObject:
   - component: {fileID: 26436641}
   - component: {fileID: 26436640}
   m_Layer: 0
-  m_Name: MarinaChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1654,7 +1654,7 @@ GameObject:
   - component: {fileID: 174180224}
   - component: {fileID: 174180223}
   m_Layer: 0
-  m_Name: PlayerChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2753,7 +2753,7 @@ GameObject:
   - component: {fileID: 267372641}
   - component: {fileID: 267372640}
   m_Layer: 0
-  m_Name: PlayerChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6567,7 +6567,7 @@ GameObject:
   - component: {fileID: 606738550}
   - component: {fileID: 606738549}
   m_Layer: 0
-  m_Name: MarinaChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7635,7 +7635,7 @@ GameObject:
   - component: {fileID: 722492334}
   - component: {fileID: 722492333}
   m_Layer: 0
-  m_Name: PlayerTable
+  m_Name: GenericTable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7991,7 +7991,7 @@ GameObject:
   - component: {fileID: 751633699}
   - component: {fileID: 751633698}
   m_Layer: 0
-  m_Name: PlayerChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8381,7 +8381,7 @@ GameObject:
   - component: {fileID: 781155405}
   - component: {fileID: 781155404}
   m_Layer: 0
-  m_Name: PlayerTable
+  m_Name: GenericTable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9752,7 +9752,7 @@ GameObject:
   - component: {fileID: 1059461317}
   - component: {fileID: 1059461316}
   m_Layer: 0
-  m_Name: PlayerTable
+  m_Name: GenericTable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11029,7 +11029,7 @@ GameObject:
   - component: {fileID: 1164666661}
   - component: {fileID: 1164666660}
   m_Layer: 0
-  m_Name: MarinaChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13745,7 +13745,7 @@ GameObject:
   - component: {fileID: 1448558911}
   - component: {fileID: 1448558910}
   m_Layer: 0
-  m_Name: PlayerTable
+  m_Name: GenericTable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15852,7 +15852,7 @@ GameObject:
   - component: {fileID: 2057771658}
   - component: {fileID: 2057771657}
   m_Layer: 0
-  m_Name: PlayerChair
+  m_Name: GenericChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
