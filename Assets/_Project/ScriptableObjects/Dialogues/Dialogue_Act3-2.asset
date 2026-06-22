@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5dff2e1582e6f4458683d70c6288f41, type: 3}
+  m_Name: Dialogue_Act3-2
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.DialogueData
+  lines:
+  - speaker: Entregador
+    text: Pedido pra Clear.
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: '...isso. Obrigada.
+
+'
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Entregador
+    text: "Eu sei onde voc\xEA mora agora."
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: Como?
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Entregador
+    text: "...pro caso de voc\xEA pedir de novo. Boa noite."
+    extraHold: 3
+    sfx: {fileID: 8300000, guid: 53d84c3793b8f264d9e0102bd44f748c, type: 3}

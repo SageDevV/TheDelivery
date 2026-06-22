@@ -437,6 +437,7 @@ namespace TheDelivery.Narrative
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.SetAct(GameAct.Act3);
+                Debug.Log($"[Act2->Act3] SetAct(Act3). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
                 GameManager.Instance.StartCoroutine(
                     GameManager.Instance.TransitionToScene(GameScene.Apartamento));
             }

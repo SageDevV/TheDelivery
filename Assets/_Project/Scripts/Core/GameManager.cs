@@ -105,6 +105,8 @@ namespace TheDelivery.Core
 
             // Clareia (fade de volta), revelando a cena já pronta.
             yield return Fade(0f);
+
+            Debug.Log("[GameManager] Transição completa, fade clareado.");
         }
 
         /// <summary>

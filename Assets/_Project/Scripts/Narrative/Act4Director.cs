@@ -5,6 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using TheDelivery.AI;
+using TheDelivery.Core;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
 
@@ -328,6 +329,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private Act4Beat startBeat = Act4Beat.Awakening;
         [Tooltip("Habilita as teclas numéricas (1-9) para pular entre beats durante o Play.")]
         [SerializeField] private bool debugMode = false;
+        [Tooltip("Permite iniciar o Ato 4 sozinho mesmo sem CurrentAct==Act4 (testar o Ato 4 isolado dando Play na cena). No fluxo real (vindo do Ato 3), deixe FALSE — o Ato 4 é acionado pelo Act3Director via BeginAct4().")]
+        [SerializeField] private bool autoStartForDebug = false;
 
         /// <summary>Beat em execução no momento.</summary>
         public Act4Beat CurrentBeat { get; private set; } = Act4Beat.None;
@@ -387,7 +390,27 @@ namespace TheDelivery.Narrative
 
             EnsureAudioSource();
 
-            AdvanceToBeat(startBeat);
+            // COEXISTÊNCIA NA MESMA CENA (Ato 3 e Ato 4 compartilham o apartamento): só
+            // inicia sozinho se for a vez do Ato 4, OU em teste isolado (autoStartForDebug).
+            // No fluxo real, fica INERTE até o Act3Director chamar BeginAct4() no handoff
+            // (Clear dorme) — assim o despertar do Ato 4 não dispara durante o Ato 3.
+            bool isAct4 = GameManager.Instance != null && GameManager.Instance.CurrentAct == GameAct.Act4;
+            if (isAct4 || autoStartForDebug)
+                AdvanceToBeat(startBeat);
+            else
+                Debug.Log("[Act4Director] Inerte: CurrentAct não é Act4 e autoStartForDebug=false. Aguardando BeginAct4() do Act3Director.", this);
+        }
+
+        /// <summary>
+        /// Aciona o Ato 4 a partir do handoff do <see cref="Act3Director"/> (Clear dorme).
+        /// Começa pelo primeiro beat (<see cref="Act4Beat.Awakening"/>, o despertar). Como
+        /// é a MESMA cena, não há troca de cena — só a passagem de controle. Mantido
+        /// separado do <see cref="Start"/> para preservar o teste isolado do Ato 4
+        /// (autoStartForDebug), que continua iniciando por <see cref="startBeat"/>.
+        /// </summary>
+        public void BeginAct4()
+        {
+            AdvanceToBeat(Act4Beat.Awakening);
         }
 
         /// <summary>
@@ -1079,7 +1102,7 @@ namespace TheDelivery.Narrative
                     ?? phoneObject.GetComponentInChildren<DeadPhone>();
                 if (phone != null)
                 {
-                    phone.Arm(this);
+                    phone.Arm(OnPhonePickedUp);
                     phoneArmed = true;
                 }
                 else
@@ -1173,7 +1196,7 @@ namespace TheDelivery.Narrative
                     ?? landlineObject.GetComponentInChildren<Landline>();
                 if (ll != null)
                 {
-                    ll.Arm(this);
+                    ll.Arm(OnLandlinePickedUp);
                     landlineArmed = true;
                 }
                 else
