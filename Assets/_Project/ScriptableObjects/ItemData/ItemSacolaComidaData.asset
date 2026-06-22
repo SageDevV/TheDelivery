@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 994c00bf646980c48b69cae92731b231, type: 3}
+  m_Name: ItemSacolaComidaData
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Items.ItemData
+  displayName: ItemSacolaComida
+  description: Comida de clear que o entregador entregou
+  icon: {fileID: 0}
+  heldPrefab: {fileID: 2870369367448831602, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}

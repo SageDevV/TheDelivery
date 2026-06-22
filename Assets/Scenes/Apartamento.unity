@@ -22848,7 +22848,9 @@ Transform:
   - {fileID: 1675086028}
   - {fileID: 1939609498}
   - {fileID: 1116260289}
+  - {fileID: 1915455268}
   - {fileID: 734699757}
+  - {fileID: 1423512614}
   m_Father: {fileID: 742995988}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &925706554
@@ -29648,6 +29650,11 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!1 &1134138295 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2870369367448831602, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+  m_PrefabInstance: {fileID: 1915455267}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1150838421
 GameObject:
   m_ObjectHideFlags: 0
@@ -36349,6 +36356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.Act3Director
   playerController: {fileID: 298793799}
   playerInteraction: {fileID: 3215520256697133919}
+  playerInventory: {fileID: 3215520256697133929}
   standUpPrompt: {fileID: 3215520256697133918}
   act4Director: {fileID: 819793242}
   blackScreen: {fileID: 715360866}
@@ -36393,6 +36401,9 @@ MonoBehaviour:
   entregadorDoorPoint: {fileID: 1215392099}
   entregadorTurnSpeed: 180
   entregadorDialogue: {fileID: 11400000, guid: 9e468007d3f5ac247bc3fb85a8e10186, type: 2}
+  deliveryFoodItem: {fileID: 11400000, guid: e3c81844644725f4489f95942de00a31, type: 2}
+  placeFoodThought: {fileID: 11400000, guid: 164cbd3cd256ef44489053acf28f784f, type: 2}
+  counterDropPoint: {fileID: 1423512616}
   apartmentDoor: {fileID: 759974717}
   explorationDelay: 10
   campainhaRepetidaSound: {fileID: 8300000, guid: d81657d96c690774192dab0be5d331a6, type: 3}
@@ -36428,7 +36439,7 @@ MonoBehaviour:
   eatThought: {fileID: 11400000, guid: d2268ac03c49ebe4db4b21c92ebb46e9, type: 2}
   sleepThought: {fileID: 11400000, guid: 529383e597c90b644be4dac15d39ead7, type: 2}
   sleepFadeDuration: 2
-  startBeat: 1
+  startBeat: 6
   debugMode: 0
   autoStartForDebug: 1
 --- !u!1 &1374788270
@@ -37933,6 +37944,74 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1411759375}
   m_CullTransparentMesh: 1
+--- !u!1 &1423512613
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1423512614}
+  - component: {fileID: 1423512615}
+  - component: {fileID: 1423512616}
+  m_Layer: 7
+  m_Name: SacolaItem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1423512614
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1423512613}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -8.509, y: 1.043, z: 5.959}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 922026933}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1423512615
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1423512613}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.38639766, y: 0.26211524, z: 0.31585824}
+  m_Center: {x: 0.30680123, y: -0.36894238, z: -0.34207094}
+--- !u!114 &1423512616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1423512613}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f22d5c1db00b2444bcd49c952a97053, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Items.CounterDropPoint
+  placedVisual: {fileID: 1134138295}
+  interactionPrompt: Deixar na bancada
 --- !u!1 &1436550913
 GameObject:
   m_ObjectHideFlags: 0
@@ -47849,6 +47928,72 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!1001 &1915455267
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 922026933}
+    m_Modifications:
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -8.218
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.781
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.671
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2870369367448831602, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_Name
+      value: ItemSacolaComida
+      objectReference: {fileID: 0}
+    - target: {fileID: 2870369367448831602, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+--- !u!4 &1915455268 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1865247139788332056, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+  m_PrefabInstance: {fileID: 1915455267}
+  m_PrefabAsset: {fileID: 0}
 --- !u!43 &1924958550
 Mesh:
   m_ObjectHideFlags: 0
@@ -56426,6 +56571,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 120
       objectReference: {fileID: 0}
+    - target: {fileID: 3194859472707614662, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.21
+      objectReference: {fileID: 0}
+    - target: {fileID: 3194859472707614662, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7030062572630585017, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
       propertyPath: m_Alpha
       value: 1
@@ -56491,6 +56644,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35896edcd0a82c5479a0082e906ce4b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Interaction.PlayerInteraction
+--- !u!114 &3215520256697133929 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6285348304546250852, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
+  m_PrefabInstance: {fileID: 3215520256697133917}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb5c53cb1c3a3940bc263a947ea98cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Items.PlayerInventory
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -46,6 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.DialogueSystem
   subtitleGroup: {fileID: 7825594089493687337}
   subtitleText: {fileID: 1268194083400023110}
+  audioSource: {fileID: 0}
   baseTime: 1.2
   timePerChar: 0.045
   fadeDuration: 0.3
@@ -830,6 +831,37 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &7233640223635833518
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3194859472707614662}
+  m_Layer: 0
+  m_Name: HandAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3194859472707614662
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7233640223635833518}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.18, y: 1.45, z: 0.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2170689590808255923}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7787330308774228338
 GameObject:
   m_ObjectHideFlags: 0
@@ -995,6 +1027,7 @@ GameObject:
   - component: {fileID: 6683599242968116500}
   - component: {fileID: 8732545011691879246}
   - component: {fileID: 1462351108245526661}
+  - component: {fileID: 6285348304546250852}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -1017,6 +1050,7 @@ Transform:
   m_Children:
   - {fileID: 639362007821937604}
   - {fileID: 1606899220859158928}
+  - {fileID: 3194859472707614662}
   - {fileID: 4170183566795201490}
   - {fileID: 3053065409721879634}
   m_Father: {fileID: 0}
@@ -1164,6 +1198,19 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   wallCheckMargin: 0.1
+--- !u!114 &6285348304546250852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8608346235461898063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb5c53cb1c3a3940bc263a947ea98cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Items.PlayerInventory
+  handAnchor: {fileID: 3194859472707614662}
 --- !u!1 &8788023796977430752
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 using TheDelivery.AI;
 using TheDelivery.Core;
 using TheDelivery.Interaction;
+using TheDelivery.Items;
 using TheDelivery.Player;
 
 namespace TheDelivery.Narrative
@@ -53,6 +54,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private PlayerController playerController;
         [Tooltip("PlayerInteraction do player (garantido habilitado nos beats livres).")]
         [SerializeField] private PlayerInteraction playerInteraction;
+        [Tooltip("Inventário do player. O entregador ENTREGA a sacolinha de comida nele no Beat 4 (deliveryFoodItem). Opcional só em testes isolados.")]
+        [SerializeField] private PlayerInventory playerInventory;
         [Tooltip("UI \"Pressione Espaço para levantar\" (se a cena herdar uma). Garantido desativado no início. Opcional.")]
         [SerializeField] private GameObject standUpPrompt;
         [Tooltip("Act4Director da MESMA cena. No handoff (Clear dorme), recebe BeginAct4(). Opcional só em testes isolados do Ato 3.")]
@@ -139,6 +142,12 @@ namespace TheDelivery.Narrative
         [SerializeField] private float entregadorTurnSpeed = 180f;
         [Tooltip("Diálogo curto do entregador na entrega (algo ainda errado nele).")]
         [SerializeField] private DialogueData entregadorDialogue;
+        [Tooltip("A sacolinha de comida que o entregador ENTREGA ao protagonista ao fim do diálogo (vai pro PlayerInventory). Crie via Assets > Create > The Delivery > Item. Se vazio, a entrega não dá comida (warning).")]
+        [SerializeField] private ItemData deliveryFoodItem;
+        [Tooltip("Pensamento que manda a Clear levar a comida pra cozinha (após receber a entrega). Opcional.")]
+        [SerializeField] private ThoughtData placeFoodThought;
+        [Tooltip("Ponto na BANCADA da cozinha (objeto vazio com CounterDropPoint + collider) onde a Clear DEIXA a comida (F). O roteiro o arma após a entrega. Se vazio, o passo de deixar a comida é pulado (warning).")]
+        [SerializeField] private CounterDropPoint counterDropPoint;
         [Tooltip("A porta do apartamento (componente Door). Na entrega, o diálogo só começa quando a Clear ABRIR esta porta, e o auto-fechar é suspenso (a porta só fecha por interação) até a entrega terminar. Opcional.")]
         [SerializeField] private Door apartmentDoor;
 
@@ -237,6 +246,12 @@ namespace TheDelivery.Narrative
         // componente Landline que o Ato 4 usa (cena compartilhada), armado por callback.
         private bool phoneAnswered;
         private Landline activePhone;
+
+        // Deixar a comida na bancada (Beat 4): foodPlaced é setado por OnFoodPlaced
+        // (callback do CounterDropPoint); a coroutine aguarda essa flag. activeDropPoint
+        // guarda o ponto armado para desarmá-lo em qualquer troca de beat (salto de debug).
+        private bool foodPlaced;
+        private CounterDropPoint activeDropPoint;
 
         // Vizinho (Beat 5, fenômeno 5): neighborKnocked é setado por OnNeighborKnocked
         // (callback do evento Knocked da porta do vizinho, em modo "só bater"). A coroutine
@@ -391,6 +406,9 @@ namespace TheDelivery.Narrative
             // Se o pedido pelo celular (Beat 3) estava pendente, desarma e fecha o overlay
             // — para o prompt/imagem do celular não vazarem ao trocar de beat.
             StopOrderPhone();
+
+            // Se a bancada (Beat 4) estava armada, desarma — para o prompt não vazar.
+            StopDropPoint();
 
             // Se estávamos aguardando a batida na porta do vizinho (Beat 5), cancela a
             // inscrição no evento (sem isso, um salto de debug deixaria o handler preso).
@@ -725,6 +743,10 @@ namespace TheDelivery.Narrative
 
             yield return ShowDialogueAndWait(entregadorDialogue);
 
+            // O entregador ENTREGA a sacolinha de comida na mão do protagonista — vai pro
+            // inventário (e aparece na mão, se o item tiver HeldPrefab e houver handAnchor).
+            GiveDeliveryFood();
+
             // A Clear pega o lanche e volta a se mover.
             EnsurePlayerFree();
 
@@ -736,6 +758,10 @@ namespace TheDelivery.Narrative
             // caminho (invertido), de volta ao elevador. Só então some (entra no elevador).
             yield return EntregadorLeaveDelivery();
             DeactivateEntregador();
+
+            // A Clear leva a comida pra cozinha e a deixa na bancada (interagindo com o
+            // ponto vazio). Só depois disso a escalada (Beat 5) começa.
+            yield return PlaceFoodOnCounter();
 
             AdvanceToBeat(Act3Beat.Phenomena);
         }
@@ -800,6 +826,89 @@ namespace TheDelivery.Narrative
                 yield return null;
             }
             t.rotation = target;
+        }
+
+        /// <summary>
+        /// A entrega do item: o entregador passa a <see cref="deliveryFoodItem"/> (a
+        /// sacolinha) ao protagonista, adicionando-a ao <see cref="playerInventory"/>.
+        /// Null-safe e idempotente (o inventário ignora item repetido); avisa no Console se
+        /// faltar referência, sem travar a entrega.
+        /// </summary>
+        private void GiveDeliveryFood()
+        {
+            if (deliveryFoodItem == null)
+            {
+                Debug.LogWarning("[Act3Director] deliveryFoodItem não atribuído; a entrega não deu comida ao player.", this);
+                return;
+            }
+
+            if (playerInventory == null)
+            {
+                Debug.LogWarning("[Act3Director] playerInventory não atribuído; o entregador não pôde entregar a comida.", this);
+                return;
+            }
+
+            playerInventory.Add(deliveryFoodItem);
+        }
+
+        /// <summary>
+        /// Após a entrega, a Clear pensa em levar a comida pra cozinha
+        /// (<see cref="placeFoodThought"/>) e vai até a BANCADA: o roteiro arma o
+        /// <see cref="counterDropPoint"/> (objeto vazio) e espera ela interagir (F) para
+        /// DEIXAR a comida lá — o <see cref="CounterDropPoint"/> remove o item do inventário,
+        /// revela o visual pousado e chama <see cref="OnFoodPlaced"/>. FALLBACK: sem
+        /// counterDropPoint, ou se a Clear não estiver com a comida, pula o passo (warning),
+        /// para não travar o ato.
+        /// </summary>
+        private IEnumerator PlaceFoodOnCounter()
+        {
+            // Pensamento: levar a comida pra cozinha.
+            yield return ShowThoughtAndWait(placeFoodThought);
+
+            if (counterDropPoint == null)
+            {
+                Debug.LogWarning("[Act3Director] counterDropPoint não atribuído; pulando o deixar a comida na bancada.", this);
+                yield break;
+            }
+
+            // Sem a comida em mãos (config faltando ou salto de debug), não há o que deixar.
+            if (playerInventory == null || deliveryFoodItem == null || !playerInventory.Contains(deliveryFoodItem))
+            {
+                Debug.LogWarning("[Act3Director] a Clear não está com a comida; pulando o deixar na bancada.", this);
+                yield break;
+            }
+
+            // Arma a bancada: a Clear vai até lá e interage (F) para deixar a comida.
+            foodPlaced = false;
+            activeDropPoint = counterDropPoint;
+            counterDropPoint.Arm(deliveryFoodItem, OnFoodPlaced, "Deixar a comida na bancada");
+
+            yield return new WaitUntil(() => foodPlaced);
+
+            // Já consumido; limpa a referência para o cleanup de troca de beat não desarmar à toa.
+            activeDropPoint = null;
+        }
+
+        /// <summary>
+        /// Callback do <see cref="CounterDropPoint"/> quando a Clear deixa a comida na
+        /// bancada (F) no Beat 4. Libera o beat (a coroutine aguarda <see cref="foodPlaced"/>).
+        /// </summary>
+        private void OnFoodPlaced()
+        {
+            foodPlaced = true;
+        }
+
+        /// <summary>
+        /// Desarma o ponto da bancada, se ainda ativo. Null-safe e idempotente — chamado em
+        /// toda troca de beat para o prompt não vazar num salto de debug no meio do passo.
+        /// </summary>
+        private void StopDropPoint()
+        {
+            if (activeDropPoint != null)
+            {
+                activeDropPoint.Disarm();
+                activeDropPoint = null;
+            }
         }
 
         // --- BEAT 5: Phenomena --------------------------------------------
