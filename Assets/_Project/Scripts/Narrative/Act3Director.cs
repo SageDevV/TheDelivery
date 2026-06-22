@@ -201,13 +201,27 @@ namespace TheDelivery.Narrative
         [Tooltip("Intervalo MÁXIMO (s) entre cada fenômeno da escalada. Cada gap é sorteado entre min e max.")]
         [SerializeField] private float phenomenaGapMax = 6f;
 
-        [Header("Beat 6 - Dormir")]
+        [Header("Beat 6 - Comer e Dormir")]
+        [Tooltip("Pensamento disparado IMEDIATAMENTE ao pegar a comida na bancada (Thought_Act3-9). Opcional.")]
+        [SerializeField] private ThoughtData takeFoodThought;
+        [Tooltip("Pensamento disparado logo em seguida ao Thought_Act3-9, após pegar a comida (Thought_Act3-9.1). Opcional.")]
+        [SerializeField] private ThoughtData foodTakenThought;
+        [Tooltip("Zona da SACADA (objeto vazio). A Clear vai até aqui, com a comida em mãos, para comer. Se vazia, come sem esperar a sacada (warning).")]
+        [SerializeField] private Transform balconyPoint;
+        [Tooltip("Raio (m) da zona da sacada.")]
+        [SerializeField] private float balconyRadius = 1.5f;
+        [Tooltip("Pensamento ao comer na sacada, exausta/perturbada. Opcional.")]
+        [SerializeField] private ThoughtData eatThought;
+        [Tooltip("Onde o ENTREGADOR aparece, de longe, encarando a Clear enquanto ela come na sacada. Posicione bem visível da sacada, à distância. Se vazio, o susto da sacada é pulado (só o pensamento).")]
+        [SerializeField] private Transform entregadorBalconyPoint;
+        [Tooltip("Som (sting) no instante em que a câmera trava no entregador visto da sacada. Opcional.")]
+        [SerializeField] private AudioClip balconyEntregadorSound;
+        [Tooltip("Pensamento ao ver o entregador encarando de longe (susto da sacada). Opcional.")]
+        [SerializeField] private ThoughtData balconyEntregadorThought;
         [Tooltip("Zona da cama. Clear caminha até aqui para deitar.")]
         [SerializeField] private Transform bedPoint;
         [Tooltip("Raio (m) da zona da cama.")]
         [SerializeField] private float bedRadius = 1.5f;
-        [Tooltip("Pensamento ao comer, exausta/perturbada. Opcional.")]
-        [SerializeField] private ThoughtData eatThought;
         [Tooltip("Pensamento ao deitar/dormir.")]
         [SerializeField] private ThoughtData sleepThought;
         [Tooltip("Duração (s) do fade para preto ao dormir, antes do handoff pro Ato 4.")]
@@ -247,10 +261,12 @@ namespace TheDelivery.Narrative
         private bool phoneAnswered;
         private Landline activePhone;
 
-        // Deixar a comida na bancada (Beat 4): foodPlaced é setado por OnFoodPlaced
-        // (callback do CounterDropPoint); a coroutine aguarda essa flag. activeDropPoint
-        // guarda o ponto armado para desarmá-lo em qualquer troca de beat (salto de debug).
+        // Bancada (CounterDropPoint): foodPlaced é setado por OnFoodPlaced ao DEIXAR a
+        // comida (Beat 4); foodTaken por OnFoodTaken ao PEGÁ-la de volta (Beat 6). Cada
+        // coroutine aguarda sua flag. activeDropPoint guarda o ponto armado para desarmá-lo
+        // em qualquer troca de beat (salto de debug).
         private bool foodPlaced;
+        private bool foodTaken;
         private CounterDropPoint activeDropPoint;
 
         // Vizinho (Beat 5, fenômeno 5): neighborKnocked é setado por OnNeighborKnocked
@@ -899,6 +915,47 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
+        /// Início do Beat 6: a Clear pensa em pegar a comida (<see cref="takeFoodThought"/>),
+        /// vai até a BANCADA e o roteiro arma o <see cref="counterDropPoint"/> em modo PEGAR
+        /// (<see cref="CounterDropPoint.ArmPickup"/>): ao interagir (F), a comida volta pro
+        /// inventário, o visual pousado some e <see cref="OnFoodTaken"/> libera o passo.
+        /// FALLBACK: sem counterDropPoint, pula (warning) — para não travar o ato.
+        /// </summary>
+        private IEnumerator TakeFoodFromCounter()
+        {
+            if (counterDropPoint == null)
+            {
+                Debug.LogWarning("[Act3Director] counterDropPoint não atribuído; pulando o pegar a comida na bancada.", this);
+                yield break;
+            }
+
+            // Arma a bancada em modo PEGAR: a Clear vai até lá e interage (F) para recolher.
+            foodTaken = false;
+            activeDropPoint = counterDropPoint;
+            counterDropPoint.ArmPickup(deliveryFoodItem, OnFoodTaken, "Pegar a comida");
+
+            yield return new WaitUntil(() => foodTaken);
+
+            // Já consumido; limpa a referência para o cleanup de troca de beat não desarmar à toa.
+            activeDropPoint = null;
+
+            // Imediatamente ao pegar a comida (Thought_Act3-9).
+            yield return ShowThoughtAndWait(takeFoodThought);
+
+            // Logo em seguida (Thought_Act3-9.1).
+            yield return ShowThoughtAndWait(foodTakenThought);
+        }
+
+        /// <summary>
+        /// Callback do <see cref="CounterDropPoint"/> quando a Clear pega a comida na bancada
+        /// (F) no Beat 6. Libera o passo (a coroutine aguarda <see cref="foodTaken"/>).
+        /// </summary>
+        private void OnFoodTaken()
+        {
+            foodTaken = true;
+        }
+
+        /// <summary>
         /// Desarma o ponto da bancada, se ainda ativo. Null-safe e idempotente — chamado em
         /// toda troca de beat para o prompt não vazar num salto de debug no meio do passo.
         /// </summary>
@@ -1250,9 +1307,26 @@ namespace TheDelivery.Narrative
         {
             EnsurePlayerFree();
 
+            // 1. Vai até a cozinha e PEGA a comida de volta na bancada (a que deixou no
+            // Beat 4). Volta pro inventário (e pra mão, se tiver HeldPrefab).
+            yield return TakeFoodFromCounter();
+
+            // 2. Vai até a SACADA com a comida.
+            if (balconyPoint != null)
+                yield return new WaitUntil(() => PlayerInZone(balconyPoint, balconyRadius));
+            else
+                Debug.LogWarning("[Act3Director] balconyPoint não atribuído; comendo sem esperar a sacada.", this);
+
+            // 3. Come na sacada (consome a comida — some da mão).
+            if (playerInventory != null && deliveryFoodItem != null)
+                playerInventory.Remove(deliveryFoodItem);
             yield return ShowThoughtAndWait(eatThought);
 
-            // Vai até a cama.
+            // 4. Durante a comida: o entregador aparece de longe encarando a Clear; a câmera
+            // TRAVA nele, com som e pensamento.
+            yield return BalconyEntregadorSighting();
+
+            // 5. Vai até a cama.
             if (bedPoint != null)
                 yield return new WaitUntil(() => PlayerInZone(bedPoint, bedRadius));
             else
@@ -1283,6 +1357,42 @@ namespace TheDelivery.Narrative
                 Debug.LogError("[Act3Director] act4Director não atribuído; o Ato 4 não será acionado no handoff.", this);
 
             beatRoutine = null;
+        }
+
+        /// <summary>
+        /// O susto da sacada (Beat 6): enquanto a Clear come, o ENTREGADOR aparece de longe
+        /// (<see cref="entregadorBalconyPoint"/>) encarando-a; a câmera TRAVA nele
+        /// (<see cref="StartCameraFocus"/> — trava movimento e olhar, o Director dirige a
+        /// câmera), toca o <see cref="balconyEntregadorSound"/> e dispara o
+        /// <see cref="balconyEntregadorThought"/>. Ao fim, solta a câmera, some com o
+        /// entregador e devolve o controle. FALLBACK: sem entregador/ponto, mostra só o
+        /// pensamento (sem trava de câmera).
+        /// </summary>
+        private IEnumerator BalconyEntregadorSighting()
+        {
+            if (entregador == null || entregadorBalconyPoint == null)
+            {
+                Debug.LogWarning("[Act3Director] entregador/entregadorBalconyPoint ausente; susto da sacada sem trava de câmera.", this);
+                yield return ShowThoughtAndWait(balconyEntregadorThought);
+                yield break;
+            }
+
+            // Trava interação e revela o entregador encarando, de longe.
+            if (playerInteraction != null)
+                playerInteraction.InteractionEnabled = false;
+            ActivateEntregadorAt(entregadorBalconyPoint); // encara a Clear por padrão.
+
+            // Sting no instante em que a câmera trava nele, e foco forçado seguindo-o.
+            PlaySound(balconyEntregadorSound);
+            StartCameraFocus(entregador.transform);
+
+            // Pensamento enquanto a câmera está travada no entregador.
+            yield return ShowThoughtAndWait(balconyEntregadorThought);
+
+            // Solta a câmera (sem snap), some com o entregador e devolve o controle livre.
+            StopCameraFocus();
+            DeactivateEntregador();
+            EnsurePlayerFree();
         }
 
         // --- Helpers -------------------------------------------------------

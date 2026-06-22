@@ -13,7 +13,7 @@ namespace TheDelivery.Items
     /// </summary>
     public sealed class PlayerInventory : MonoBehaviour
     {
-        [Tooltip("Ponto na hierarquia do player (tipicamente um filho da câmera) onde o visual do item carregado é instanciado. Opcional — sem ele, os itens são só lógicos.")]
+        [Tooltip("Ponto onde o visual do item carregado é instanciado (parentado a ele). DEVE ser filho da CÂMERA/CameraHolder — não do corpo do player — senão o item não acompanha o girar da câmera (principalmente o olhar para cima/baixo, já que o pitch fica na câmera e o yaw no corpo). Opcional — sem ele, os itens são só lógicos.")]
         [SerializeField] private Transform handAnchor;
 
         private readonly HashSet<ItemData> items = new HashSet<ItemData>();
@@ -50,7 +50,12 @@ namespace TheDelivery.Items
 
             if (item.HeldPrefab != null && handAnchor != null && !heldVisuals.ContainsKey(item))
             {
-                GameObject visual = Instantiate(item.HeldPrefab, handAnchor);
+                // worldPositionStays:false => o visual nasce no espaço LOCAL do handAnchor
+                // e fica PARENTADO a ele, acompanhando-o todo frame (inclusive a rotação da
+                // câmera, SE o handAnchor for filho da câmera/CameraHolder). Evita também a
+                // distorção de escala que o overload padrão (worldPositionStays:true) causa
+                // quando o anchor tem escala != 1.
+                GameObject visual = Instantiate(item.HeldPrefab, handAnchor, false);
                 visual.transform.localPosition = Vector3.zero;
                 visual.transform.localRotation = Quaternion.identity;
                 heldVisuals[item] = visual;
