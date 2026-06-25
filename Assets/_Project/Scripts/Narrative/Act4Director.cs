@@ -131,6 +131,12 @@ namespace TheDelivery.Narrative
         [SerializeField] private Transform shadowEndPoint;
         [Tooltip("Velocidade da caminhada do vulto (m/s, lenta).")]
         [SerializeField] private float shadowWalkSpeed = 1.2f;
+        [Tooltip("Animator do vulto (modelo do antagonista). Se vazio, busca no shadowFigure. Recebe o parâmetro de velocidade para tocar a animação Walking enquanto cruza o corredor. O vulto é movido por MoveTowards, então o root motion é desligado para não duplicar a translação.")]
+        [SerializeField] private Animator shadowAnimator;
+        [Tooltip("Nome do parâmetro float de velocidade no Animator do vulto (deve casar com o controller — ver AntagonistAI/locomotion).")]
+        [SerializeField] private string shadowSpeedParam = "Speed";
+        [Tooltip("Nome do parâmetro bool de perseguição no Animator do vulto. Fica FALSE: o vulto só caminha (Walking), não persegue.")]
+        [SerializeField] private string shadowChasingParam = "IsChasing";
         [Tooltip("Som/sting de tensão quando o vulto cruza (placeholder).")]
         [SerializeField] private AudioClip tensionStingSound;
 
@@ -891,6 +897,17 @@ namespace TheDelivery.Narrative
                 FaceTowards(shadowFigure.transform, shadowEndPoint.position);
                 shadowFigure.SetActive(true);
 
+                // O vulto é PURAMENTE scriptado: desliga qualquer FSM/agente/sensor
+                // nele para que ele apenas atravesse (MoveTowards) sem olhar nem
+                // perseguir o player. A FSM real só entra no fim do Beat 3, no
+                // antagonista de verdade (objeto separado).
+                EnsureShadowIsScriptedOnly();
+
+                // O vulto é o modelo do antagonista: dispara a animação Walking
+                // (param Speed > 0) enquanto cruza. A translação fica por conta do
+                // MoveTowards abaixo, então o root motion do clipe é desligado.
+                SetShadowWalking(true);
+
                 // Sting de tensão que SUSTENTA enquanto o vulto cruza (loop + fade
                 // in, em paralelo para não travar a caminhada). Será parado com fade
                 // out no instante em que o vulto chegar ao endpoint.
@@ -905,7 +922,9 @@ namespace TheDelivery.Narrative
                     yield return null;
                 }
 
-                // Chegou ao endpoint: para o sting suavemente (fade out) e o vulto some.
+                // Chegou ao endpoint: volta o Animator a parado, para o sting
+                // suavemente (fade out) e o vulto some.
+                SetShadowWalking(false);
                 StopSoundWithFade();
                 shadowFigure.SetActive(false);
             }
@@ -979,6 +998,71 @@ namespace TheDelivery.Narrative
             // quando a condição composta for satisfeita.
             Debug.Log("[Act4Director] Beat 3: caçada iniciada, gameplay no controle");
             deadPhoneMonitor = StartCoroutine(MonitorDeadPhoneTrigger());
+        }
+
+        /// <summary>
+        /// Liga/desliga a animação de caminhada do vulto (o modelo do antagonista que
+        /// cruza o corredor no Beat 3). Resolve o Animator a partir do shadowFigure se
+        /// não foi atribuído, desliga o root motion (o vulto é transladado por
+        /// MoveTowards — root motion duplicaria o deslocamento) e seta o param de
+        /// velocidade: <see cref="shadowWalkSpeed"/> dispara o estado Walking,
+        /// 0 volta para Idle. Mantém IsChasing em false (o vulto só caminha). No-op se
+        /// não houver Animator — compatível com o placeholder antigo (mera silhueta).
+        /// </summary>
+        private void SetShadowWalking(bool walking)
+        {
+            if (shadowAnimator == null && shadowFigure != null)
+                shadowAnimator = shadowFigure.GetComponentInChildren<Animator>();
+            if (shadowAnimator == null)
+            {
+                Debug.LogWarning("[Act4Director] Vulto sem Animator: a animação Walking não vai tocar. " +
+                                 "Garanta que o shadowFigure (ou um filho dele) tenha um componente Animator.", this);
+                return;
+            }
+            if (walking && shadowAnimator.runtimeAnimatorController == null)
+            {
+                Debug.LogWarning("[Act4Director] O Animator do vulto está SEM Controller (atribua o Antagonist.controller " +
+                                 "no campo Controller do Animator) — sem ele o Speed não dispara nenhuma animação.", this);
+            }
+
+            shadowAnimator.applyRootMotion = false;
+            shadowAnimator.SetFloat(shadowSpeedParam, walking ? shadowWalkSpeed : 0f);
+            shadowAnimator.SetBool(shadowChasingParam, false);
+        }
+
+        /// <summary>
+        /// Garante que o vulto do Beat 3 seja apenas um movimento SCRIPTADO: desliga
+        /// nele qualquer componente de IA (FSM <see cref="AntagonistAI"/>, NavMeshAgent
+        /// e sensores <see cref="AIVision"/>/<see cref="AIHearing"/>/<see cref="PatrolBehavior"/>).
+        /// Sem isso, um <see cref="shadowFigure"/> que seja uma cópia do antagonista
+        /// completo olharia/perseguiria o player durante a travessia — a FSM real só
+        /// deve agir no fim do Beat 3, no antagonista de verdade. O NavMeshAgent também
+        /// precisa ficar desligado porque ele disputaria a posição com o MoveTowards.
+        /// Se <see cref="shadowFigure"/> e <see cref="antagonist"/> forem o MESMO objeto,
+        /// avisa: por design eles têm que ser separados (vulto visual × killer com FSM).
+        /// </summary>
+        private void EnsureShadowIsScriptedOnly()
+        {
+            if (shadowFigure == null)
+                return;
+
+            if (shadowFigure == antagonist)
+            {
+                Debug.LogWarning("[Act4Director] shadowFigure e antagonist apontam para o MESMO objeto. " +
+                                 "O vulto (scriptado) e o killer (FSM) devem ser objetos SEPARADOS — " +
+                                 "use um modelo visual-only para o shadowFigure.", this);
+            }
+
+            foreach (var ai in shadowFigure.GetComponentsInChildren<AntagonistAI>(true))
+                ai.enabled = false;
+            foreach (var agent in shadowFigure.GetComponentsInChildren<NavMeshAgent>(true))
+                agent.enabled = false;
+            foreach (var vision in shadowFigure.GetComponentsInChildren<AIVision>(true))
+                vision.enabled = false;
+            foreach (var hearing in shadowFigure.GetComponentsInChildren<AIHearing>(true))
+                hearing.enabled = false;
+            foreach (var patrol in shadowFigure.GetComponentsInChildren<PatrolBehavior>(true))
+                patrol.enabled = false;
         }
 
         // --- BEAT 4: Dead Phone -------------------------------------------

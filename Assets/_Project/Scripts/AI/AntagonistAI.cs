@@ -76,6 +76,15 @@ namespace TheDelivery.AI
         [Tooltip("Raio ao redor da última posição conhecida onde a busca sorteia pontos.")]
         [SerializeField] private float searchRadius = 4f;
 
+        [Header("Animation")]
+        [Tooltip("Animator do modelo visual riggado. Se vazio, busca via GetComponentInChildren no Start. " +
+                 "Pode ficar nulo (ex.: prefab ainda com cubo placeholder) — nesse caso a FSM ignora a animação.")]
+        [SerializeField] private Animator animator;
+        [Tooltip("Nome do parâmetro float de velocidade no AnimatorController (Idle/Walking/Running).")]
+        [SerializeField] private string speedParam = "Speed";
+        [Tooltip("Nome do parâmetro bool de perseguição no AnimatorController (true só no estado Chase).")]
+        [SerializeField] private string chasingParam = "IsChasing";
+
         [Header("Debug")]
         [Tooltip("Loga as transições de estado no Console.")]
         [SerializeField] private bool showStateInConsole = true;
@@ -101,12 +110,20 @@ namespace TheDelivery.AI
         // Velocidade de "varredura" ao olhar em volta no estado Suspicious (graus/s).
         private const float LookAroundSpeed = 60f;
 
+        // Hashes dos parâmetros do Animator (resolvidos no Start a partir dos nomes acima).
+        private int speedHash;
+        private int chasingHash;
+
         private void Start()
         {
             if (agent == null) agent = GetComponent<NavMeshAgent>();
             if (patrol == null) patrol = GetComponent<PatrolBehavior>();
             if (vision == null) vision = GetComponent<AIVision>();
             if (hearing == null) hearing = GetComponent<AIHearing>();
+            if (animator == null) animator = GetComponentInChildren<Animator>();
+
+            speedHash = Animator.StringToHash(speedParam);
+            chasingHash = Animator.StringToHash(chasingParam);
 
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
@@ -138,6 +155,26 @@ namespace TheDelivery.AI
                     HandleAttack();
                     break;
             }
+
+            UpdateAnimator();
+        }
+
+        /// <summary>
+        /// Traduz o estado da FSM para os parâmetros do Animator (Idle/Walking/Running):
+        /// <c>Speed</c> recebe a velocidade horizontal do agente (separa parado de andando)
+        /// e <c>IsChasing</c> fica true só no <see cref="AIState.Chase"/> (dispara o Running,
+        /// usado no Ato 4). No-op se não houver Animator — a prefab pode estar com o cubo
+        /// placeholder, sem rig.
+        /// </summary>
+        private void UpdateAnimator()
+        {
+            if (animator == null)
+                return;
+
+            Vector3 planarVelocity = agent.velocity;
+            planarVelocity.y = 0f;
+            animator.SetFloat(speedHash, planarVelocity.magnitude);
+            animator.SetBool(chasingHash, CurrentState == AIState.Chase);
         }
 
         // --- Handlers ------------------------------------------------------

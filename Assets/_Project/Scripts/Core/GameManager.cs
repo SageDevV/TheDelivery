@@ -44,6 +44,15 @@ namespace TheDelivery.Core
             }
 
             Instance = this;
+
+            // DontDestroyOnLoad SÓ funciona em GameObject RAIZ. Se este GameManager
+            // estiver aninhado (ex.: organizado dentro de um container _Managers na cena
+            // Boot), desparenta para a raiz ANTES de marcar — senão ele (e o fadeCanvas
+            // filho) seriam destruídos na 1ª troca de cena e o Instance ficaria nulo nos
+            // atos seguintes (sintoma: "GameManager.Instance nulo" ao transicionar).
+            if (transform.parent != null)
+                transform.SetParent(null);
+
             DontDestroyOnLoad(gameObject);
 
             // Começa coberto pelo preto: a cena Boot é vazia (só o GameManager), então

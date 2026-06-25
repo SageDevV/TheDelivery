@@ -322,8 +322,12 @@ namespace TheDelivery.Narrative
                     Debug.LogWarning("[Act3Director] blackScreen não atribuído; se a cena tiver um overlay preto autorado opaco (p/ o Ato 4), o Ato 3 pode começar na tela preta.", this);
                 }
 
-                Debug.Log("[Act3Director] Assumindo o Ato 3.", this);
-                AdvanceToBeat(startBeat);
+                // startBeat == None (valor 0, default do enum serializado) não tem rotina:
+                // o Ato 3 assumiria a cena mas não rodaria beat nenhum (player parado na
+                // posição padrão, parecendo o Ato 4). Cai pro 1º beat real nesse caso.
+                Act3Beat beat = startBeat == Act3Beat.None ? Act3Beat.CorridorMeeting : startBeat;
+                Debug.Log($"[Act3Director] Assumindo o Ato 3 (beat {beat}).", this);
+                AdvanceToBeat(beat);
             }
             else
                 Debug.Log("[Act3Director] Inerte: CurrentAct não é Act3 e autoStartForDebug=false. Aguardando ser a vez do Ato 3.", this);
