@@ -84,6 +84,15 @@ namespace TheDelivery.AI
         [SerializeField] private string speedParam = "Speed";
         [Tooltip("Nome do parâmetro bool de perseguição no AnimatorController (true só no estado Chase).")]
         [SerializeField] private string chasingParam = "IsChasing";
+        [Tooltip("Nome da layer mascarada (Avatar Mask de corpo superior) que toca o Sneak só do tronco " +
+                 "pra cima. Acionada por peso via código ao parar num ponto de patrulha; as pernas seguem " +
+                 "vindo da Base Layer (Idle). Existe só no AntagonistFSM.")]
+        [SerializeField] private string sneakLayerName = "UpperBody";
+        [Tooltip("Nome do estado de espreita dentro da layer mascarada. Usado para tocá-lo do início e " +
+                 "detectar quando termina.")]
+        [SerializeField] private string sneakStateName = "Sneak";
+        [Tooltip("Tempo (s) de fade do peso da layer de Sneak ao entrar/sair, pra não dar 'pop' no tronco.")]
+        [SerializeField] private float sneakBlendTime = 0.2f;
 
         [Header("Debug")]
         [Tooltip("Loga as transições de estado no Console.")]
@@ -114,6 +123,16 @@ namespace TheDelivery.AI
         private int speedHash;
         private int chasingHash;
 
+        // Borda de subida do "parado em ponto de patrulha": dispara o Sneak uma única vez por parada.
+        private bool wasWaitingAtPoint;
+
+        // Espreita (Sneak) na layer mascarada de corpo superior.
+        private int sneakLayerIndex = -1;       // índice da layer UpperBody (-1 = controller sem ela)
+        private bool sneaking;                   // o Sneak está tocando (peso subindo/no ar)
+        private bool sneakStarted;               // o Play já surtiu efeito (normalizedTime resetou)
+        private float sneakLayerWeight;          // peso atual da layer (lerpado pra suavizar)
+        private Quaternion lockedSneakRotation;  // orientação congelada enquanto a layer influencia
+
         private void Start()
         {
             if (agent == null) agent = GetComponent<NavMeshAgent>();
@@ -124,6 +143,8 @@ namespace TheDelivery.AI
 
             speedHash = Animator.StringToHash(speedParam);
             chasingHash = Animator.StringToHash(chasingParam);
+            if (animator != null)
+                sneakLayerIndex = animator.GetLayerIndex(sneakLayerName);
 
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
@@ -175,6 +196,101 @@ namespace TheDelivery.AI
             planarVelocity.y = 0f;
             animator.SetFloat(speedHash, planarVelocity.magnitude);
             animator.SetBool(chasingHash, CurrentState == AIState.Chase);
+
+            // Espreita (Sneak): tocada numa layer mascarada de CORPO SUPERIOR, então só o tronco
+            // pra cima é afetado — as pernas continuam vindo da Base Layer (Idle), plantadas.
+            // Dispara UMA vez na borda de subida de IsWaitingAtPoint e só em Patrol — paradas de
+            // outros estados (Suspicious/Attack) não acionam o Sneak.
+            bool waitingAtPoint = CurrentState == AIState.Patrol
+                && patrol != null
+                && patrol.IsWaitingAtPoint;
+
+            if (waitingAtPoint && !wasWaitingAtPoint)
+                BeginSneak();
+
+            wasWaitingAtPoint = waitingAtPoint;
+
+            UpdateSneak();
+        }
+
+        // --- Espreita (Sneak) na layer de corpo superior ------------------
+
+        /// <summary>
+        /// Inicia o Sneak ao parar num ponto de patrulha: toca o clipe do início na layer
+        /// mascarada e trava a rotação do antagonista (desliga <c>updateRotation</c> e guarda
+        /// a orientação atual, reforçada no <see cref="LateUpdate"/>) para ele não girar durante
+        /// a espreita. No-op se o controller não tiver a layer.
+        /// </summary>
+        private void BeginSneak()
+        {
+            if (sneakLayerIndex < 0)
+                return;
+
+            sneaking = true;
+            sneakStarted = false;
+            lockedSneakRotation = transform.rotation;
+            if (agent != null)
+                agent.updateRotation = false;
+
+            // Toca o Sneak do frame 0 (a layer pode estar com o clipe em loop ao fundo, peso 0).
+            animator.Play(sneakStateName, sneakLayerIndex, 0f);
+        }
+
+        /// <summary>
+        /// Mantém o Sneak: faz o peso da layer subir/descer suavemente, encerra quando o clipe
+        /// toca uma vez (normalizedTime &gt;= 1) e corta na hora se a FSM deixar a patrulha
+        /// (ex.: virou Chase). Enquanto a layer influencia (peso &gt; 0), a rotação fica travada;
+        /// ao zerar, devolve o <c>updateRotation</c> ao agente.
+        /// </summary>
+        private void UpdateSneak()
+        {
+            if (sneakLayerIndex < 0)
+                return;
+
+            // Saiu da patrulha: corta o Sneak imediatamente para não atrasar a perseguição.
+            if (sneaking && CurrentState != AIState.Patrol)
+            {
+                sneaking = false;
+                sneakLayerWeight = 0f;
+            }
+
+            // Detecta o fim do clipe — mas só DEPOIS que o animator.Play surte efeito. O Play é
+            // aplicado no próximo passo de avaliação do Animator, então no mesmo frame o
+            // normalizedTime ainda é o "velho" (o clipe roda em loop ao fundo com peso 0 e já está
+            // >= 1). Espera o tempo resetar pra perto de 0 (sneakStarted) antes de checar o fim,
+            // senão o Sneak encerraria na hora e só o Idle da base apareceria.
+            if (sneaking)
+            {
+                AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(sneakLayerIndex);
+                if (info.IsName(sneakStateName))
+                {
+                    if (!sneakStarted)
+                    {
+                        if (info.normalizedTime < 0.5f)
+                            sneakStarted = true;
+                    }
+                    else if (info.normalizedTime >= 1f)
+                    {
+                        sneaking = false;
+                    }
+                }
+            }
+
+            float target = sneaking ? 1f : 0f;
+            float step = sneakBlendTime <= 0f ? 1f : Time.deltaTime / sneakBlendTime;
+            sneakLayerWeight = Mathf.MoveTowards(sneakLayerWeight, target, step);
+            animator.SetLayerWeight(sneakLayerIndex, sneakLayerWeight);
+
+            // Devolve a rotação ao agente assim que a layer deixa de influenciar.
+            if (sneakLayerWeight <= 0f && agent != null && !agent.updateRotation)
+                agent.updateRotation = true;
+        }
+
+        private void LateUpdate()
+        {
+            // Congela a orientação enquanto o Sneak influencia, mesmo contra velocidade residual.
+            if (sneakLayerWeight > 0f)
+                transform.rotation = lockedSneakRotation;
         }
 
         // --- Handlers ------------------------------------------------------
@@ -442,6 +558,14 @@ namespace TheDelivery.AI
         /// </summary>
         public void SuspendForDirector()
         {
+            // Encerra um Sneak em andamento e devolve a rotação ao agente antes do Director assumir.
+            sneaking = false;
+            sneakLayerWeight = 0f;
+            if (sneakLayerIndex >= 0 && animator != null)
+                animator.SetLayerWeight(sneakLayerIndex, 0f);
+            if (agent != null)
+                agent.updateRotation = true;
+
             if (patrol != null)
                 patrol.PausePatrol();
             enabled = false;

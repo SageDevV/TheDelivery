@@ -22,10 +22,12 @@ namespace TheDelivery.AI
         [SerializeField] private float arrivalThreshold = 0.2f;
 
         [Header("Timings")]
-        [Tooltip("Tempo mínimo de espera (idle) em cada ponto.")]
-        [SerializeField] private float minWaitTime = 2f;
+        [Tooltip("Tempo mínimo de espera (idle) em cada ponto. DEVE ser >= à duração do clipe de " +
+                 "espreita (Sneak), senão o antagonista volta a andar antes da animação terminar e ela " +
+                 "fica cortada. Veja a duração do clipe Sneak no Inspector do FBX.")]
+        [SerializeField] private float minWaitTime = 5f;
         [Tooltip("Tempo máximo de espera (idle) em cada ponto.")]
-        [SerializeField] private float maxWaitTime = 6f;
+        [SerializeField] private float maxWaitTime = 8f;
 
         [Header("Debug")]
         [Tooltip("Desenha a rota de patrulha na Scene View.")]
@@ -39,6 +41,14 @@ namespace TheDelivery.AI
 
         /// <summary>Índice do ponto de patrulha atualmente sendo perseguido.</summary>
         public int CurrentPatrolIndex { get; private set; }
+
+        /// <summary>
+        /// True enquanto o agente está parado AGUARDANDO em um ponto de patrulha
+        /// (entre a chegada ao ponto e a partida para o próximo). É o sinal que a
+        /// <see cref="AntagonistAI"/> usa para disparar a animação de espreita (Sneak)
+        /// só nas paradas de patrulha — outras paradas (Suspicious/Attack) não contam.
+        /// </summary>
+        public bool IsWaitingAtPoint { get; private set; }
 
         private void Start()
         {
@@ -72,8 +82,10 @@ namespace TheDelivery.AI
                     !agent.pathPending &&
                     agent.remainingDistance < (agent.stoppingDistance + arrivalThreshold));
 
+                IsWaitingAtPoint = true;
                 float waitTime = Random.Range(minWaitTime, maxWaitTime);
                 yield return new WaitForSeconds(waitTime);
+                IsWaitingAtPoint = false;
 
                 CurrentPatrolIndex = (CurrentPatrolIndex + 1) % patrolPoints.Length;
             }
@@ -97,6 +109,7 @@ namespace TheDelivery.AI
             if (agent != null && agent.isOnNavMesh)
                 agent.isStopped = true;
 
+            IsWaitingAtPoint = false;
             IsPatrolling = false;
         }
 
