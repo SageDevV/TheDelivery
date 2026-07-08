@@ -6,6 +6,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using TheDelivery.AI;
 using TheDelivery.Core;
+using TheDelivery.FX;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
 
@@ -215,6 +216,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private float flickerMaxInterval = 0.18f;
         [Tooltip("Som tocado no instante em que as luzes terminam de piscar e apagam de vez.")]
         [SerializeField] private AudioClip lightsOutSound;
+        [Tooltip("Interruptores dos cômodos (LightSwitch). Na queda de energia, todos ficam SEM energia (Powered=false): o player pode até clicá-los, mas as luzes não voltam. Opcional; vazio = sem interruptores na cena.")]
+        [SerializeField] private LightSwitch[] roomSwitches;
 
         [Header("Beat 7 - Final Hiding")]
         [Tooltip("Pensamento que direciona ao banheiro.")]
@@ -253,6 +256,14 @@ namespace TheDelivery.Narrative
         [SerializeField] private float sirenFadeIn = 1f;
         [Tooltip("Fade out (s) da sirene ao encerrar (no fim do tempo no chão, antes da tela preta).")]
         [SerializeField] private float sirenFadeOut = 1.5f;
+        [Tooltip("Luzes de sirene das VIATURAS (as montadas nos carros). Já vêm ACESAS na aproximação — ligadas quando as viaturas partem, para o giroflex piscar enquanto chegam. Desligadas na emboscada. Dê a cada uma phaseOffset/flashesPerSecond diferentes para dessincronizar. Opcional: vazio.")]
+        [SerializeField] private SirenLightEffect[] sirenEffects;
+        [Tooltip("Luzes de sirene que só acendem quando as viaturas ESTACIONAM (ex.: a sirene da JANELA / Batoteira, que varre o apê). Ligadas após WaitPoliceCarsParked, desligadas na emboscada. NÃO inclua aqui as sirenes das viaturas (essas vão em sirenEffects e já vêm acesas na aproximação).")]
+        [SerializeField] private SirenLightEffect[] parkedSirenEffects;
+        [Tooltip("Viaturas que PERCORREM um trajeto até a vaga antes de a sirene/luzes ligarem. Elas partem quando o killer some e a sirene + os SirenLightEffect só entram quando TODAS estacionarem. Opcional: vazio = a sirene toca logo após o reliefPause (comportamento antigo, viaturas estáticas).")]
+        [SerializeField] private PoliceCarArrival[] policeCars;
+        [Tooltip("Timeout (s) de segurança esperando as viaturas estacionarem: se um trajeto emperrar, a sirene entra assim mesmo para não travar o clímax. 0 = espera indefinidamente.")]
+        [SerializeField] private float policeCarsParkTimeout = 20f;
         [Tooltip("Pensamento que incentiva o player a sair: \"Ele foi embora?\"")]
         [SerializeField] private ThoughtData heFoiEmboraThought;
         [Tooltip("Zona no corredor (indo pra sala) que dispara a porrada.")]
@@ -1397,6 +1408,15 @@ namespace TheDelivery.Narrative
                     l.enabled = false;
             }
 
+            // Corta a energia dos interruptores: a partir daqui eles clicam seco e não
+            // religam as luzes (o escuro do clímax não pode ser desfeito com um [F]).
+            if (roomSwitches != null)
+            {
+                foreach (LightSwitch sw in roomSwitches)
+                    if (sw != null)
+                        sw.Powered = false;
+            }
+
             // Som do "baque" da energia caindo, no instante exato do apagar. Toca no
             // sfxAudioSource (volume fixo), e NÃO no audioSource principal: este tem o
             // volume dirigido pelo fade do deadLineSound ainda em andamento, e um
@@ -1568,16 +1588,36 @@ namespace TheDelivery.Narrative
             if (antagonist != null)
                 antagonist.SetActive(false);
 
+            // As viaturas PARTEM rumo à vaga em paralelo, enquanto o player tem o
+            // respiro de alívio. A SIRENE entra já na aproximação (passo 3); as LUZES
+            // de varredura na janela só quando elas estacionam (passo 3b). Vazio: pula
+            // o trajeto (viaturas estáticas), sirene e luzes acendem em seguida.
+            StartPoliceCarsDriving();
+
+            // As sirenes DAS VIATURAS já vêm ACESAS na aproximação: o giroflex pisca
+            // enquanto elas chegam. A luz da JANELA (Batoteira) NÃO — essa só acende ao
+            // estacionar (passo 3b). Só luzes; o áudio da sirene entra no passo 3.
+            StartSirenEffects(sirenEffects);
+
             // 2. Pausa de alívio (silêncio real - "ele foi?"), já sem passos tocando.
             yield return new WaitForSeconds(Mathf.Max(0f, reliefPause));
 
-            // 3. Sirenes ao fundo (a polícia chegou - esperança). SÓ AGORA, com o
-            //    killer fora e os passos cessados. Loop com CROSSFADE (StartSirenLoop):
-            //    duas instâncias se revezam sobrepondo o fim de uma no início da próxima,
-            //    para um loop contínuo e natural — sem o "buraco" do loop simples.
-            //    Permanece tocando, conectando com o epílogo.
+            // 3. A SIRENE entra JÁ na aproximação: você OUVE a polícia CHEGANDO,
+            //    enquanto as viaturas ainda percorrem o trajeto — não só quando param.
+            //    Loop com CROSSFADE (StartSirenLoop): duas instâncias se revezam
+            //    sobrepondo o fim de uma no início da próxima, para um loop contínuo e
+            //    natural (sem o "buraco" do loop simples). Permanece tocando até o epílogo.
             StartSirenLoop(policeSirenSound);
-            Debug.Log("[Act4Director] Sirenes de polícia ao fundo (loop com crossfade)");
+            Debug.Log("[Act4Director] Sirenes de polícia se aproximando (loop com crossfade)");
+
+            // 3b. Espera as viaturas ESTACIONAREM (com timeout de segurança). As sirenes
+            //     das viaturas já estão acesas desde a aproximação; aqui só falta a luz
+            //     da JANELA (Batoteira), que passa a varrer o apê agora que a viatura
+            //     chegou lá fora. Sem viaturas atribuídas, retorna na hora.
+            yield return WaitPoliceCarsParked();
+
+            // Ao estacionar: acende as luzes de estacionamento (a da janela / Batoteira).
+            StartSirenEffects(parkedSirenEffects);
 
             // 4. Pensamento incentiva sair.
             ShowThought(heFoiEmboraThought);
@@ -1608,6 +1648,14 @@ namespace TheDelivery.Narrative
             //    não é mais reerguido aqui (a sirene migrou para sources próprios), então
             //    um PlayOneShot ali sairia MUDO. Mesmo canal/razão do "baque" das luzes.
             playerController.CanMove = false;
+
+            // A reviravolta: o falso alívio quebra. TODAS as luzes de sirene se apagam
+            // no instante da emboscada — tanto as das viaturas (sirenEffects) quanto a
+            // da janela (parkedSirenEffects). O som da sirene segue no fundo e só encerra
+            // no fim do groggy (StopSirenLoop, mais abaixo).
+            StopSirenEffects(sirenEffects);
+            StopSirenEffects(parkedSirenEffects);
+
             if (sfxAudioSource != null && headHitSound != null)
                 sfxAudioSource.PlayOneShot(headHitSound);
             else
@@ -2427,6 +2475,83 @@ namespace TheDelivery.Narrative
 
             if (sirenSourceA != null) { sirenSourceA.Stop(); sirenSourceA.volume = 0f; }
             if (sirenSourceB != null) { sirenSourceB.Stop(); sirenSourceB.volume = 0f; }
+        }
+
+        // --- Luzes de sirene (Beat 8) -------------------------------------
+
+        /// <summary>Liga todos os <see cref="SirenLightEffect"/> do array (null-safe por item e por array).</summary>
+        private void StartSirenEffects(SirenLightEffect[] effects)
+        {
+            if (effects == null)
+                return;
+            foreach (SirenLightEffect fx in effects)
+                if (fx != null)
+                    fx.StartSiren();
+        }
+
+        /// <summary>Desliga todos os <see cref="SirenLightEffect"/> do array (null-safe por item e por array).</summary>
+        private void StopSirenEffects(SirenLightEffect[] effects)
+        {
+            if (effects == null)
+                return;
+            foreach (SirenLightEffect fx in effects)
+                if (fx != null)
+                    fx.StopSiren();
+        }
+
+        // --- Chegada das viaturas (Beat 8) --------------------------------
+
+        /// <summary>
+        /// Dispara o trajeto de TODAS as <see cref="policeCars"/> em paralelo — cada
+        /// viatura roda sua própria <see cref="PoliceCarArrival.BeginDrive"/> e se move
+        /// sozinha até a vaga. Retorna imediatamente; o estacionamento é aguardado por
+        /// <see cref="WaitPoliceCarsParked"/>. Seguro com o array vazio/nulo.
+        /// </summary>
+        private void StartPoliceCarsDriving()
+        {
+            if (policeCars == null)
+                return;
+
+            foreach (PoliceCarArrival car in policeCars)
+                if (car != null)
+                    car.BeginDrive();
+        }
+
+        /// <summary>True quando todas as viaturas atribuídas já estacionaram (ou não há
+        /// nenhuma) — condição para a sirene e as luzes entrarem.</summary>
+        private bool AllPoliceCarsParked()
+        {
+            if (policeCars == null || policeCars.Length == 0)
+                return true;
+
+            foreach (PoliceCarArrival car in policeCars)
+                if (car != null && !car.IsParked)
+                    return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Espera todas as viaturas estacionarem antes de liberar a sirene/luzes, com
+        /// um TIMEOUT de segurança (<see cref="policeCarsParkTimeout"/>): se um trajeto
+        /// emperrar, a sequência segue assim mesmo para não travar o clímax. Retorna na
+        /// hora se não houver viaturas ou se todas já estiverem estacionadas.
+        /// </summary>
+        private IEnumerator WaitPoliceCarsParked()
+        {
+            if (AllPoliceCarsParked())
+                yield break;
+
+            float elapsed = 0f;
+            while (!AllPoliceCarsParked())
+            {
+                if (policeCarsParkTimeout > 0f && elapsed >= policeCarsParkTimeout)
+                {
+                    Debug.LogWarning("[Act4Director] Timeout esperando as viaturas estacionarem; a sirene entra assim mesmo.", this);
+                    yield break;
+                }
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
         }
 
         /// <summary>

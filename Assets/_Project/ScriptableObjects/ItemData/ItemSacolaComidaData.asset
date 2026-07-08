@@ -15,4 +15,4 @@ MonoBehaviour:
   displayName: ItemSacolaComida
   description: Comida de clear que o entregador entregou
   icon: {fileID: 0}
-  heldPrefab: {fileID: 2870369367448831602, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}
+  heldPrefab: {fileID: 1480829667324320943, guid: c86ae2b18fd28fb4abaa3712bf3bed41, type: 3}

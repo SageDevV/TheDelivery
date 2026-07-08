@@ -86,6 +86,12 @@ namespace TheDelivery.Narrative
         [SerializeField] private Transform[] entregadorExitPath;
         [Tooltip("Velocidade (m/s) da caminhada scriptada do entregador (sem NavMesh).")]
         [SerializeField] private float entregadorWalkSpeed = 1.4f;
+        [Tooltip("Nome do parâmetro FLOAT de velocidade no Animator do entregador — dispara a animação Walking durante a travessia scriptada (a FSM fica desligada no Ato 3, então o Director seta este param à mão). Deve casar com o controller do Antagonist (normalmente \"Speed\").")]
+        [SerializeField] private string entregadorSpeedParam = "Speed";
+        [Tooltip("Nome do parâmetro BOOL de perseguição no Animator do entregador. Fica FALSE no Ato 3 — o entregador só CAMINHA, nunca persegue.")]
+        [SerializeField] private string entregadorChasingParam = "IsChasing";
+        [Tooltip("Animator que TOCA a animação do entregador. IMPORTANTE: o entregador é um objeto COMPOSTO — a raiz é um modelo e o Animator que anima o corpo está num FILHO. Atribua AQUI exatamente o MESMO Animator usado no Ato 4 (campo shadowAnimator do Act4Director). Se ficar vazio, tenta achar sozinho (GetComponentInChildren), mas pode pegar o Animator errado da raiz.")]
+        [SerializeField] private Animator entregadorAnimator;
         [Tooltip("Som (sting) tocado no INSTANTE em que a câmera VIRA para travar no entregador — o susto/baque do encontro. Opcional.")]
         [SerializeField] private AudioClip entregadorRevealSound;
         [Tooltip("Som sinistro do \"boa noite\" (placeholder/sting). Opcional se o diálogo já tiver áudio.")]
@@ -192,6 +198,17 @@ namespace TheDelivery.Narrative
         [SerializeField] private GameObject vizinho;
         [Tooltip("Onde o vizinho aparece ao abrir a porta (no vão). Se vazio, usa a posição atual do modelo na cena. Opcional.")]
         [SerializeField] private Transform vizinhoSpawn;
+        [Tooltip("Animator do vizinho (o do próprio 'vizinho' ou de um filho dele). Ao FIM do diálogo, recebe o trigger 'Closing' para o vizinho fazer a animação de encerrar/fechar. Se vazio, tenta achar no próprio vizinho (GetComponentInChildren). Opcional.")]
+        [SerializeField] private Animator vizinhoAnimator;
+        [Tooltip("Nome do parâmetro TRIGGER no Animator do vizinho que dispara a animação 'Closing' quando o diálogo acaba. Deve casar com o Vizinho.controller.")]
+        [SerializeField] private string vizinhoClosingTrigger = "Closing";
+        [Tooltip("Nome do ESTADO 'Closing' no Animator do vizinho. O roteiro usa este nome para AGUARDAR a animação terminar antes de fechar a porta (espera automática pela duração real do clipe, quando vizinhoClosingDuration = 0). Deve casar com o estado no Vizinho.controller.")]
+        [SerializeField] private string vizinhoClosingState = "Closing";
+        [Tooltip("Tempo (s) que o roteiro AGUARDA a animação 'Closing' do vizinho tocar antes de fechar a porta. 0 (recomendado) = espera AUTOMÁTICA pela state vizinhoClosingState até a fração vizinhoClosingDoorCue. >0 = espera fixa este tempo (override manual).")]
+        [SerializeField] private float vizinhoClosingDuration = 0f;
+        [Tooltip("Fração (0..1) da animação 'Closing' em que a PORTA COMEÇA a fechar — a porta deve começar a fechar UM POUCO ANTES do fim da animação, para o fechamento sobrepor o gesto. Ex.: 0.8 = a porta começa aos 80% da animação. Só vale na espera automática (vizinhoClosingDuration = 0).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float vizinhoClosingDoorCue = 0.8f;
         [Tooltip("Pensamento que direciona Clear ao vizinho. Opcional.")]
         [SerializeField] private ThoughtData goToNeighborThought;
         [Tooltip("Pensamento de isolamento após a resposta grossa do vizinho. Opcional.")]
@@ -214,6 +231,16 @@ namespace TheDelivery.Narrative
         [SerializeField] private ThoughtData eatThought;
         [Tooltip("Onde o ENTREGADOR aparece, de longe, encarando a Clear enquanto ela come na sacada. Posicione bem visível da sacada, à distância. Se vazio, o susto da sacada é pulado (só o pensamento).")]
         [SerializeField] private Transform entregadorBalconyPoint;
+        [Tooltip("Zona de REVELAÇÃO (objeto vazio 'AntagonistaFarVision') no caminho para a sacada, UM POUCO ANTES dela. Ao a Clear entrar aqui, o entregador JÁ é posicionado no entregadorBalconyPoint e ativado — assim ele já ESTÁ lá, parado encarando, quando ela chega e olha (não 'pipoca' no momento). Se vazia, revela ao entrar num raio maior da própria sacada (fallback).")]
+        [SerializeField] private Transform entregadorBalconyRevealZone;
+        [Tooltip("Raio (m) da zona de revelação do entregador da sacada.")]
+        [SerializeField] private float entregadorBalconyRevealRadius = 2f;
+        [Tooltip("Caminho de SAÍDA do entregador da sacada: ao FIM do foco, ele CAMINHA (Walking) por estes waypoints EM ORDEM e SÓ ENTÃO some — em vez de simplesmente apagar. Coloque um ponto em cada quina até um lugar fora de vista. Se vazio, cai no entregadorBalconyExitPoint.")]
+        [SerializeField] private Transform[] entregadorBalconyExitPath;
+        [Tooltip("Ponto único de SAÍDA do entregador da sacada (FALLBACK do entregadorBalconyExitPath). Ao fim do foco, ele caminha até aqui em linha reta e some. Se ambos vazios, ele some sem caminhar (comportamento antigo, com warning).")]
+        [SerializeField] private Transform entregadorBalconyExitPoint;
+        [Tooltip("Luminária da CALÇADA em cima do entregador (visto da sacada). Depois que ele encara a Clear (fim do pensamento), esta luz PISCA até APAGAR por completo; só então ele sai andando. Usa os mesmos flickerCount/flickerMinInterval/flickerMaxInterval/flickerSound do Beat 5. Se vazia, o passo do flicker é pulado. Opcional.")]
+        [SerializeField] private Light balconyLampLight;
         [Tooltip("Som (sting) no instante em que a câmera trava no entregador visto da sacada. Opcional.")]
         [SerializeField] private AudioClip balconyEntregadorSound;
         [Tooltip("Pensamento ao ver o entregador encarando de longe (susto da sacada). Opcional.")]
@@ -761,6 +788,14 @@ namespace TheDelivery.Narrative
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
+            // RE-ENCARA a Clear AGORA: o FaceTowards da chegada à porta virou o entregador
+            // para onde ela ESTAVA enquanto ainda caminhava até a porta. Ao esperar ela
+            // abrir a porta, a Clear se deslocou — deixando o entregador em diagonal, sem
+            // encará-la. Com o player já travado na posição final, re-encara para o diálogo
+            // acontecer de frente.
+            if (entregador != null)
+                FaceTowards(entregador.transform, playerController.transform.position);
+
             yield return ShowDialogueAndWait(entregadorDialogue);
 
             // O entregador ENTREGA a sacolinha de comida na mão do protagonista — vai pro
@@ -817,9 +852,9 @@ namespace TheDelivery.Narrative
             // Gira no eixo para encarar o primeiro ponto do retorno (dar meia-volta).
             yield return RotateEntregadorToward(back[0].position);
 
-            // Vai embora pelo mesmo caminho, invertido.
-            foreach (Transform wp in back)
-                yield return WalkEntregadorTo(wp.position);
+            // Vai embora pelo mesmo caminho, invertido — travessia contínua (Walking
+            // ativo do início ao fim do retorno, sem piscar Idle entre os waypoints).
+            yield return WalkEntregadorThrough(back.ToArray());
         }
 
         /// <summary>
@@ -1275,6 +1310,11 @@ namespace TheDelivery.Narrative
             // Diálogo encerrado: devolve o controle livre.
             EnsurePlayerFree();
 
+            // O vizinho dispara a animação "Closing" (encerra a interação e se retira) e o
+            // roteiro AGUARDA a animação tocar por completo ANTES de fechar a porta — senão a
+            // porta fecharia no meio do gesto (era o bug: a folha fechava antes do fim).
+            yield return PlayVizinhoClosing();
+
             // O vizinho FECHA a porta e a deixa fechar COMPLETAMENTE antes de sumir — assim
             // a folha fechada já o esconde quando ele é desativado e o jogador não o vê
             // "desaparecer" (espelha o spawn atrás da porta). Selando o isolamento.
@@ -1297,6 +1337,64 @@ namespace TheDelivery.Narrative
             neighborKnocked = true;
         }
 
+        /// <summary>
+        /// Dispara a animação "Closing" do vizinho ao fim do diálogo — o trigger
+        /// <see cref="vizinhoClosingTrigger"/> no Animator do vizinho (campo
+        /// <see cref="vizinhoAnimator"/>, ou o primeiro Animator achado no próprio
+        /// <see cref="vizinho"/>) — e AGUARDA a animação tocar por completo, para a porta só
+        /// fechar depois do gesto. A espera é AUTOMÁTICA (segue a state
+        /// <see cref="vizinhoClosingState"/> até o fim) quando <see cref="vizinhoClosingDuration"/>
+        /// é 0; caso contrário espera esse tempo fixo. Null-safe: sem Animator/trigger, apenas
+        /// avisa e segue, sem travar o encontro.
+        /// </summary>
+        private IEnumerator PlayVizinhoClosing()
+        {
+            if (string.IsNullOrEmpty(vizinhoClosingTrigger))
+                yield break;
+
+            Animator anim = vizinhoAnimator;
+            if (anim == null && vizinho != null)
+                anim = vizinho.GetComponentInChildren<Animator>();
+
+            if (anim == null)
+            {
+                Debug.LogWarning("[Act3Director] vizinhoAnimator ausente (e nenhum Animator no vizinho); sem animação 'Closing'.", this);
+                yield break;
+            }
+
+            anim.SetTrigger(vizinhoClosingTrigger);
+
+            // Override manual: espera fixa.
+            if (vizinhoClosingDuration > 0f)
+            {
+                yield return new WaitForSeconds(vizinhoClosingDuration);
+                yield break;
+            }
+
+            // Espera AUTOMÁTICA: acompanha a state Closing até ela tocar por completo.
+            if (string.IsNullOrEmpty(vizinhoClosingState))
+                yield break;
+
+            // 1) Espera o Animator ENTRAR na state Closing (transição do trigger), com um
+            //    timeout de segurança para nunca travar o ato se o nome não casar.
+            float enterTimeout = 1.5f;
+            while (enterTimeout > 0f && !anim.GetCurrentAnimatorStateInfo(0).IsName(vizinhoClosingState))
+            {
+                enterTimeout -= Time.deltaTime;
+                yield return null;
+            }
+
+            // 2) Deixa a state tocar até vizinhoClosingDoorCue (fração do clipe) — a porta
+            //    COMEÇA a fechar um pouco ANTES do fim, sobrepondo o gesto (não espera 100%).
+            //    Sai também se, por algum motivo, sair da state.
+            float cue = Mathf.Clamp01(vizinhoClosingDoorCue);
+            while (anim.GetCurrentAnimatorStateInfo(0).IsName(vizinhoClosingState)
+                   && anim.GetCurrentAnimatorStateInfo(0).normalizedTime < cue)
+            {
+                yield return null;
+            }
+        }
+
         // --- BEAT 6: EatAndSleep (handoff pro Ato 4) ----------------------
 
         /// <summary>
@@ -1315,7 +1413,12 @@ namespace TheDelivery.Narrative
             // Beat 4). Volta pro inventário (e pra mão, se tiver HeldPrefab).
             yield return TakeFoodFromCounter();
 
-            // 2. Vai até a SACADA com a comida.
+            // 2. A caminho da sacada: UM POUCO ANTES de chegar, o entregador JÁ é revelado
+            // (posicionado no ponto de longe, parado encarando) — assim ele já ESTÁ lá quando
+            // a Clear chega e olha, em vez de "pipocar" no momento do foco.
+            yield return RevealBalconyEntregador();
+
+            // Vai até a SACADA com a comida.
             if (balconyPoint != null)
                 yield return new WaitUntil(() => PlayerInZone(balconyPoint, balconyRadius));
             else
@@ -1364,13 +1467,40 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// O susto da sacada (Beat 6): enquanto a Clear come, o ENTREGADOR aparece de longe
-        /// (<see cref="entregadorBalconyPoint"/>) encarando-a; a câmera TRAVA nele
+        /// Revela o entregador da sacada ANTES de a Clear chegar: espera ela entrar na
+        /// <see cref="entregadorBalconyRevealZone"/> (um pouco antes da sacada) e então o
+        /// posiciona no <see cref="entregadorBalconyPoint"/>, ativado e encarando — parado,
+        /// esperando. Assim ele já ESTÁ lá quando ela olha, sem "pipocar" no momento do foco.
+        /// FALLBACK sem zona: revela ao entrar num raio maior da própria sacada. Null-safe:
+        /// sem entregador/ponto, não faz nada (o sighting cai no fallback só-pensamento).
+        /// </summary>
+        private IEnumerator RevealBalconyEntregador()
+        {
+            if (entregador == null || entregadorBalconyPoint == null)
+                yield break;
+
+            // Zona de gatilho: a de revelação, ou (fallback) um raio maior da sacada, para
+            // ainda revelar "um pouco antes" de a Clear entrar na zona apertada de comer.
+            Transform zone = entregadorBalconyRevealZone != null ? entregadorBalconyRevealZone : balconyPoint;
+            float radius = entregadorBalconyRevealZone != null ? entregadorBalconyRevealRadius : balconyRadius * 2.5f;
+
+            if (zone != null)
+                yield return new WaitUntil(() => PlayerInZone(zone, radius));
+
+            // Posiciona e ativa de longe, encarando a Clear — parado, esperando ser visto.
+            ActivateEntregadorAt(entregadorBalconyPoint);
+        }
+
+        /// <summary>
+        /// O susto da sacada (Beat 6): o ENTREGADOR já foi revelado de longe
+        /// (<see cref="RevealBalconyEntregador"/>) e está parado no
+        /// <see cref="entregadorBalconyPoint"/> encarando a Clear. A câmera TRAVA nele
         /// (<see cref="StartCameraFocus"/> — trava movimento e olhar, o Director dirige a
         /// câmera), toca o <see cref="balconyEntregadorSound"/> e dispara o
-        /// <see cref="balconyEntregadorThought"/>. Ao fim, solta a câmera, some com o
-        /// entregador e devolve o controle. FALLBACK: sem entregador/ponto, mostra só o
-        /// pensamento (sem trava de câmera).
+        /// <see cref="balconyEntregadorThought"/>. Ao FIM do foco, em vez de simplesmente
+        /// sumir, ele CAMINHA (Walking) até o ponto de saída
+        /// (<see cref="WalkEntregadorBalconyExit"/>, câmera seguindo-o) e SÓ ENTÃO some.
+        /// FALLBACK: sem entregador/ponto, mostra só o pensamento (sem trava de câmera).
         /// </summary>
         private IEnumerator BalconyEntregadorSighting()
         {
@@ -1381,10 +1511,16 @@ namespace TheDelivery.Narrative
                 yield break;
             }
 
-            // Trava interação e revela o entregador encarando, de longe.
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
-            ActivateEntregadorAt(entregadorBalconyPoint); // encara a Clear por padrão.
+
+            // O entregador já foi revelado (RevealBalconyEntregador) e está de longe
+            // encarando. Se, por algum motivo (salto de debug / sem zona), ele não estiver
+            // ativo, ativa agora como fallback; senão só o re-encara antes do foco.
+            if (!entregador.activeSelf)
+                ActivateEntregadorAt(entregadorBalconyPoint);
+            else
+                FaceTowards(entregador.transform, playerController.transform.position);
 
             // Sting no instante em que a câmera trava nele, e foco forçado seguindo-o.
             PlaySound(balconyEntregadorSound);
@@ -1393,10 +1529,74 @@ namespace TheDelivery.Narrative
             // Pensamento enquanto a câmera está travada no entregador.
             yield return ShowThoughtAndWait(balconyEntregadorThought);
 
+            // A luminária da calçada em cima dele PISCA até APAGAR de vez — ele fica no
+            // escuro. Só depois disso ele sai andando.
+            yield return FlickerBalconyLampOff();
+
+            // Fim do momento: em vez de apagar, ele dá meia-volta e CAMINHA para longe (a
+            // câmera continua seguindo-o) até o ponto de saída, e SÓ ENTÃO some.
+            yield return WalkEntregadorBalconyExit();
+
             // Solta a câmera (sem snap), some com o entregador e devolve o controle livre.
             StopCameraFocus();
             DeactivateEntregador();
             EnsurePlayerFree();
+        }
+
+        /// <summary>
+        /// Saída do entregador da sacada: ao fim do foco, ele gira no próprio eixo para
+        /// encarar a saída e CAMINHA (Walking) pelo <see cref="entregadorBalconyExitPath"/>
+        /// (waypoints em ordem) — ou pelo <see cref="entregadorBalconyExitPoint"/> em linha
+        /// reta (fallback) — até um lugar fora de vista, onde é escondido/desativado por quem
+        /// chama. A câmera (foco ainda ativo) o segue durante o trajeto. Sem path nem ponto,
+        /// ele apenas some (comportamento antigo), com aviso.
+        /// </summary>
+        private IEnumerator WalkEntregadorBalconyExit()
+        {
+            if (entregador == null)
+                yield break;
+
+            List<Transform> path = new List<Transform>();
+            if (entregadorBalconyExitPath != null)
+                foreach (Transform wp in entregadorBalconyExitPath)
+                    if (wp != null)
+                        path.Add(wp);
+            if (path.Count == 0 && entregadorBalconyExitPoint != null)
+                path.Add(entregadorBalconyExitPoint);
+
+            if (path.Count == 0)
+            {
+                Debug.LogWarning("[Act3Director] sem entregadorBalconyExitPath/Point; o entregador some sem caminhar na sacada.", this);
+                yield break;
+            }
+
+            // Meia-volta suave para encarar a saída e caminhada contínua até sumir.
+            yield return RotateEntregadorToward(path[0].position);
+            yield return WalkEntregadorThrough(path.ToArray());
+        }
+
+        /// <summary>
+        /// A luminária da calçada (<see cref="balconyLampLight"/>) em cima do entregador visto
+        /// da sacada PISCA erraticamente e depois APAGA de vez — o antagonista fica no escuro
+        /// antes de sair andando. Mesmo estilo/params de piscar do
+        /// <see cref="FlickerAndRestoreLights"/> (Beat 5), mas aqui a luz MORRE (não volta).
+        /// Null-safe: sem lâmpada, é um no-op (o susto segue direto para a saída).
+        /// </summary>
+        private IEnumerator FlickerBalconyLampOff()
+        {
+            if (balconyLampLight == null)
+                yield break;
+
+            // Piscar errático: on/off aleatório a cada passo, intervalo variável.
+            for (int i = 0; i < flickerCount; i++)
+            {
+                balconyLampLight.enabled = Random.value > 0.5f;
+                yield return new WaitForSeconds(Random.Range(flickerMinInterval, flickerMaxInterval));
+            }
+
+            // Apaga por completo (a luz não volta) e dá o baque no instante do apagão.
+            balconyLampLight.enabled = false;
+            PlaySound(flickerSound);
         }
 
         // --- Helpers -------------------------------------------------------
@@ -1451,6 +1651,19 @@ namespace TheDelivery.Narrative
         /// </summary>
         private IEnumerator WalkEntregadorTo(Vector3 worldTarget)
         {
+            SetEntregadorWalking(true);
+            yield return StepEntregadorTo(worldTarget);
+            SetEntregadorWalking(false);
+        }
+
+        /// <summary>
+        /// Deslocamento CRU de um trecho (sem ligar/desligar a animação de andar), para
+        /// os movers acima poderem manter o Walking ATIVO entre waypoints consecutivos
+        /// (sem piscar Idle nas quinas). Caminha em linha reta até o alvo no plano,
+        /// encarando a direção do movimento; para ao chegar perto.
+        /// </summary>
+        private IEnumerator StepEntregadorTo(Vector3 worldTarget)
+        {
             if (entregador == null)
                 yield break;
 
@@ -1501,11 +1714,58 @@ namespace TheDelivery.Narrative
             if (path == null)
                 yield break;
 
+            // Anima uma vez para o trajeto inteiro: Walking fica ativo do 1º ao último
+            // waypoint (StepEntregadorTo não mexe na animação), sem piscar Idle nas quinas.
+            SetEntregadorWalking(true);
             foreach (Transform wp in path)
             {
                 if (wp != null)
-                    yield return WalkEntregadorTo(wp.position);
+                    yield return StepEntregadorTo(wp.position);
             }
+            SetEntregadorWalking(false);
+        }
+
+        /// <summary>
+        /// Liga/desliga a animação de CAMINHAR do entregador durante a travessia scriptada
+        /// do Ato 3. No Ato 3 a FSM (<see cref="AntagonistAI"/>) está DESLIGADA — ela é
+        /// quem normalmente dirige o Animator (param Speed) —, então o Director seta o
+        /// param à mão: <see cref="entregadorWalkSpeed"/> dispara o estado Walking, 0 volta
+        /// para Idle. Mantém o param de perseguição em false (o entregador só caminha).
+        ///
+        /// NÃO impacta o Ato 4: escreve só os params Speed/IsChasing (que o
+        /// <c>AntagonistAI.UpdateAnimator</c> reescreve todo frame quando a FSM reassume no
+        /// Ato 4) e NÃO toca em applyRootMotion nem em qualquer outro estado persistente do
+        /// Animator.
+        ///
+        /// Usa o <see cref="entregadorAnimator"/> ATRIBUÍDO (o do filho que anima o corpo —
+        /// o MESMO do shadowAnimator do Ato 4). O entregador é um objeto COMPOSTO: a raiz
+        /// tem outro Animator (sem o controller de locomoção), então buscar pela raiz pegava
+        /// o Animator errado (sintoma: "desliza sem animar"). Sem o campo atribuído, cai num
+        /// fallback por <c>GetComponentInChildren</c>; no-op sem Animator.
+        /// </summary>
+        private void SetEntregadorWalking(bool walking)
+        {
+            if (entregador == null)
+                return;
+
+            // Preferir o Animator ATRIBUÍDO (o do FILHO que anima o corpo — mesmo do
+            // shadowAnimator do Ato 4). Fallback só se vazio: GetComponentInChildren
+            // (NÃO GetComponent, que pegaria o Animator da RAIZ, sem o controller certo).
+            if (entregadorAnimator == null)
+            {
+                entregadorAnimator = entregador.GetComponentInChildren<Animator>();
+                if (entregadorAnimator == null)
+                {
+                    Debug.LogWarning("[Act3Director] Animator do entregador não encontrado; a animação Walking não vai tocar. Atribua 'entregadorAnimator' (o MESMO do shadowAnimator do Ato 4).", this);
+                    return;
+                }
+            }
+
+            if (walking && entregadorAnimator.runtimeAnimatorController == null)
+                Debug.LogWarning("[Act3Director] O Animator do entregador está SEM Controller — o param Speed não dispara nenhuma animação. Verifique se é o Animator do FILHO (modelo do antagonista), não o da raiz.", this);
+
+            entregadorAnimator.SetFloat(entregadorSpeedParam, walking ? Mathf.Max(0.01f, entregadorWalkSpeed) : 0f);
+            entregadorAnimator.SetBool(entregadorChasingParam, false);
         }
 
         /// <summary>
