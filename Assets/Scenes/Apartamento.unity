@@ -51340,9 +51340,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Interaction.SittableChair
   interactionPrompt: Sentar
   standPrompt: Levantar
+  standWithInteractKey: 1
   seatCameraPoint: {fileID: 998698478}
   sitTransitionDuration: 0.5
   standingCameraHeight: 1.7
+  allowLookWhileSeated: 1
+  maxLookYaw: 90
+  maxLookPitch: 70
+  inputActions: {fileID: -944628639613478452, guid: 9a3bc710b543c384fb11b24ded91c164, type: 3}
+  lookSensitivity: 0.08
+  gamepadLookSensitivity: 140
 --- !u!1 &1961702569
 GameObject:
   m_ObjectHideFlags: 0

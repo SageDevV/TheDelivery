@@ -125,5 +125,19 @@ namespace TheDelivery.Interaction
 
         /// <summary>String da tecla para a UI montar "[E] Abrir". Atualiza com remapeamento.</summary>
         public string GetInteractKeyDisplay() => cachedKeyDisplay;
+
+        /// <summary>
+        /// True no frame em que a tecla de interação foi pressionada, INDEPENDENTE de haver
+        /// algo em foco no raycast E de <see cref="InteractionEnabled"/> — reporta o aperto
+        /// CRU da ação (como o Espaço lido direto no teclado). Para objetos que ASSUMEM a
+        /// câmera ao interagir e por isso perdem o foco (o SphereCast deixa de mirá-los), e
+        /// que ainda precisam ler a tecla mesmo com a interação do MUNDO desligada — ex.:
+        /// <see cref="SittableChair"/>, que ao sentar DESLIGA a interação (para o raycast não
+        /// mirar um HideSpot à frente e oferecer "Esconder-se"), mas precisa LEVANTAR com a
+        /// mesma tecla. Quem chama decide quando faz sentido usar (o SittableChair só o
+        /// consulta enquanto sentado e com o levantar permitido). Respeita o remapeamento.
+        /// </summary>
+        public bool InteractPressedThisFrame() =>
+            interactAction != null && interactAction.WasPressedThisFrame();
     }
 }
