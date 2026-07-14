@@ -33,6 +33,20 @@ namespace TheDelivery.Items
         public bool Contains(ItemData item) => item != null && items.Contains(item);
 
         /// <summary>
+        /// Devolve o GameObject do visual instanciado na MÃO para este item (o clone do
+        /// <see cref="ItemData.HeldPrefab"/> no <see cref="handAnchor"/>), ou null se o item
+        /// não tem visual na mão. Para o roteiro ANIMAR o item na mão (ex.: o Ato 3 balança a
+        /// comida pra cima/baixo simulando a Clear comendo no sofá) antes de removê-lo.
+        /// </summary>
+        public GameObject GetHeldVisual(ItemData item)
+        {
+            if (item == null)
+                return null;
+            heldVisuals.TryGetValue(item, out GameObject visual);
+            return visual;
+        }
+
+        /// <summary>
         /// Adiciona um item ao inventário. Se ele tiver <see cref="ItemData.HeldPrefab"/> e
         /// houver <see cref="handAnchor"/>, instancia o visual na mão. Idempotente:
         /// re-adicionar o mesmo item não duplica nem reinstancia o visual.
@@ -58,6 +72,11 @@ namespace TheDelivery.Items
                 GameObject visual = Instantiate(item.HeldPrefab, handAnchor, false);
                 visual.transform.localPosition = Vector3.zero;
                 visual.transform.localRotation = Quaternion.identity;
+                // Um visual na mão deve SEMPRE nascer visível: se o prefab foi salvo com a
+                // raiz desativada (ex.: criado a partir de um objeto que começa inativo na
+                // cena, como o unwrappedFoodVisual da bancada), o Instantiate herdaria o
+                // estado inativo e nada apareceria na mão. Força ativo.
+                visual.SetActive(true);
                 heldVisuals[item] = visual;
             }
 

@@ -31,6 +31,9 @@ namespace TheDelivery.Items
         private bool armed;
         // true = PEGAR (adiciona ao inventário); false = DEIXAR (remove do inventário).
         private bool pickupMode;
+        // true = AÇÃO genérica (ex.: DESEMBALAR): só dispara o callback, sem mexer no
+        // inventário nem no placedVisual — quem armou (o Director) cuida do resto.
+        private bool actionMode;
 
         // --- IInteractable -------------------------------------------------
 
@@ -46,7 +49,12 @@ namespace TheDelivery.Items
 
             PlayerInventory inventory = source.GetComponentInParent<PlayerInventory>();
 
-            if (pickupMode)
+            if (actionMode)
+            {
+                // AÇÃO genérica (ex.: DESEMBALAR): não toca no inventário nem no visual; quem
+                // armou trata o efeito (ex.: fade + troca do visual pousado) no callback.
+            }
+            else if (pickupMode)
             {
                 // PEGAR: a comida sai da bancada e vai pro inventário.
                 if (inventory != null && targetItem != null)
@@ -84,6 +92,7 @@ namespace TheDelivery.Items
             targetItem = item;
             onInteract = onPlaced;
             pickupMode = false;
+            actionMode = false;
             if (!string.IsNullOrEmpty(prompt))
                 interactionPrompt = prompt;
             armed = true;
@@ -99,6 +108,7 @@ namespace TheDelivery.Items
             targetItem = item;
             onInteract = onPickedUp;
             pickupMode = true;
+            actionMode = false;
             if (!string.IsNullOrEmpty(prompt))
                 interactionPrompt = prompt;
             armed = true;
@@ -106,6 +116,40 @@ namespace TheDelivery.Items
             // Se dá pra PEGAR, a comida tem de estar VISÍVEL na bancada agora — mesmo que o
             // beat que a deixou (Beat 4) não tenha rodado (ex.: pular direto pro Beat 6 em
             // debug). Idempotente: se já estava ativa (fluxo normal), nada muda.
+            if (placedVisual != null)
+                placedVisual.SetActive(true);
+        }
+
+        /// <summary>
+        /// Arma para uma AÇÃO genérica na bancada (ex.: DESEMBALAR): ao interagir (F), NÃO
+        /// mexe no inventário nem no <see cref="placedVisual"/> — apenas dispara
+        /// <paramref name="onInteracted"/>. O efeito visual (ex.: fade + <see cref="SwapPlacedVisual"/>)
+        /// fica a cargo de quem armou, para poder acontecer no tempo certo (ex.: no escuro).
+        /// Prompt opcional.
+        /// </summary>
+        public void ArmAction(Action onInteracted, string prompt = null)
+        {
+            targetItem = null;
+            onInteract = onInteracted;
+            pickupMode = false;
+            actionMode = true;
+            if (!string.IsNullOrEmpty(prompt))
+                interactionPrompt = prompt;
+            armed = true;
+        }
+
+        /// <summary>
+        /// Troca o visual pousado na bancada por outro (ex.: DESEMBALAR — a embalagem some e a
+        /// comida aparece). Esconde o <see cref="placedVisual"/> atual, ativa
+        /// <paramref name="newVisual"/> e passa a considerá-lo o visual pousado, então um
+        /// <see cref="ArmPickup"/> posterior mostra/esconde a COMIDA (não a embalagem).
+        /// Chamável durante um fade (troca invisível). Null-safe.
+        /// </summary>
+        public void SwapPlacedVisual(GameObject newVisual)
+        {
+            if (placedVisual != null)
+                placedVisual.SetActive(false);
+            placedVisual = newVisual;
             if (placedVisual != null)
                 placedVisual.SetActive(true);
         }

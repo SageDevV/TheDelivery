@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc1bbe7721639454fa2821a8498c7e74, type: 3}
+  m_Name: Thought_Act3-9.5
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.ThoughtData
+  lines:
+  - text: "Assassino a solta... essa cidade sempre foi tao pac\xEDfica... Vou para
+      a cama"
+    duration: 0
+    delay: 2

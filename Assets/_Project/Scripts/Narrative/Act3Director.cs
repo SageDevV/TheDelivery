@@ -5,6 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using TheDelivery.AI;
 using TheDelivery.Core;
+using TheDelivery.FX;
 using TheDelivery.Interaction;
 using TheDelivery.Items;
 using TheDelivery.Player;
@@ -154,6 +155,14 @@ namespace TheDelivery.Narrative
         [SerializeField] private ThoughtData placeFoodThought;
         [Tooltip("Ponto na BANCADA da cozinha (objeto vazio com CounterDropPoint + collider) onde a Clear DEIXA a comida (F). O roteiro o arma após a entrega. Se vazio, o passo de deixar a comida é pulado (warning).")]
         [SerializeField] private CounterDropPoint counterDropPoint;
+        [Tooltip("Pensamento antes de DESEMBALAR a comida na bancada (ex.: \"Deixa eu ver o que pedi...\"). Opcional.")]
+        [SerializeField] private ThoughtData unwrapFoodThought;
+        [Tooltip("Objeto da comida REVELADA (o \"outro objeto\" sob a embalagem). Comece-o INATIVO na cena, no lugar sobre a bancada. Ao DESEMBALAR, a embalagem (placedVisual da bancada) some e este aparece durante o fade preto — e passa a ser o que a Clear pega no Beat 6. Se vazio, o passo de desembalar é PULADO.")]
+        [SerializeField] private GameObject unwrappedFoodVisual;
+        [Tooltip("Item da comida DESEMBRULHADA que a Clear PEGA e COME no Beat 6 (define o modelo na MÃO via heldPrefab). Crie um ItemData separado do deliveryFoodItem (sacola) apontando pro modelo da comida sem embalagem. Se vazio, cai de volta no deliveryFoodItem (a sacola fica na mão).")]
+        [SerializeField] private ItemData unwrappedFoodItem;
+        [Tooltip("Duração (s) de cada metade do fade preto ao desembalar (entra no preto, troca a embalagem pela comida, volta). Ex.: 0.6 = ~1.2s no total.")]
+        [SerializeField] private float unwrapFadeDuration = 0.6f;
         [Tooltip("A porta do apartamento (componente Door). Na entrega, o diálogo só começa quando a Clear ABRIR esta porta, e o auto-fechar é suspenso (a porta só fecha por interação) até a entrega terminar. Opcional.")]
         [SerializeField] private Door apartmentDoor;
 
@@ -227,7 +236,7 @@ namespace TheDelivery.Narrative
         [SerializeField] private Transform balconyPoint;
         [Tooltip("Raio (m) da zona da sacada.")]
         [SerializeField] private float balconyRadius = 1.5f;
-        [Tooltip("Pensamento ao comer na sacada, exausta/perturbada. Opcional.")]
+        [Tooltip("Pensamento ao comer no sofá (sentada, vendo TV), exausta/perturbada. Opcional.")]
         [SerializeField] private ThoughtData eatThought;
         [Tooltip("Onde o ENTREGADOR aparece, de longe, encarando a Clear enquanto ela come na sacada. Posicione bem visível da sacada, à distância. Se vazio, o susto da sacada é pulado (só o pensamento).")]
         [SerializeField] private Transform entregadorBalconyPoint;
@@ -245,6 +254,32 @@ namespace TheDelivery.Narrative
         [SerializeField] private AudioClip balconyEntregadorSound;
         [Tooltip("Pensamento ao ver o entregador encarando de longe (susto da sacada). Opcional.")]
         [SerializeField] private ThoughtData balconyEntregadorThought;
+        [Tooltip("Voz do antagonista CHAMANDO a Clear ('Clear... Clear...') — toca em LOOP a partir de quando ela pega a comida na bancada, para GUIÁ-LA até a sacada, e PARA quando ela chega e encara o entregador. Opcional.")]
+        [SerializeField] private AudioClip entregadorCallingClip;
+        [Tooltip("AudioSource DEDICADO (marque Loop opcional; ideal 3D/Spatial Blend=1, posicionado NA SACADA/fora) para a voz do antagonista chamando — assim o som vem da direção da sacada e guia o jogador. Se vazio, usa o audioSource 2D compartilhado (sem direção). Opcional.")]
+        [SerializeField] private AudioSource entregadorCallingSource;
+
+        [Header("Beat 6 - Sofá e TV (comer)")]
+        [Tooltip("O SOFÁ (SittableChair, modo exploração livre) onde a Clear senta pra comer vendo TV, DEPOIS do susto da sacada. Ao sentar (F) a TV liga sozinha e o jogador pode COMER apertando F. Se vazio, come sem sentar (fallback).")]
+        [SerializeField] private SittableChair sofaChair;
+        [Tooltip("A TV da sala (TVScreen). LIGA SOZINHA quando a Clear senta no sofá; o 'ir dormir' só é liberado quando o VÍDEO desta TV TERMINA — deixe o VideoPlayer com Loop DESLIGADO (senão nunca acaba). Se vazia, o passo da TV é pulado (vai dormir logo após comer).")]
+        [SerializeField] private TVScreen livingRoomTV;
+        [Tooltip("Pensamento que guia a Clear ao sofá, logo após o susto da sacada (ex.: 'preciso me distrair... vou comer vendo um pouco de TV'). Opcional.")]
+        [SerializeField] private ThoughtData goToSofaThought;
+        [Tooltip("Pensamento pedindo para SENTAR no sofá (o jogador mira o sofá e aperta F). O fluxo espera a Clear sentar. Opcional.")]
+        [SerializeField] private ThoughtData sitOnSofaThought;
+        [Tooltip("Pensamento sentada, avisando que ela pode COMER (aperte F para comer). É a 'opção de comer': o fluxo espera o jogador apertar F. Opcional (sem ele, ainda espera o F).")]
+        [SerializeField] private ThoughtData eatPromptThought;
+        [Tooltip("Pensamento após o VÍDEO DA TV TERMINAR, guiando a Clear a ir DORMIR (ela levanta do sofá sozinha e o jogador anda até a cama). Opcional.")]
+        [SerializeField] private ThoughtData goToBedThought;
+        [Tooltip("Quantas 'mordidas' (a comida na mão sobe e desce) ao apertar F para comer no sofá, dando a impressão de que a Clear está comendo. 0 = sem animação (a comida some na hora).")]
+        [SerializeField] private int eatBiteCount = 3;
+        [Tooltip("Altura (m) que a comida sobe na mão a cada mordida.")]
+        [SerializeField] private float eatBiteHeight = 0.08f;
+        [Tooltip("Duração (s) de cada meia-mordida (só subir, ou só descer).")]
+        [SerializeField] private float eatBiteDuration = 0.18f;
+
+        [Header("Beat 6 - Dormir (handoff)")]
         [Tooltip("Zona da cama. Clear caminha até aqui para deitar.")]
         [SerializeField] private Transform bedPoint;
         [Tooltip("Raio (m) da zona da cama.")]
@@ -294,6 +329,13 @@ namespace TheDelivery.Narrative
         // em qualquer troca de beat (salto de debug).
         private bool foodPlaced;
         private bool foodTaken;
+        // Item que a Clear PEGA e COME no Beat 6: a comida DESEMBRULHADA (unwrappedFoodItem),
+        // se atribuída; senão cai de volta na sacola entregue (deliveryFoodItem). Mantém o
+        // PEGAR e o comer (Remove) sempre no mesmo item, para não sobrar visual na mão.
+        private ItemData FoodToEatItem => unwrappedFoodItem != null ? unwrappedFoodItem : deliveryFoodItem;
+        // foodUnwrapped é setado por OnFoodUnwrapped ao DESEMBALAR a comida na bancada (F),
+        // após deixá-la lá (Beat 4). A coroutine do desembalar aguarda essa flag.
+        private bool foodUnwrapped;
         private CounterDropPoint activeDropPoint;
 
         // Vizinho (Beat 5, fenômeno 5): neighborKnocked é setado por OnNeighborKnocked
@@ -348,6 +390,13 @@ namespace TheDelivery.Narrative
                 {
                     Debug.LogWarning("[Act3Director] blackScreen não atribuído; se a cena tiver um overlay preto autorado opaco (p/ o Ato 4), o Ato 3 pode começar na tela preta.", this);
                 }
+
+                // A TV da sala fica INDISPONÍVEL ao jogador (não liga com [F]) durante a
+                // exploração dos beats anteriores — só é liberada no Beat 6 (EatAndSleep),
+                // quando acende sozinha ao sentar no sofá. Não impede o controle por roteiro
+                // (TurnOn/TurnOff continuam). Ver BeatEatAndSleep.
+                if (livingRoomTV != null)
+                    livingRoomTV.PlayerCanToggle = false;
 
                 // startBeat == None (valor 0, default do enum serializado) não tem rotina:
                 // o Ato 3 assumiria a cena mas não rodaria beat nenhum (player parado na
@@ -456,6 +505,10 @@ namespace TheDelivery.Narrative
 
             // Se a bancada (Beat 4) estava armada, desarma — para o prompt não vazar.
             StopDropPoint();
+
+            // Se a voz do antagonista chamando (Beat 6) estava tocando, para — para não
+            // vazar num salto de beat/debug.
+            StopEntregadorCalling();
 
             // Se estávamos aguardando a batida na porta do vizinho (Beat 5), cancela a
             // inscrição no evento (sem isso, um salto de debug deixaria o handler preso).
@@ -942,6 +995,9 @@ namespace TheDelivery.Narrative
 
             // Já consumido; limpa a referência para o cleanup de troca de beat não desarmar à toa.
             activeDropPoint = null;
+
+            // Em seguida: DESEMBALAR a comida na bancada (revela o outro objeto, com fade preto).
+            yield return UnwrapFoodOnCounter();
         }
 
         /// <summary>
@@ -951,6 +1007,60 @@ namespace TheDelivery.Narrative
         private void OnFoodPlaced()
         {
             foodPlaced = true;
+        }
+
+        /// <summary>
+        /// Após deixar a sacola na bancada, a Clear pode DESEMBALAR a comida: o roteiro arma o
+        /// mesmo <see cref="counterDropPoint"/> em modo AÇÃO (prompt "Desembalar") e espera o F.
+        /// Ao desembalar, a tela FADE para preto; NO ESCURO a embalagem (o placedVisual da
+        /// bancada) é trocada pelo <see cref="unwrappedFoodVisual"/> (a comida revelada, "o
+        /// outro objeto") via <see cref="CounterDropPoint.SwapPlacedVisual"/>; então a tela
+        /// VOLTA ao normal (fade de volta). A comida revelada passa a ser o visual pousado, então
+        /// no Beat 6 é ELA que a Clear pega. FALLBACK: sem <see cref="unwrappedFoodVisual"/> (ou
+        /// sem counterDropPoint), pula o passo — a sacola fica na bancada.
+        /// </summary>
+        private IEnumerator UnwrapFoodOnCounter()
+        {
+            if (counterDropPoint == null || unwrappedFoodVisual == null)
+                yield break; // nada a revelar; segue com a sacola na bancada.
+
+            // Pensamento opcional antes de desembalar.
+            if (unwrapFoodThought != null)
+                yield return ShowThoughtAndWait(unwrapFoodThought);
+
+            // Arma a bancada em modo AÇÃO: F só dispara o callback (sem mexer no inventário).
+            foodUnwrapped = false;
+            activeDropPoint = counterDropPoint;
+            counterDropPoint.ArmAction(OnFoodUnwrapped, "Desembalar");
+
+            yield return new WaitUntil(() => foodUnwrapped);
+            activeDropPoint = null;
+
+            // Trava o player durante o fade (não anda no escuro).
+            playerController.CanMove = false;
+            playerController.CanLookOverride = true;
+            if (playerInteraction != null)
+                playerInteraction.InteractionEnabled = false;
+
+            // Fade para preto -> troca embalagem pela comida (invisível) -> volta ao normal.
+            if (blackScreen != null)
+                blackScreen.blocksRaycasts = true;
+            yield return FadeBlackScreen(0f, 1f, unwrapFadeDuration);
+            counterDropPoint.SwapPlacedVisual(unwrappedFoodVisual);
+            yield return FadeBlackScreen(1f, 0f, unwrapFadeDuration);
+            if (blackScreen != null)
+                blackScreen.blocksRaycasts = false;
+
+            EnsurePlayerFree();
+        }
+
+        /// <summary>
+        /// Callback do <see cref="CounterDropPoint"/> quando a Clear desembala a comida na
+        /// bancada (F). Libera a coroutine (que aguarda <see cref="foodUnwrapped"/>).
+        /// </summary>
+        private void OnFoodUnwrapped()
+        {
+            foodUnwrapped = true;
         }
 
         /// <summary>
@@ -971,7 +1081,7 @@ namespace TheDelivery.Narrative
             // Arma a bancada em modo PEGAR: a Clear vai até lá e interage (F) para recolher.
             foodTaken = false;
             activeDropPoint = counterDropPoint;
-            counterDropPoint.ArmPickup(deliveryFoodItem, OnFoodTaken, "Pegar a comida");
+            counterDropPoint.ArmPickup(FoodToEatItem, OnFoodTaken, "Pegar a comida");
 
             yield return new WaitUntil(() => foodTaken);
 
@@ -1207,6 +1317,47 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
+        /// Inicia a voz do antagonista CHAMANDO a Clear ("Clear... Clear...") em LOOP, para
+        /// guiá-la até a sacada no Beat 6. Usa o <see cref="entregadorCallingSource"/> dedicado
+        /// (3D, na direção da sacada) se atribuído — o som vem de fora e guia; senão cai no
+        /// <see cref="StartLoopingSound"/> (audioSource 2D compartilhado). Null-safe: sem clip,
+        /// no-op.
+        /// </summary>
+        private void StartEntregadorCalling()
+        {
+            if (entregadorCallingSource != null)
+            {
+                // O clip pode vir do Director (entregadorCallingClip) OU já estar configurado
+                // na própria AudioSource do poste — assim dá pra deixar o clip só no componente.
+                if (entregadorCallingClip != null)
+                    entregadorCallingSource.clip = entregadorCallingClip;
+                if (entregadorCallingSource.clip == null)
+                    return;
+
+                entregadorCallingSource.loop = true;
+                entregadorCallingSource.Play();
+                return;
+            }
+
+            // Sem fonte dedicada: fallback no audioSource 2D compartilhado (exige o clip).
+            if (entregadorCallingClip == null)
+                return;
+            StartLoopingSound(entregadorCallingClip);
+        }
+
+        /// <summary>
+        /// Para a voz do antagonista chamando. Null-safe e idempotente — chamado ao chegar na
+        /// sacada E em toda troca de beat (anti-vazamento em salto de debug).
+        /// </summary>
+        private void StopEntregadorCalling()
+        {
+            if (entregadorCallingSource != null)
+                entregadorCallingSource.Stop();
+            else
+                StopLoopingSound();
+        }
+
+        /// <summary>
         /// As <see cref="apartmentLights"/> piscam erraticamente — a cada passo, cada
         /// luz recebe um estado aleatório (on/off) e o intervalo até o próximo passo
         /// varia entre <see cref="flickerMinInterval"/> e <see cref="flickerMaxInterval"/>,
@@ -1409,29 +1560,41 @@ namespace TheDelivery.Narrative
         {
             EnsurePlayerFree();
 
+            // A TV, indisponível ao jogador nos beats anteriores, fica LIBERADA a partir do
+            // Beat 6 (ainda assim ela acende sozinha ao sentar no sofá — ver EatOnSofaWatchingTV).
+            if (livingRoomTV != null)
+                livingRoomTV.PlayerCanToggle = true;
+
             // 1. Vai até a cozinha e PEGA a comida de volta na bancada (a que deixou no
             // Beat 4). Volta pro inventário (e pra mão, se tiver HeldPrefab).
             yield return TakeFoodFromCounter();
+
+            // Com a comida em mãos, a voz do antagonista começa a CHAMAR de fora
+            // ("Clear... Clear...") — em LOOP, para GUIAR a Clear até a sacada. Insiste até
+            // ela chegar e encará-lo.
+            StartEntregadorCalling();
 
             // 2. A caminho da sacada: UM POUCO ANTES de chegar, o entregador JÁ é revelado
             // (posicionado no ponto de longe, parado encarando) — assim ele já ESTÁ lá quando
             // a Clear chega e olha, em vez de "pipocar" no momento do foco.
             yield return RevealBalconyEntregador();
 
-            // Vai até a SACADA com a comida.
+            // Vai até a SACADA (ainda com a comida em mãos) para VER o entregador de longe.
             if (balconyPoint != null)
                 yield return new WaitUntil(() => PlayerInZone(balconyPoint, balconyRadius));
             else
-                Debug.LogWarning("[Act3Director] balconyPoint não atribuído; comendo sem esperar a sacada.", this);
+                Debug.LogWarning("[Act3Director] balconyPoint não atribuído; seguindo sem esperar a sacada.", this);
 
-            // 3. Come na sacada (consome a comida — some da mão).
-            if (playerInventory != null && deliveryFoodItem != null)
-                playerInventory.Remove(deliveryFoodItem);
-            yield return ShowThoughtAndWait(eatThought);
+            // Chegou à sacada e vai encará-lo: a voz PARA.
+            StopEntregadorCalling();
 
-            // 4. Durante a comida: o entregador aparece de longe encarando a Clear; a câmera
-            // TRAVA nele, com som e pensamento.
+            // 3. Susto da sacada: o entregador aparece de longe encarando a Clear; a câmera
+            // TRAVA nele, com som e pensamento. (Ela ainda NÃO comeu — só VIU o vulto.)
             yield return BalconyEntregadorSighting();
+
+            // 4. Depois do susto, ela vai ao SOFÁ comer vendo TV (para se distrair). É SÓ aqui
+            // que a comida é consumida — ver EatOnSofaWatchingTV.
+            yield return EatOnSofaWatchingTV();
 
             // 5. Vai até a cama.
             if (bedPoint != null)
@@ -1464,6 +1627,161 @@ namespace TheDelivery.Narrative
                 Debug.LogError("[Act3Director] act4Director não atribuído; o Ato 4 não será acionado no handoff.", this);
 
             beatRoutine = null;
+        }
+
+        /// <summary>
+        /// Depois do susto da sacada, a Clear vai ao SOFÁ comer vendo TV (tenta se distrair) —
+        /// guiado por pensamentos. Fluxo: guia ao sofá → SENTAR (F) → ao sentar a TV LIGA
+        /// SOZINHA (o Director comanda <see cref="TVScreen.TurnOn"/>) → o jogador tem a OPÇÃO
+        /// de comer apertando F (lido cru via <see cref="PlayerInteraction.InteractPressedThisFrame"/>,
+        /// já que sentada a interação com o mundo é desligada pelo sofá) → consome a comida
+        /// (<see cref="FoodToEatItem"/>, some da mão) + <see cref="eatThought"/> → fica vendo
+        /// TV até o VÍDEO TERMINAR (<see cref="TVScreen.IsVideoPlaying"/>) → só então
+        /// <see cref="goToBedThought"/>, LEVANTA (forçado) e segue à cama.
+        ///
+        /// GOTCHA da tecla: sentada, o F normalmente LEVANTA (SittableChair.standWithInteractKey).
+        /// Por isso, ao sentar, travamos <see cref="SittableChair.CanStandUp"/> = false, para o
+        /// F virar a tecla de COMER; o Director levanta a Clear na força depois (o
+        /// <see cref="SittableChair.StandUp"/> direto ignora o CanStandUp). FALLBACKS null-safe:
+        /// sem <see cref="sofaChair"/> come em pé; sem <see cref="livingRoomTV"/> pula a TV e vai
+        /// dormir logo após comer.
+        /// </summary>
+        private IEnumerator EatOnSofaWatchingTV()
+        {
+            EnsurePlayerFree();
+
+            // Guia a Clear até o sofá (só narrativo).
+            yield return ShowThoughtAndWait(goToSofaThought);
+
+            // 1. SENTAR no sofá com F. Espera a transição de sentar terminar (IsSeated) e então
+            // TRAVA o levantar por F — assim o F fica livre para COMER (ver gotcha no doc).
+            if (sofaChair != null)
+            {
+                yield return ShowThoughtAndWait(sitOnSofaThought);
+                yield return new WaitUntil(() => sofaChair.IsSeated);
+                sofaChair.CanStandUp = false;
+            }
+            else
+            {
+                Debug.LogWarning("[Act3Director] sofaChair não atribuído; a Clear come sem sentar.", this);
+            }
+
+            // 2. Ao sentar, a TV LIGA SOZINHA (o Director comanda). Espera o vídeo REALMENTE
+            // começar (Play prepara de forma assíncrona) antes de, mais tarde, esperar ele
+            // TERMINAR — senão o "acabou" dispararia já no primeiro frame. Timeout de segurança.
+            if (livingRoomTV != null)
+            {
+                // Garante o vídeo desde o INÍCIO: se o jogador já a tinha ligado (a TV é
+                // liberada no início do Beat 6), reinicia — TurnOff zera a posição do vídeo —
+                // para o "esperar o vídeo terminar" ser determinístico a partir daqui.
+                if (livingRoomTV.IsOn)
+                    livingRoomTV.TurnOff();
+                livingRoomTV.TurnOn();
+
+                float startWait = 0f;
+                while (!livingRoomTV.IsVideoPlaying && startWait < 2f)
+                {
+                    startWait += Time.deltaTime;
+                    yield return null;
+                }
+            }
+
+            // 3. OPÇÃO de comer: sentada, o jogador aperta F para comer. Lê o F cru (a interação
+            // com o mundo está desligada no sofá).
+            yield return ShowThoughtAndWait(eatPromptThought);
+            if (playerInteraction != null)
+                yield return new WaitUntil(() => playerInteraction.InteractPressedThisFrame());
+
+            // Anima a comida na mão (sobe/desce, como se a Clear estivesse comendo) e SÓ ENTÃO
+            // a consome (some da mão). Depois, o pensamento ao comer.
+            yield return EatFoodAnimation();
+            yield return ShowThoughtAndWait(eatThought);
+
+            // 4. Fica vendo TV até o VÍDEO TERMINAR; a TV então DESLIGA sozinha e só depois
+            // ela pensa em dormir.
+            if (livingRoomTV != null)
+            {
+                yield return new WaitUntil(() => !livingRoomTV.IsVideoPlaying);
+                livingRoomTV.TurnOff();
+            }
+            yield return ShowThoughtAndWait(goToBedThought);
+
+            // 5. LEVANTA do sofá (forçado, transição suave — StandUp direto ignora o CanStandUp
+            // que travamos) e devolve o controle. Restaura o CanStandUp por higiene.
+            if (sofaChair != null)
+            {
+                if (sofaChair.IsSeated)
+                {
+                    sofaChair.StandUp();
+                    yield return new WaitUntil(() => !sofaChair.IsSeated);
+                }
+                sofaChair.CanStandUp = true;
+            }
+            EnsurePlayerFree();
+        }
+
+        /// <summary>
+        /// Anima a comida na MÃO (o <see cref="PlayerInventory.GetHeldVisual"/> do
+        /// <see cref="FoodToEatItem"/>) subindo e descendo <see cref="eatBiteCount"/> vezes —
+        /// dá a impressão de que a Clear está comendo (levar à boca e voltar) — e SÓ ENTÃO
+        /// consome o item (<see cref="PlayerInventory.Remove"/>, que some com o visual).
+        /// FALLBACKS: sem visual na mão (ou <see cref="eatBiteCount"/> ≤ 0) apenas consome,
+        /// sem animação; tudo null-safe.
+        /// </summary>
+        private IEnumerator EatFoodAnimation()
+        {
+            if (playerInventory == null || FoodToEatItem == null)
+                yield break;
+
+            GameObject held = playerInventory.GetHeldVisual(FoodToEatItem);
+            Transform t = held != null ? held.transform : null;
+
+            if (t != null && eatBiteCount > 0)
+            {
+                Vector3 basePos = t.localPosition;         // rest (0,0,0 no handAnchor)
+                Vector3 upPos = basePos + Vector3.up * eatBiteHeight; // levada à boca
+
+                for (int i = 0; i < eatBiteCount; i++)
+                {
+                    yield return LerpLocalPosition(t, basePos, upPos, eatBiteDuration);
+                    yield return LerpLocalPosition(t, upPos, basePos, eatBiteDuration);
+                }
+            }
+
+            // Comeu: consome o item (some da mão). Remove o MESMO item que o Beat 6 pegou na
+            // bancada (FoodToEatItem), senão o visual da mão sobraria.
+            playerInventory.Remove(FoodToEatItem);
+        }
+
+        /// <summary>
+        /// Interpola a <c>localPosition</c> de um Transform de <paramref name="from"/> a
+        /// <paramref name="to"/> com SmoothStep, garantindo o destino exato ao fim. Null-safe
+        /// (aborta se o Transform for destruído no meio, ex.: item removido).
+        /// </summary>
+        private IEnumerator LerpLocalPosition(Transform t, Vector3 from, Vector3 to, float duration)
+        {
+            if (t == null)
+                yield break;
+
+            if (duration <= 0f)
+            {
+                t.localPosition = to;
+                yield break;
+            }
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+                if (t == null)
+                    yield break;
+                t.localPosition = Vector3.Lerp(from, to, k);
+                yield return null;
+            }
+
+            if (t != null)
+                t.localPosition = to;
         }
 
         /// <summary>

@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.Video;
+using TheDelivery.Interaction;
 
 namespace TheDelivery.FX
 {
     /// <summary>
     /// Controla uma TV: LIGA/DESLIGA o vídeo E o brilho da tela juntos, por roteiro
-    /// (os directors do Ato 3/Ato 4 chamam <see cref="TurnOn"/>/<see cref="TurnOff"/>).
+    /// (os directors do Ato 3/Ato 4 chamam <see cref="TurnOn"/>/<see cref="TurnOff"/>)
+    /// E/OU pelo JOGADOR (implementa <see cref="IInteractable"/>: mira e aperta [F] na TV
+    /// para alternar liga/desliga, prompt dinâmico "Ligar TV"/"Desligar TV" — mesmo padrão
+    /// do <see cref="TheDelivery.Interaction.TableLamp"/>).
     /// Encapsula três coisas que devem acender/apagar em conjunto: o
     /// <see cref="VideoPlayer"/> (a estática/ruído), a EMISSÃO do material da tela (a tela
     /// "brilha" com o vídeo) e uma <see cref="Light"/> opcional na frente da TV (o brilho
@@ -23,7 +27,7 @@ namespace TheDelivery.FX
     /// em sharedMaterial — assim o brilho não vaza para outros objetos que compartilhem o
     /// material nem altera o asset no disco. Mesmo cuidado do TableLamp.
     /// </summary>
-    public sealed class TVScreen : MonoBehaviour
+    public sealed class TVScreen : MonoBehaviour, IInteractable
     {
         [Header("Vídeo")]
         [SerializeField] private VideoPlayer videoPlayer;
@@ -34,6 +38,8 @@ namespace TheDelivery.FX
         [Tooltip("Cor base da emissão da tela (brilho de TV, ex: branco levemente azulado).")]
         [SerializeField] private Color emissionColor = new Color(0.6f, 0.7f, 1f);
         [SerializeField] private float emissionIntensity = 1.5f;
+        [Tooltip("Cor com que a tela é LIMPA ao desligar (evita o último frame do vídeo ficar congelado). Preto = TV apagada.")]
+        [SerializeField] private Color offScreenColor = Color.black;
 
         [Header("Luz ambiente da TV (opcional)")]
         [Tooltip("Uma Point Light opcional na frente da TV, pra iluminar a sala com o brilho tremeluzente.")]
@@ -48,6 +54,17 @@ namespace TheDelivery.FX
 
         [Header("Estado inicial")]
         [SerializeField] private bool startOn = false;
+
+        [Header("Interação do jogador")]
+        [Tooltip("Se true, o jogador pode ligar/desligar a TV com [F] (além do controle por roteiro). Desmarque para uma TV que só os directors comandam.")]
+        [SerializeField] private bool playerCanToggle = true;
+        [Tooltip("Verbo do prompt quando a TV está DESLIGADA (a ação vai LIGAR).")]
+        [SerializeField] private string promptTurnOn = "Ligar TV";
+        [Tooltip("Verbo do prompt quando a TV está LIGADA (a ação vai DESLIGAR).")]
+        [SerializeField] private string promptTurnOff = "Desligar TV";
+        [Tooltip("Clique/estalo opcional ao ligar ou desligar a TV.")]
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip toggleClip;
 
         // "_EmissionColor" + keyword "_EMISSION" valem no URP/Lit e no Standard (Built-in).
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -66,6 +83,57 @@ namespace TheDelivery.FX
 
         /// <summary>Estado atual (true = ligada, mostrando vídeo e brilhando).</summary>
         public bool IsOn => isOn;
+
+        /// <summary>
+        /// True enquanto o <see cref="VideoPlayer"/> está de fato reproduzindo. Serve para o
+        /// roteiro ESPERAR o vídeo TERMINAR (ex.: o Ato 3 só libera o "ir dormir" quando o
+        /// programa da TV acaba). Só chega a false quando o vídeo NÃO está em loop — se o
+        /// VideoPlayer estiver com Loop ligado, ele nunca "termina".
+        /// </summary>
+        public bool IsVideoPlaying => videoPlayer != null && videoPlayer.isPlaying;
+
+        /// <summary>
+        /// Liga/desliga em RUNTIME a possibilidade de o JOGADOR alternar a TV com [F]
+        /// (espelha o campo <see cref="playerCanToggle"/>, controlando <see cref="CanInteract"/>).
+        /// Um Director usa para deixar a TV INDISPONÍVEL ao jogador até o momento certo
+        /// (ex.: o Ato 3 só a libera no Beat 6). NÃO afeta o controle por roteiro
+        /// (<see cref="TurnOn"/>/<see cref="TurnOff"/> continuam funcionando).
+        /// </summary>
+        public bool PlayerCanToggle
+        {
+            get => playerCanToggle;
+            set => playerCanToggle = value;
+        }
+
+        // --- IInteractable -------------------------------------------------
+
+        /// <summary>Prompt dinâmico: "Ligar TV" quando desligada, "Desligar TV" quando ligada.</summary>
+        public string InteractionPrompt => isOn ? promptTurnOff : promptTurnOn;
+
+        /// <summary>
+        /// Só oferece o [F] se <see cref="playerCanToggle"/> estiver ligado. Uma TV
+        /// puramente cinematográfica (comandada só pelos directors) fica com false e some
+        /// da mira do jogador.
+        /// </summary>
+        public bool CanInteract => playerCanToggle;
+
+        /// <summary>Alterna liga/desliga ao interagir, com clique opcional.</summary>
+        public void Interact(PlayerInteraction source)
+        {
+            Toggle();
+
+            if (audioSource != null && toggleClip != null)
+                audioSource.PlayOneShot(toggleClip);
+        }
+
+        /// <summary>Alterna ligada&lt;-&gt;desligada. Público para roteiro/atalho.</summary>
+        public void Toggle()
+        {
+            if (isOn)
+                TurnOff();
+            else
+                TurnOn();
+        }
 
         private void Awake()
         {
@@ -128,6 +196,12 @@ namespace TheDelivery.FX
             if (videoPlayer != null)
                 videoPlayer.Stop();
 
+            // Stop() para o vídeo mas DEIXA o último frame congelado na RenderTexture — e
+            // como ela também é o Base Map da tela, a imagem parada continuaria aparecendo.
+            // Limpa a RenderTexture para a cor de tela desligada (preto) para a TV apagar
+            // de verdade.
+            ClearScreen();
+
             // Apaga a emissão de vez (tela preta) — nunca deixa o brilho "preso".
             if (screenMaterial != null)
             {
@@ -140,6 +214,23 @@ namespace TheDelivery.FX
         }
 
         // --- Interno -------------------------------------------------------
+
+        /// <summary>
+        /// Limpa a RenderTexture do vídeo para <see cref="offScreenColor"/> (preto), para
+        /// que ao desligar a tela não fique com o último frame congelado. No-op se a TV não
+        /// usa Render Texture (ex.: VideoPlayer em outro Render Mode).
+        /// </summary>
+        private void ClearScreen()
+        {
+            RenderTexture rt = videoPlayer != null ? videoPlayer.targetTexture : null;
+            if (rt == null)
+                return;
+
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = rt;
+            GL.Clear(true, true, offScreenColor);
+            RenderTexture.active = previous;
+        }
 
         /// <summary>
         /// Acende a emissão da tela na intensidade dada (habilita o keyword e escreve
