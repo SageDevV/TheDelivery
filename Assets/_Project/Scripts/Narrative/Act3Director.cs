@@ -391,10 +391,10 @@ namespace TheDelivery.Narrative
                     Debug.LogWarning("[Act3Director] blackScreen não atribuído; se a cena tiver um overlay preto autorado opaco (p/ o Ato 4), o Ato 3 pode começar na tela preta.", this);
                 }
 
-                // A TV da sala fica INDISPONÍVEL ao jogador (não liga com [F]) durante a
-                // exploração dos beats anteriores — só é liberada no Beat 6 (EatAndSleep),
-                // quando acende sozinha ao sentar no sofá. Não impede o controle por roteiro
-                // (TurnOn/TurnOff continuam). Ver BeatEatAndSleep.
+                // A TV da sala NUNCA fica disponível ao jogador (não liga com [F]) — ela é
+                // puramente cinematográfica: só o roteiro a comanda (acende sozinha ao sentar
+                // no sofá no Beat 6). Não impede o controle por roteiro (TurnOn/TurnOff
+                // continuam). Ver EatOnSofaWatchingTV.
                 if (livingRoomTV != null)
                     livingRoomTV.PlayerCanToggle = false;
 
@@ -1560,11 +1560,6 @@ namespace TheDelivery.Narrative
         {
             EnsurePlayerFree();
 
-            // A TV, indisponível ao jogador nos beats anteriores, fica LIBERADA a partir do
-            // Beat 6 (ainda assim ela acende sozinha ao sentar no sofá — ver EatOnSofaWatchingTV).
-            if (livingRoomTV != null)
-                livingRoomTV.PlayerCanToggle = true;
-
             // 1. Vai até a cozinha e PEGA a comida de volta na bancada (a que deixou no
             // Beat 4). Volta pro inventário (e pra mão, se tiver HeldPrefab).
             yield return TakeFoodFromCounter();
@@ -1671,8 +1666,8 @@ namespace TheDelivery.Narrative
             // TERMINAR — senão o "acabou" dispararia já no primeiro frame. Timeout de segurança.
             if (livingRoomTV != null)
             {
-                // Garante o vídeo desde o INÍCIO: se o jogador já a tinha ligado (a TV é
-                // liberada no início do Beat 6), reinicia — TurnOff zera a posição do vídeo —
+                // Garante o vídeo desde o INÍCIO: se ela já estava ligada (ex.: salto de
+                // debug no meio do beat), reinicia — TurnOff zera a posição do vídeo —
                 // para o "esperar o vídeo terminar" ser determinístico a partir daqui.
                 if (livingRoomTV.IsOn)
                     livingRoomTV.TurnOff();
