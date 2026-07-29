@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fec009952efe6f942bac2a7e5c222a90
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Generated/BCG_Road_Surface.mat
+  uploadId: 962654

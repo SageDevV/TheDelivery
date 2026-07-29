@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0fe43b5bd73f62b4189ba7518b39d35b
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Editor/RC/BCG_BuildingGen.Editor.RC.asmdef
+  uploadId: 962654

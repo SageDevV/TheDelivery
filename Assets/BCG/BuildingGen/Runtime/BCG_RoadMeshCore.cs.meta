@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: d543714bc1c957742a38f3c0fcca5ebf
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Runtime/BCG_RoadMeshCore.cs
+  uploadId: 962654

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7243ee07b0519794cb86e977b3ce30bf, type: 3}
+  m_Name: BCG_Preset_CommercialStrip
+  m_EditorClassIdentifier: BCG_BuildingGen.Runtime::BoneCrackerGames.BuildingGen.BCG_GenerationPreset
+  description: "Roadside retail \u2014 low storefront boxes with wide parking gaps."
+  towerWeight: 0.05
+  shopWeight: 0.9
+  apartmentWeight: 0.15
+  houseWeight: 0
+  variantA: 1
+  variantB: 0
+  variantC: 1
+  variantD: 0
+  edgeMargin: 2
+  gapMin: 8
+  gapMax: 14
+  rowGapMin: 10
+  rowGapMax: 14
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  heightFalloff:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  snapToGround: 0
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295

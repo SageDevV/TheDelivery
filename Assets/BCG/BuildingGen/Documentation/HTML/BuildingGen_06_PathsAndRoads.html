@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paths and Roads</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="paths-and-roads">Paths and Roads</h1>
+<p>Two related things live here. <strong>Paths</strong> decide where a line of buildings goes when it is not a
+straight segment. <strong>Roads</strong> are actual drivable geometry — asphalt, kerbs, pavements and painted
+markings — that the tool can build into the gaps between your buildings.</p>
+<p>They are independent: you can line a curved path with buildings and no road, or generate roads with
+no path in sight.</p>
+<h2 id="following-a-path">Following a path</h2>
+<p>A <strong>street path</strong> is a polyline you draw in the scene. Buildings walk along it by distance, facing
+the carriageway, so you can line a bend, a racing line, or a road that came from another tool.</p>
+<h3 id="creating-and-shaping-one">Creating and shaping one</h3>
+<ol>
+<li>Go to <strong>2 Build ▸ Street</strong> and switch the toolbar from <strong>Straight</strong> to <strong>Along Path</strong>. (The
+   same <strong>Create Street Path</strong> button is the primary action on <strong>1 Plan ▸ Paths</strong>, which also lists
+   every path in the scene with whether it has been populated.)</li>
+<li>Press <strong>Create Street Path</strong>. A three-point path drops at your scene-view pivot.</li>
+<li>Shape it — drag the position handles in the Scene view, or edit the point list in the
+   Inspector, where <code>+</code> inserts a point, <code>−</code> deletes one, and <strong>Add Point</strong> extends the tail.
+   <strong>Road Width</strong> and <strong>Both Sides</strong> live on the path component itself, not the window.</li>
+<li>Press <strong>Generate Along Path</strong>.</li>
+</ol>
+<p>Buildings land under a parent named <code>BCG_StreetPathRow_{pathName}_{seed}</code>, and the path's gizmo
+turns from cyan to green once it has been populated.</p>
+<h3 id="things-worth-knowing">Things worth knowing</h3>
+<ul>
+<li><strong>Regenerating replaces</strong> the path's previous output, unlike straight rows which stack. The path
+  remembers what it produced.</li>
+<li><strong>A straight two-point path produces exactly the same buildings as the straight layout</strong> for the
+  same seed. They share one placement grammar, so switching between them is not a re-roll.</li>
+<li><strong>At sharp corners</strong>, buildings that would overlap on the inside of the bend are relocated by the
+  usual placement guard. The Console reports how many moved and how many were skipped.</li>
+<li><strong>Buildings inherit the height of the path point they sit near</strong>, so keep path points on the
+  ground — or turn on Snap To Ground and let the terrain decide.</li>
+<li>Every other setting applies as normal: props, LODs, mesh variety, obstacle layers, ground
+  snapping.</li>
+</ul>
+<p>Path layouts do <strong>not</strong> generate road surfaces — see <a href="#what-the-road-builder-does-not-do">Limitations</a>.</p>
+<h2 id="roads">Roads</h2>
+<p>Turn on <strong>Create Roads</strong> (on <strong>1 Plan ▸ City Grid</strong>, where it is on by default) or <strong>Generate road
+surface</strong> (on <strong>2 Build ▸ Street ▸ Straight</strong>, off by default) and the gaps between your buildings
+become real roads.</p>
+<h3 id="what-you-get">What you get</h3>
+<ul>
+<li>An <strong>asphalt / gutter / kerb / pavement ribbon</strong> down every street and avenue. The ribbon fills
+  the whole gap; the carriageway is what remains after a pavement on each side, with a 0.3 m gutter
+  band worked into each edge.</li>
+<li><strong>Junction pads</strong> at every crossing, with dropped-kerb crossing sockets where each road meets the
+  pad, so a pedestrian crossing reads correctly instead of stopping at a kerb.</li>
+<li>A <strong>markings overlay</strong> — zebra crossings at every junction, a fitted dashed centreline, and solid
+  edge lines. Dashes are fitted to each segment's length so no half-dash ever abuts a junction. It
+  is a separate renderer with shadows switched off, so the thin paint geometry never casts a shadow
+  artefact.</li>
+<li><strong>One drivable <code>MeshCollider</code></strong> on the road surface, sharing the <em>exact same mesh instance</em> the
+  renderer draws. Collision is bitwise identical to what you see; it is never a simplified proxy.</li>
+</ul>
+<h3 id="kerbs-you-can-drive-onto">Kerbs you can drive onto</h3>
+<p>The kerb face is <strong>bevelled</strong>, not a vertical wall: it climbs its 0.13 m rise over a 0.2 m lateral
+run, which works out to roughly a 33° ramp, while still leaving a 0.1 m flat kerb top.</p>
+<p>This is a deliberate vehicle-physics decision. Because the collider shares the render mesh, a
+square 90° kerb would be a wall that wheel colliders cannot climb and that catches a car's body at
+shallow approach angles. The ramp lets a vehicle mount the pavement the way it does in a real
+driving game.</p>
+<h3 id="settings">Settings</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Where</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create Roads</td>
+<td>Plan ▸ City Grid</td>
+<td>on</td>
+<td>Builds the road network for the whole grid. Off leaves the gaps empty</td>
+</tr>
+<tr>
+<td>Sidewalk Width (m)</td>
+<td>Plan ▸ City Grid</td>
+<td>2.5 (range 1 – 4)</td>
+<td>Per side, inside the ribbon. The carriageway is whatever is left between the kerbs</td>
+</tr>
+<tr>
+<td>Generate road surface</td>
+<td>Build ▸ Street ▸ Straight</td>
+<td>off</td>
+<td>Emits the same ribbon down a street row's carriageway</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Road Width keeps its meaning</strong> on the Street pane — it is still the clear carriageway. Turning
+road generation on widens each row's setback by one pavement width per side so buildings do not end
+up standing on the new pavement.</p>
+<h3 id="layering-why-nothing-z-fights">Layering (why nothing z-fights)</h3>
+<p>City-scale scenes are where coplanar surfaces flicker, so the road builder separates everything
+deliberately: the ground plane sits at −0.02 m, asphalt and junction pads at +0.02 m, kerb tops at
++0.15 m (asphalt plus the 0.13 m kerb rise), and painted markings float 15 mm above the asphalt on
+their own renderer.</p>
+<p>That 15 mm is generous on purpose. Below about 4 mm the offset sinks under 24-bit depth-buffer
+resolution past roughly 140 m — and WebGL has no reversed-Z to help — so a smaller lift would
+z-fight the asphalt across any city-sized view.</p>
+<h3 id="roads-and-seeds">Roads and seeds</h3>
+<p>Road generation draws <strong>nothing</strong> from any seeded random sequence. The network, ribbons, junction
+pads and markings are pure functions of your grid settings.</p>
+<p>The practical effect: the same seed gives you the same city whether or not Create Roads is on, and
+toggling it never reshuffles a single building. This is verified by an automated test, not just
+intended.</p>
+<h3 id="regenerating-roads">Regenerating roads</h3>
+<p>Once built, the layout persists as a <code>BCG_RoadNetwork</code> component on the generation root — junction
+nodes and the edges between them. That component is the source of truth, which is what makes
+<strong>Regenerate Roads</strong> (on <strong>1 Plan ▸ City Grid</strong>) able to rebuild every road network in the open
+scene exactly, in one Undo step, without having to reverse-engineer the layout from geometry.</p>
+<p>Road objects carry their own hidden marker, so the placement guard, ground snapping and
+<em>Select All</em> / <em>Destroy All</em> all handle them correctly — roads never block themselves, and
+destroying generated content takes the roads with it.</p>
+<p>The road material is pipeline-aware like the facade materials, so <strong>Fix Materials</strong> rebinds it if
+you switch render pipeline. See
+<a href="BuildingGen_08_MaterialsAndLighting.html">Materials and Lighting</a>.</p>
+<blockquote>
+<p>If a scene made with an older version ever ends up with an invisible road or an empty road
+container, the health dashboard offers a <strong>Roads</strong> repair button that rebuilds broken networks
+from their stored data. See <a href="BuildingGen_10_Finishing.html#the-fix-row">Finishing and Shipping</a>.</p>
+</blockquote>
+<h3 id="what-the-road-builder-does-not-do">What the road builder does not do</h3>
+<p>Be aware of the boundaries before you plan a level around it:</p>
+<ul>
+<li><strong>Flat ground only.</strong> Roads assume a level plane. Sloped terrain and ground-following roads are
+  not supported.</li>
+<li><strong>90° grid junctions only.</strong> Every junction is a cross, T, corner or dead end at a right angle.
+  There are no roundabouts, no rounded fillets, no off-grid intersections.</li>
+<li><strong>Straight streets only.</strong> The Along Path layout lines buildings along a curve but does <strong>not</strong>
+  generate a road surface under them.</li>
+</ul>
+<p>For curved streets, ramps, elevation changes and proper multi-way junctions, see the Road
+Constructor bridge below.</p>
+<h2 id="working-with-road-constructor-optional">Working with Road Constructor (optional)</h2>
+<p><strong>Road Constructor</strong> by Pampel Games is a separate, separately-purchased Asset Store product that
+builds spline-based road networks — curves, ramps, elevation, complex junctions. If you
+own it, this package bridges to it automatically.</p>
+<p><strong>If you do not own it, none of this exists.</strong> No extra menus, no extra toggles, no references of
+any kind — the bridge code lives in its own assembly that is not compiled at all unless Road
+Constructor's assembly is detected in your project. Detection is automatic after every script
+compile, and reverses itself if you later remove Road Constructor.</p>
+<p>The bridge works in two directions:</p>
+<p><strong>1. Build the city grid through Road Constructor.</strong> With Road Constructor installed, a <strong>Road
+Backend</strong> dropdown appears next to Create Roads on <strong>1 Plan ▸ City Grid</strong>. Switch it from
+<em>Built-in (grid roads)</em> to <em>Road Constructor</em> and <strong>Generate City</strong> lays every street and avenue as
+a real Road Constructor road, adds drivable colliders, and exports the generated meshes so they
+persist in your project. Sidewalk Width applies only to the built-in geometry and is disabled while
+this backend is selected. A Console report tells you how many segments were built and why any
+failed.</p>
+<p><strong>2. Line existing Road Constructor roads with buildings.</strong> On <strong>2 Build ▸ Street ▸ Along Path</strong>, a
+Road Constructor section lists every network it finds, each with a <strong>Populate Along RC Roads</strong>
+button. That samples the road's spline into a polyline and lines both sides with buildings using
+the pane's current seed and mix. This is how you get buildings along genuinely curved or elevated
+roads: build them with Road Constructor's own tools first, then line them here.</p>
+<h3 id="requirements-and-gotchas">Requirements and gotchas</h3>
+<ul>
+<li>A <code>RoadConstructor</code> component in the open scene with a <strong>RoadSet</strong> assigned.</li>
+<li>A <strong>ground collider</strong> under the city, included in Road Constructor's own Ground Layers mask —
+  it raycasts down to find the height for every road point.</li>
+<li>The grid backend looks up two road names in your RoadSet: <strong><code>Side Street Asphalt</code></strong> for streets
+  and <strong><code>Boulevard Asphalt</code></strong> for avenues. Road Constructor's shipped demo set defines both. If your
+  set uses different names, generation stops with a Console message naming the missing road rather
+  than silently building nothing — rename or duplicate entries in your RoadSet to match.</li>
+<li>Set Road Constructor's <strong>Collider Layer</strong> to a layer <em>outside</em> its own Ground Layers mask. If they
+  overlap, a second city grid's ground raycasts can hit the first grid's road colliders and read the
+  wrong height. When the tool detects that overlap it leaves the new colliders on their default
+  layer and says so in its report.</li>
+<li>Road Constructor's meshes are pooled scratch objects until exported, so the grid backend exports
+  them for you into <code>Assets/BCG_RCRoadExports/&lt;city name&gt;/</code>. That folder is <strong>your project's</strong>
+  content, not part of this package — safe to delete or regenerate at any time.</li>
+<li>Buildings placed along a Road Constructor road use their own seed sequence. The same seed always
+  reproduces the same roadside row, but it shares no sequence with the straight scatter or the city
+  grid.</li>
+</ul>
+<p>Full troubleshooting for the bridge — including what to do if a Road Constructor update breaks the
+integration — is in
+<a href="BuildingGen_11_Troubleshooting.html#road-constructor-integration">Troubleshooting ▸ Road Constructor</a>.</p>
+<h2 id="dressing-the-pavements">Dressing the pavements</h2>
+<p>Empty pavements are what make a generated city read as a model rather than a place. <strong>3 Dress ▸
+Furniture</strong> lines every road network's pavements with lamp posts, benches, bus shelters and trees.</p>
+<p>Press <strong>Generate Street Furniture</strong> and props march both pavement centrelines, staggered from side
+to side, with clearance kept at every junction. Lamps set the rhythm at roughly 18 m spacing;
+benches, shelters and trees fill the gaps from a per-road-edge deterministic sequence — so the roads
+themselves stay free of randomness, and regenerating an unchanged network reproduces identical
+furniture.</p>
+<p>Two props are gated on space, because a bench you cannot walk past looks worse than no bench:
+<strong>trees need at least 2 m of pavement</strong>, and <strong>shelters need at least 1.8 m</strong>.</p>
+<p><strong>Lamp heads glow at night for free.</strong> They sample a guaranteed-lit pane in the atlas's night
+emission map, so the same day/night material swap that lights your windows lights the lamps too —
+with no real light sources at all. Trees use two small solid-colour materials
+(<code>BCG_Furniture_Foliage</code> and <code>BCG_Furniture_Bark</code>), created pipeline-aware like everything else.</p>
+<p><strong>Remove Street Furniture</strong> clears it; regenerating replaces in place.</p>
+<h3 id="crashable-props">Crashable props</h3>
+<p>By default all the furniture on a network is combined into a few chunk meshes. That is the cheapest
+possible filler, but every prop is part of one immovable wall — no good if you want a lamp post that
+falls over when a car hits it.</p>
+<p>Turn on <strong>Separate Props</strong> (the toggle on <strong>3 Dress ▸ Furniture</strong>, mirrored in the gear menu and as
+a menu item) and regenerate. Each planned prop becomes <strong>one prefab instance</strong> instead. The layout
+is identical in both modes — same planner, same sequence.</p>
+<p>The first run in separate mode creates four <strong>editable prefabs</strong> in your output folder:
+<code>BCG_Furniture_Lamp</code>, <code>_Bench</code>, <code>_Shelter</code> and <code>_Tree</code>.</p>
+<ul>
+<li>Each ships with a <strong>convex MeshCollider</strong>, so it is Rigidbody-ready as it stands. Trees collide
+  via their trunk child only — canopies stay collider-free so nothing invisible blocks the road.</li>
+<li><strong>Your edits to those prefabs are permanent.</strong> Add a <code>Rigidbody</code> to the lamp prefab once and every
+  lamp in every city becomes knock-overable. Regenerating never overwrites an existing prop prefab,
+  and Clean Unused never offers furniture assets for deletion.</li>
+<li>Props are marked <strong>Occludee Static only, never Batching Static</strong> — a batched prop that starts
+  moving renders incorrectly.</li>
+<li>Regenerating with the toggle back off re-combines the exact same layout.</li>
+</ul>
+<p><strong>The trade-off:</strong> separate mode swaps draw calls for interactivity — a demo-scale city becomes
+roughly 1,500 small objects instead of a handful of chunks. They are small low-poly meshes sharing
+three materials, so they batch well on desktop. For pure background filler, and especially on
+mobile, keep the default combined mode.</p>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>Can I drive on the generated roads?</strong> Yes. The road surface has a <code>MeshCollider</code> sharing the
+render mesh, and the kerbs are ramped so vehicles can mount pavements without catching.</p>
+<p><strong>Why is my Along Path row not generating a road?</strong> Road surfaces are straight-layout only. Use the
+Road Constructor bridge, or lay your own road geometry along the path.</p>
+<p><strong>My markings flicker at a distance.</strong> Check your camera's near clip plane — city-scale scenes need
+it no lower than about 0.5 for the depth buffer to resolve the marking offset cleanly.</p>
+<p><strong>Buildings ended up on the pavement.</strong> On the Street pane, check that <strong>Generate road surface</strong> was
+on <em>before</em> you generated the row — the setback widens only when the tool knows a pavement is
+coming.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_05_CitiesAndDistricts.html">Cities and Districts</a></strong> — the grid that roads fill.</li>
+<li><strong><a href="BuildingGen_08_MaterialsAndLighting.html">Materials and Lighting</a></strong> — night markings and baked
+  lighting on roads.</li>
+<li><strong><a href="BuildingGen_09_Optimizing.html">Optimising</a></strong> — street furniture and combining the finished city.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_06_PathsAndRoads.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

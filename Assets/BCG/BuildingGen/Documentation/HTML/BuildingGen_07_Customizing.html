@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customising Buildings</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="customising-buildings">Customising Buildings</h1>
+<p>This page covers everything that changes what a building is <em>made of</em> — which kind it is, which
+palette it wears, how much geometry it gets, and the optional extras. These settings appear in the
+<strong>Generation Settings ▸ Geometry</strong> foldout on every pane that generates buildings, and as
+per-district fields on <code>BCG_BuildingZone</code>.</p>
+<p>Everything here is deterministic. Changing a setting changes what you get, but the same settings
+plus the same seed always give the same building.</p>
+<h2 id="the-four-archetypes">The four archetypes</h2>
+<p>An archetype is a structural preset — the rules the generator follows for that kind of building.</p>
+<table>
+<thead>
+<tr>
+<th>Archetype</th>
+<th>Typical height</th>
+<th>Shape</th>
+<th>Roof</th>
+<th>Reads as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tower</strong></td>
+<td>7 – 16 floors</td>
+<td>Can break into multiple volumes (setbacks, podiums, L-plans)</td>
+<td>Flat, with a concrete parapet and roof clutter</td>
+<td>Offices, high-rise</td>
+</tr>
+<tr>
+<td><strong>Shop</strong></td>
+<td>1 – 2 floors</td>
+<td>One slab</td>
+<td>Flat, with a dark fascia strip</td>
+<td>Retail, storefronts</td>
+</tr>
+<tr>
+<td><strong>Apartment</strong></td>
+<td>3 – 8 floors</td>
+<td>One slab</td>
+<td>Flat, with a parapet</td>
+<td>Residential blocks</td>
+</tr>
+<tr>
+<td><strong>House</strong></td>
+<td>1 – 2 floors</td>
+<td>One slab</td>
+<td>Pitched shingle roof with eaves and a chimney</td>
+<td>Suburbs, low-density</td>
+</tr>
+</tbody>
+</table>
+<p>Switching archetype loads a starting point for that kind of building. Every field stays editable
+afterwards — these are defaults, not constraints:</p>
+<table>
+<thead>
+<tr>
+<th>Archetype</th>
+<th style="text-align: right;">Floors</th>
+<th style="text-align: right;">Cells X × Z</th>
+<th style="text-align: right;">Floor Height</th>
+<th style="text-align: right;">Ground Floor</th>
+<th style="text-align: right;">Parapet Height</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tower</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">7 × 5</td>
+<td style="text-align: right;">3.2 m</td>
+<td style="text-align: right;">4.0 m</td>
+<td style="text-align: right;">0.9 m</td>
+</tr>
+<tr>
+<td>Shop</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5 × 4</td>
+<td style="text-align: right;">3.2 m</td>
+<td style="text-align: right;">4.2 m</td>
+<td style="text-align: right;">1.0 m</td>
+</tr>
+<tr>
+<td>Apartment</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">8 × 4</td>
+<td style="text-align: right;">3.0 m</td>
+<td style="text-align: right;">4.0 m</td>
+<td style="text-align: right;">0.7 m</td>
+</tr>
+<tr>
+<td>House</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4 × 3</td>
+<td style="text-align: right;">2.8 m</td>
+<td style="text-align: right;">3.0 m</td>
+<td style="text-align: right;"><em>(ignored)</em></td>
+</tr>
+</tbody>
+</table>
+<h3 id="multi-volume-towers">Multi-volume towers</h3>
+<p>Towers are the only archetype that can break out of a single box, and only when they are big enough
+to justify it: <strong>7 or more floors, at least 6 cells wide and 5 cells deep</strong>. Below that threshold —
+and for every other archetype at any size — you get a single slab.</p>
+<p>When a tower does qualify, its seed picks between a plain slab, a setback (stepping in as it rises),
+a podium (a wide base with a tower on top) or an L-plan. This is the single biggest reason a
+downtown district looks varied while a low-rise one looks uniform.</p>
+<h3 id="houses">Houses</h3>
+<p>House geometry is deliberately special-cased. The roof pitch is a pure function of the seed —
+<code>32 + (seed mod 9)</code> degrees, so always between <strong>32° and 40°</strong> — with the ridge running along the
+building's longer axis. A chimney appears <strong>70% of the time</strong>, its side and position along the ridge
+both seeded. Houses have no parapet, no roof clutter and no massing variants, so the parapet fields
+are ignored for them.</p>
+<h2 id="palettes">Palettes</h2>
+<p><strong>Texture Variant</strong> picks which of four palettes a building wears:</p>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Look</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>Light Gray</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>Brick</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>Graphite Curtain</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>White Plaster</td>
+</tr>
+</tbody>
+</table>
+<p>All four share one atlas layout, so a palette swap is genuinely free — same mesh, different
+material. On the fills that place many buildings, the <strong>Variant Mix</strong> checkboxes control which
+palettes are eligible: tick only C for a glass financial district, drop B for a city with no brick.</p>
+<h2 id="detail-levels">Detail levels</h2>
+<p>The <strong>Detail</strong> dropdown picks how much geometry represents a building. Crucially, it does <strong>not</strong>
+change <em>which</em> building you get — the same seed produces the same design at every tier, just with
+more or less geometry describing it.</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>What it is</th>
+<th>Use it for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Simple</strong></td>
+<td>Flat shells. Flush facades, no relief, no roof clutter, no props</td>
+<td>Distant filler, mobile, LOD tails</td>
+</tr>
+<tr>
+<td><strong>Standard</strong></td>
+<td>The default look — recessed windows, roof clutter, full detail</td>
+<td>Almost everything</td>
+</tr>
+<tr>
+<td><strong>Detailed</strong></td>
+<td>Standard plus heavy facade elaboration</td>
+<td>Hero buildings the camera gets close to</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-detailed-adds">What Detailed adds</h3>
+<ul>
+<li><strong>Recessed relief on every facade style.</strong> Styles that were flush gain the same recessed-opening
+  treatment the others already had, plus window sills and mullion divider bars inside each opening.</li>
+<li><strong>Real balconies</strong> — an actual slab, railing posts and a top rail per cell, instead of a flat
+  painted band.</li>
+<li><strong>Cornices and trim</strong> — a parapet coping profile and corner pilasters on block edges.</li>
+<li><strong>Storefront depth</strong> — recessed entry cells and pilasters between shop windows.</li>
+<li><strong>House details</strong> — window shutters, a door canopy and porch stoop, and a chimney cap.</li>
+<li><strong>Richer roof clutter</strong> — the same clutter boxes, but each with a lip, legs and a pipe.</li>
+</ul>
+<p>None of this consumes any extra randomness. Every Detailed-only feature is either always-present
+geometry or a pure function of the seed, which is why switching tiers never changes the design.</p>
+<h3 id="what-it-costs">What it costs</h3>
+<p>These are pinned reference measurements from the package's own regression tests, with rooftop props
+and facade extras <strong>off</strong> so the comparison is like-for-like:</p>
+<table>
+<thead>
+<tr>
+<th>Building</th>
+<th style="text-align: right;">Standard</th>
+<th style="text-align: right;">Detailed</th>
+<th style="text-align: right;">Multiplier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tower 7×5, 9 floors (seed 4242)</td>
+<td style="text-align: right;">1,100</td>
+<td style="text-align: right;">5,764</td>
+<td style="text-align: right;">5.2×</td>
+</tr>
+<tr>
+<td>Tower 8×6, 12 floors (seed 314159)</td>
+<td style="text-align: right;">1,364</td>
+<td style="text-align: right;">5,096</td>
+<td style="text-align: right;">3.7×</td>
+</tr>
+<tr>
+<td>Shop 5×3, 2 floors (seed 777)</td>
+<td style="text-align: right;">312</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">3.2×</td>
+</tr>
+<tr>
+<td>Apartment 6×4, 6 floors (seed 1234)</td>
+<td style="text-align: right;">1,064</td>
+<td style="text-align: right;">9,948</td>
+<td style="text-align: right;">9.3×</td>
+</tr>
+<tr>
+<td>House 4×3, 2 floors (seed 7)</td>
+<td style="text-align: right;">86</td>
+<td style="text-align: right;">1,208</td>
+<td style="text-align: right;">14.0×</td>
+</tr>
+</tbody>
+</table>
+<p><em>(Vertex counts.)</em> Apartments and houses show the largest multipliers because they gain the most
+per-cell geometry — balconies on one, shutters and porches on the other. A Standard house is close
+to a decorated box, which is exactly what makes it cheap.</p>
+<p><strong>Two pieces of guidance:</strong></p>
+<ol>
+<li><strong>Pair Detailed with Generate LODs.</strong> A Detailed building gets a three-level LOD chain
+   (Detailed → Standard → Simple), so the extra triangles only cost anything close up. Without
+   LODs, a Detailed building carries its full vertex count at every distance, including when it is
+   twelve pixels tall. See <a href="BuildingGen_09_Optimizing.html#lods">Optimising ▸ LODs</a>.</li>
+<li><strong>On mobile, stay on Standard or Simple.</strong> Detailed is a desktop, foreground-only tier. It is
+   fine for a handful of hero buildings near the camera; it is not what you fill a mobile skyline
+   with.</li>
+</ol>
+<p>Detail is available from every workflow, and as a per-district field on <code>BCG_BuildingZone</code>, so you
+can run Detailed in the block the player walks through and Simple everywhere else.</p>
+<h2 id="rooftop-and-storefront-props">Rooftop and storefront props</h2>
+<p><strong>Rooftop Props</strong> (on by default) adds silhouette props — the things that stop a skyline reading as
+a row of boxes:</p>
+<table>
+<thead>
+<tr>
+<th>Archetype</th>
+<th>What it gets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tower, Apartment</td>
+<td>An antenna mast with cross-arms and/or a water tank on legs, on the topmost roof block</td>
+</tr>
+<tr>
+<td>Tower, 10+ floors</td>
+<td>Additionally a rooftop billboard on one roof edge</td>
+</tr>
+<tr>
+<td>Shop</td>
+<td>Fabric awnings over every storefront cell (door cells stay clear) and a protruding sign box over the door</td>
+</tr>
+<tr>
+<td>House</td>
+<td>None — its silhouette comes from the gabled roof and chimney</td>
+</tr>
+</tbody>
+</table>
+<p>The rooftop billboard's face reuses the lit-window band of the atlas, so it part-glows at night
+along with the windows, at no extra cost.</p>
+<p>Turning props <strong>off</strong> reproduces the pre-props geometry exactly. Turning them <strong>on</strong> means a given
+seed's roof clutter differs from what that seed produced before props existed — the props draw from
+the same random sequence. That is expected and documented; it is not a bug, and it only affects
+buildings you generate from now on.</p>
+<h2 id="facade-extras">Facade extras</h2>
+<p><strong>Facade Extras</strong> (on by default) adds small seeded set-dressing to walls: air-conditioning units
+under some window cells, and wall vents. It applies to Tower, Shop and Apartment; <strong>House is
+untouched</strong>.</p>
+<p>It is independent of detail level and works the same at Standard and Detailed. Simple truncates it,
+along with everything else in the tail.</p>
+<p>Turning it off reproduces the extras-free geometry byte-for-byte.</p>
+<h2 id="lit-signage">Lit signage</h2>
+<p><strong>Lit Signage</strong> adds vertical corner sign strips to tall towers (10+ floors, up to two of them) and
+a lit fascia strip over a shop's storefront. The strips are mapped into the atlas's lit-window band,
+so they <strong>glow at night</strong> through the same emission path as the windows — no new textures, no real
+lights, still one material and one draw call per building.</p>
+<p>The engine default is <strong>off</strong>, for byte-compatibility with scenes made before signage existed. The
+window's toggle defaults <strong>on</strong> for new work, so buildings you generate now get signs while nothing
+existing changes retroactively.</p>
+<h2 id="turning-a-blockout-into-buildings">Turning a blockout into buildings</h2>
+<p>If you prefer to design a skyline by hand, block it out with plain boxes — any object with a
+BoxCollider or a mesh; scaled cubes are ideal — select them, and run <strong>Replace Greyboxes With
+Buildings</strong> from <strong>2 Build ▸ Greybox</strong>.</p>
+<p>Each box becomes a generated building matching its <strong>footprint, height, base height and yaw</strong>
+(snapped to the nearest 90°).</p>
+<ul>
+<li><strong>The box defines the intent.</strong> There is no ground snapping (the box's own base <em>is</em> the base) and
+  no random reseed — the seed is a stable hash of the box's <strong>name</strong>. Re-running a re-blocked scene
+  reproduces the same buildings, and renaming one box rerolls just that building.</li>
+<li><strong>The archetype is inferred from shape</strong>: tall becomes a Tower, mid-rise an Apartment, low and
+  wide a Shop, low and small a House. Floors and window cells are fitted to the box's dimensions.</li>
+<li>Placement still routes through the anti-overlap guard. Generated output, road pieces and zone
+  markers are never mistaken for greyboxes. One Undo restores the boxes.</li>
+</ul>
+<p>Four settings have no effect on greybox replacement either way, and the pane says so: <strong>Snap To
+Ground</strong> and <strong>Ground Layers</strong> (the box's base already decides the height), <strong>Mesh Variety</strong> (the
+seed is always the box-name hash) and <strong>Reuse Existing Assets</strong> (replacement always reuses a
+matching asset when saving prefabs).</p>
+<blockquote>
+<p>The menu-item version of this command uses quick-blockout defaults instead of the pane's settings:
+scene instances with no assets written, no lightmap UVs, no LODs, Standard detail, props and
+extras on. Run it from the pane when you want your own settings honoured.</p>
+</blockquote>
+<h2 id="how-mesh-files-stay-separate">How mesh files stay separate</h2>
+<p>Because these options change geometry, the tool must never let one option's mesh overwrite
+another's. Generated mesh files carry short name tags recording what built them — props, detail
+tier, extras and signage each add a tag — so a props-on mesh and a props-off mesh are always
+different files at the same size and seed.</p>
+<p>You do not need to think about this day to day. It matters when you flip an option and want to know
+whether your existing buildings changed: they did not. The tag table is in
+<a href="BuildingGen_12_Reference.html#mesh-name-content-tags">Reference ▸ Mesh name tags</a>.</p>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>I switched to Detailed and my building looks the same shape.</strong> That is correct. Detail changes how
+much geometry describes the design, not the design. Look at the window reveals, sills and balconies.</p>
+<p><strong>My towers are all plain boxes.</strong> They are below the massing threshold — multi-volume shapes need
+7+ floors and at least 6 × 5 cells.</p>
+<p><strong>Can I add my own props or facades?</strong> Not through the tool. You can repaint the texture atlas — see
+<a href="BuildingGen_AtlasLayout.html">Atlas Layout</a> — and you can of course parent your own objects to a
+generated building in the scene.</p>
+<p><strong>Why did my old buildings not get signage after I turned it on?</strong> Nothing changes retroactively.
+Regenerate them, or refill the district, to pick up new content options.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_08_MaterialsAndLighting.html">Materials and Lighting</a></strong> — palettes, night glow and
+  fake interiors.</li>
+<li><strong><a href="BuildingGen_09_Optimizing.html">Optimising</a></strong> — LODs, and what Detailed actually costs you.</li>
+<li><strong><a href="BuildingGen_12_Reference.html">Reference</a></strong> — the seed contract and every setting's default.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_07_Customizing.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

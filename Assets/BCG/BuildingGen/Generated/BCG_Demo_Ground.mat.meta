@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5cb79d11ddd0eda4cb6517e30b565874
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Generated/BCG_Demo_Ground.mat
+  uploadId: 962654

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCG Building Generator — Facade Strip-Atlas Layout</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="bcg-building-generator--facade-strip-atlas-layout">BCG Building Generator — Facade Strip-Atlas Layout</h1>
+<p>This document describes the UV layout of the BCG facade strip-atlas so that advanced users
+can author their own albedo and emission atlases in any image editor.</p>
+<hr>
+<h2 id="overview">Overview</h2>
+<p>The atlas is a <strong>1024 × 2048 px</strong> vertical strip. One full tile spans all 1024 columns
+horizontally and 256 rows vertically (the window-band height for most bands). U advances
+<strong>1/8 per window cell</strong> horizontally (<code>cellsPerTile = 8</code>): a building 8 cells wide uses
+exactly one full tile repetition, a 4-cell building uses half a tile, etc. V selects which
+band a floor samples by staying inside that band's row range for the entire floor quad.</p>
+<p>The atlas is split into nine horizontal <strong>bands</strong>, stacked from bottom (V = 0) to top
+(V = 1). Both the <strong>albedo</strong> and <strong>emission</strong> atlases share the <strong>identical band layout</strong>,
+so a custom emission map can be authored directly on top of a custom albedo.</p>
+<p>The four shipped palettes — and the <code>BCG_Facade_Albedo_{A..D}.png</code> /
+<code>BCG_Facade_Emission_{A..D}.png</code> file names — use this same layout.</p>
+<figure><img alt="Band layout overlaid on the Albedo_A atlas — the nine V-bands with their V ranges and pixel rows, the roof band's flat/shingle split at column 512, and the fasciaDark sub-band." src="images/atlas_band_diagram.png"><figcaption>Band layout overlaid on the Albedo_A atlas — the nine V-bands with their V ranges and pixel rows, the roof band's flat/shingle split at column 512, and the fasciaDark sub-band.</figcaption></figure>
+<hr>
+<h2 id="band-table">Band table</h2>
+<p>V coordinates are normalized (0 = bottom of image, 1 = top of image), matching Unity
+UV space. Pixel rows count from the <strong>top</strong> of the image downward (row 0 = top).</p>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Variable</th>
+<th>V range (normalized)</th>
+<th>Pixel rows (top-origin)</th>
+<th>Height</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Store</td>
+<td><code>bandStore</code></td>
+<td>0.0000 – 0.1250</td>
+<td>1792 – 2048</td>
+<td>256 px</td>
+<td>Ground-floor storefront: display windows, entry doors. The door cell is at U [2/8, 3/8] within the tile.</td>
+</tr>
+<tr>
+<td>Mullion</td>
+<td><code>bandMullion</code></td>
+<td>0.1250 – 0.2500</td>
+<td>1536 – 1792</td>
+<td>256 px</td>
+<td>Flush mullion curtain wall: vertical metal framing, glass infill.</td>
+</tr>
+<tr>
+<td>Balcony</td>
+<td><code>bandBalcony</code></td>
+<td>0.2500 – 0.3750</td>
+<td>1280 – 1536</td>
+<td>256 px</td>
+<td>Balcony band: slab edge + railing detail. Used with geometric relief (0.12 m inset).</td>
+</tr>
+<tr>
+<td>Ribbon</td>
+<td><code>bandRibbon</code></td>
+<td>0.3750 – 0.5000</td>
+<td>1024 – 1280</td>
+<td>256 px</td>
+<td>Flush ribbon (strip) glazing: horizontal bands of glass with spandrel.</td>
+</tr>
+<tr>
+<td>Punched</td>
+<td><code>bandPunched</code></td>
+<td>0.5000 – 0.6250</td>
+<td>768 – 1024</td>
+<td>256 px</td>
+<td>Punched openings in a masonry/plaster field. Flush (no relief).</td>
+</tr>
+<tr>
+<td>WinLit</td>
+<td><code>bandWinLit</code></td>
+<td>0.6250 – 0.7500</td>
+<td>512 – 768</td>
+<td>256 px</td>
+<td>Lit office glass: bright interior illumination behind dark frames. Used with geometric relief.</td>
+</tr>
+<tr>
+<td>WinDark</td>
+<td><code>bandWinDark</code></td>
+<td>0.7500 – 0.8750</td>
+<td>256 – 512</td>
+<td>256 px</td>
+<td>Dark office glass: tinted/reflective curtain wall. Used with geometric relief.</td>
+</tr>
+<tr>
+<td>Concrete</td>
+<td><code>bandConcrete</code></td>
+<td>0.8750 – 0.9375</td>
+<td>128 – 256</td>
+<td>128 px</td>
+<td>Spandrel / concrete parapet fill. Sub-sampled by the engine for parapet, corner strips, reveals, gable triangles, and House chimney sides.</td>
+</tr>
+<tr>
+<td>Roof</td>
+<td><code>bandRoof</code></td>
+<td>0.9375 – 1.0000</td>
+<td>0 – 128</td>
+<td>128 px</td>
+<td>Roof surfaces. <strong>Split horizontally</strong> — see §Roof band below.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="padding">Padding</h2>
+<p>Each band is inset by <strong>6 px on each vertical edge</strong> before the UV coordinates are handed
+to mesh quads. This is computed as:</p>
+<pre><code>padV = 6 / 2048  ≈ 0.00293 (UV units)
+</code></pre>
+<p>The constant in source is <code>const float padV = 6f / 2048f</code> (<code>BCG_BuildingMeshBuilder.cs</code>, line 172).
+The engine calls <code>Pad(band)</code> which shrinks the V range inward by <code>padV</code> on both sides:
+<code>Pad(band) = (band.x + padV, band.y - padV)</code>.</p>
+<p>This 6 px guard prevents mip-map bleed across band boundaries at standard atlas sizes.</p>
+<hr>
+<h2 id="roof-band--horizontal-split">Roof band — horizontal split</h2>
+<p>The roof band (V 0.9375 – 1.0000, rows 0 – 128) is split <strong>horizontally</strong> into two
+independently tileable halves at column 512:</p>
+<table>
+<thead>
+<tr>
+<th>Half</th>
+<th>U range</th>
+<th>Constants</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Left — flat roof</td>
+<td>U 0.0 – 0.5</td>
+<td><code>roofFlatU</code></td>
+<td>Flat-roof gravel / membrane. Padded: <code>(0 + padU, 0.5 − padU)</code>.</td>
+</tr>
+<tr>
+<td>Right — shingles</td>
+<td>U 0.5 – 1.0</td>
+<td><code>roofShingleU</code></td>
+<td>Pitched shingle tiles. Padded: <code>(0.5 + padU, 1.0 − padU)</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The horizontal padding is <strong>6 px</strong> at 1024 px width:</p>
+<pre><code>padU = 6 / 1024  ≈ 0.00586 (UV units)
+</code></pre>
+<p>Source constant: <code>const float padU = 6f / 1024f</code> (<code>BCG_BuildingMeshBuilder.cs</code>, line 191).
+This guards against mip bleed across the half seam at U = 0.5.</p>
+<ul>
+<li><strong>Non-House buildings</strong> (flat roof): parapet cap and roof slab sample <code>roofFlatU</code>.</li>
+<li><strong>House buildings</strong> (pitched roof): the two shingle planes tile into <code>roofShingleU</code>,
+  with U chunked in <code>cellWidth × 4</code> m segments and V stripped in <code>cellWidth</code> m bands across
+  the slope.</li>
+</ul>
+<hr>
+<h2 id="dark-fascia-sub-band">Dark fascia sub-band</h2>
+<p>Shop parapets sample a narrow strip <strong>inside</strong> the Concrete band rather than the full
+parapet concrete sub-range:</p>
+<table>
+<thead>
+<tr>
+<th>Sub-band</th>
+<th>V range</th>
+<th>Approximate pixel rows (top-origin)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fasciaDark</code></td>
+<td>0.9204 – 0.9331</td>
+<td>rows 136 – 164</td>
+</tr>
+</tbody>
+</table>
+<p>This is stored as a pre-padded constant; no additional <code>Pad()</code> is applied at usage.</p>
+<hr>
+<h2 id="tiling-and-u-layout">Tiling and U layout</h2>
+<p>U advances at one window cell per <code>1/cellsPerTile</code> tile fraction. With <code>cellsPerTile = 8</code>:</p>
+<pre><code>U_per_cell = 1/8 = 0.125
+</code></pre>
+<p>For a building with <code>cellsX = 7</code> cells and a random integer U offset <code>uOffset</code> (0–7),
+the side maps U = <code>uOffset/8</code> to <code>(uOffset + 7)/8</code>. The offset shifts lit windows and
+door positions per facade for variety, while keeping cell seam alignment.</p>
+<p>A per-floor shift of <code>(floor * 3) &amp; 7</code> cells breaks the vertical stacking of the same
+texel column without extra rng draws, so lit-window columns appear staggered.</p>
+<hr>
+<h2 id="concrete-sub-sampling">Concrete sub-sampling</h2>
+<p>The Concrete band (128 px) is the shared reservoir for all non-window surfaces. The engine
+selects sub-ranges by linear fraction within the <strong>padded</strong> concrete band:</p>
+<table>
+<thead>
+<tr>
+<th>Usage</th>
+<th><code>ConcreteSub(f0, f1)</code> fractions</th>
+<th>Surface</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Parapet outer (non-Shop)</td>
+<td>0.25 – 0.70</td>
+<td>Outer parapet wall ring</td>
+</tr>
+<tr>
+<td>Parapet inner</td>
+<td>0.30 – 0.62</td>
+<td>Inner parapet wall ring</td>
+</tr>
+<tr>
+<td>Parapet cap</td>
+<td>0.45 – 0.52</td>
+<td>Flat cap strip</td>
+</tr>
+<tr>
+<td>Gables, chimney sides, corner strips, reveals</td>
+<td>0.25 – 0.70</td>
+<td>Wall fill</td>
+</tr>
+<tr>
+<td>Chimney cap</td>
+<td>0.45 – 0.52</td>
+<td>Flat box top</td>
+</tr>
+<tr>
+<td>Eave soffit</td>
+<td>0.30 – 0.40</td>
+<td>Underside of eave overhang</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="four-shipped-palettes">Four shipped palettes</h2>
+<figure><img alt="The four shipped atlases — top row: albedo palettes A–D (Light Gray / Brick / Graphite Curtain / White Plaster); bottom row: the matching emission maps A–D (dark, with lit window cells)." src="images/atlas_contact_sheet.png"><figcaption>The four shipped atlases — top row: albedo palettes A–D (Light Gray / Brick / Graphite Curtain / White Plaster); bottom row: the matching emission maps A–D (dark, with lit window cells).</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Letter</th>
+<th>Albedo file</th>
+<th>Emission file</th>
+<th>Visual character</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>A</td>
+<td><code>BCG_Facade_Albedo_A.png</code></td>
+<td><code>BCG_Facade_Emission_A.png</code></td>
+<td>Light gray (generic concrete / glass tower)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>B</td>
+<td><code>BCG_Facade_Albedo_B.png</code></td>
+<td><code>BCG_Facade_Emission_B.png</code></td>
+<td>Brick (warm red-brown masonry)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>C</td>
+<td><code>BCG_Facade_Albedo_C.png</code></td>
+<td><code>BCG_Facade_Emission_C.png</code></td>
+<td>Graphite curtain wall (dark glass)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>D</td>
+<td><code>BCG_Facade_Albedo_D.png</code></td>
+<td><code>BCG_Facade_Emission_D.png</code></td>
+<td>White plaster (bright render / stucco)</td>
+</tr>
+</tbody>
+</table>
+<p>All four atlases share the exact band layout described in this document and are
+interchangeable on any generated mesh without UV changes.</p>
+<hr>
+<h2 id="normal-map-atlases-v120">Normal-map atlases (v1.2.0)</h2>
+<p><code>BCG_Facade_Normal_{A..D}.png</code> are tangent-space normal maps sharing the <strong>identical band
+layout</strong> as their albedo/emission counterparts — same 1024 × 2048 strip, same nine bands, same
+padding. They were generated offline from the albedo/emission features (height-from-features →
+tangent-space normal) by the same <code>Tools~/gen_facade_textures.py</code> generator, adding relief cues
+for window frames, spandrels, and roof gravel/shingles.</p>
+<ul>
+<li><strong>Always-on when present, no toggle.</strong> <code>CreateFacadeMaterial</code> binds them on every pipeline with
+  the correct slot/keyword: Built-in <code>Standard</code> → <code>_BumpMap</code> + <code>_NORMALMAP</code>; URP <code>Lit</code> →
+  <code>_BumpMap</code> + its normal-map keyword; HDRP <code>Lit</code> → <code>_NormalMap</code> via the existing reflection-safe
+  path. <strong>Fix Materials</strong> is the one repair entry point that (re)binds them; the footer
+  material-health badge flags a missing bind.</li>
+<li><strong>Requires mesh tangents.</strong> <code>FinalizeMesh</code> calls <code>Mesh.RecalculateTangents()</code> so normal mapping
+  has a valid tangent basis — vertex positions/counts are unaffected, so this does not touch any
+  freeze test.</li>
+<li>Day/Night facade variants inherit the normal bind automatically (it's independent of the
+  emission dial).</li>
+<li>To author a custom normal atlas: paint it at the same 1024 × 2048 resolution and band layout as
+  the albedo atlas (see the band table above), name it <code>BCG_Facade_Normal_{A..D}.png</code>, drop it
+  into <code>Assets/BCG/BuildingGen/Textures/</code>, and run <strong>Fix Materials</strong>.</li>
+</ul>
+<hr>
+<h2 id="specgloss-atlases-v120">SpecGloss atlases (v1.2.0)</h2>
+<ul>
+<li><code>BCG_Facade_Specular_{A,B,C,D}.png</code> — 1024×2048 SpecGloss atlases (RGB = specular
+  color, A = per-texel smoothness), same band layout as the albedo. Bound as
+  <code>_SpecGlossMap</code> on the fake-interiors facade shader by <strong>Fix Materials</strong>; when
+  absent, re-run <strong>Fix Materials</strong> so the materials fall back to the scalar
+  wall/glass smoothness.</li>
+</ul>
+<hr>
+<h2 id="shared-window-mask-v120">Shared window mask (v1.2.0)</h2>
+<p><code>BCG_Facade_WindowMask.png</code> is a single <strong>shared</strong> 1024 × 2048 linear (non-color) mask used by the
+<a href="BuildingGen_UserGuide.html#12-fake-interiors">Fake Interiors</a> shader to tell glass texels from
+wall texels:</p>
+<ul>
+<li><strong>White = glass</strong>, black = wall. It uses the <strong>same band layout and padding</strong> as the albedo
+  atlas, so it aligns pixel-for-pixel with every variant's window openings.</li>
+<li><strong>Shared across all four palette variants</strong> — because A–D all share the same band layout, one
+  mask file covers every variant rather than needing four (verified at implementation time; the
+  engine would fall back to per-variant masks if a future palette's layout ever diverged).</li>
+<li>The mask also carries <strong>trim detail</strong>: railing silhouettes (Balcony band), door outlines (Store
+  band), and mullion bar lines (Mullion band) are painted into the mask alongside the plain glass
+  rectangles, so the interior shader's masked-fragment test naturally excludes railings/frames/
+  mullions from the "look into the room" treatment — those stay opaque facade.</li>
+<li>Read as <strong>linear</strong> (not sRGB) since it's a boolean-ish mask, not colour data.</li>
+<li>Authored by the same <code>Tools~</code> generator as the albedo/normal atlases.</li>
+</ul>
+<hr>
+<h2 id="interior-room-atlas-v120">Interior room atlas (v1.2.0)</h2>
+<p><code>BCG_InteriorAtlas.png</code> is a <strong>2048 × 1024</strong> grid of <strong>4 × 2</strong> pre-projected 512² room captures
+used by the Fake Interiors shader as the "room behind the glass":</p>
+<ul>
+<li><strong>Baked by <code>BCG_InteriorRoomBaker.BakeAtlas()</code></strong> (Editor utility, no MenuItem — an internal dev
+  tool, not a shipped workflow). It renders 8 deterministic parametric box-rooms from the window
+  plane (camera at the plane, FOV 90°, aspect 1:1) into 512² tiles and composites them into the
+  atlas grid. Purely algorithmic — no external or AI-generated imagery — only the baked PNG ships
+  as a dependency.</li>
+<li><strong><code>farFrac = 0.5</code> contract</strong> — each room is baked with its back wall filling exactly the central
+  half of the tile (room depth = room width, the classic single-texture parallax-room setup). The
+  interior mapping shader (<code>BCG_InteriorMapping.hlsl</code>) hard-codes this same <code>farFrac</code>, so the atlas
+  and the shader's ray-box intersection must agree on it — <strong>re-bake and shader must change
+  together</strong> if that ratio is ever tuned.
+  Concretely: <code>farFrac</code> is the fraction of the tile's linear size the back wall spans as the
+  camera's 90° FOV frames a room whose depth equals its width — moving to a different depth/width
+  ratio (or FOV) changes <code>farFrac</code> and requires updating the constant in the shader to match.</li>
+<li><strong>One texture sampler instead of N cubemaps</strong> — cheaper on mobile than a per-room cubemap array,
+  trivial to atlas into one file, and produces the same "look into a room" visual class as classic
+  interior-mapping cubemap techniques.</li>
+<li><strong>Per-cell room selection</strong> — the shader hashes the window's UV cell index to pick a grid tile
+  (room variant), tint, and day/night lit state; this is a pure function of the cell index, not a
+  runtime random draw, so the same building always shows the same rooms.</li>
+<li><strong>Re-baking:</strong> re-run <code>BCG_InteriorRoomBaker.BakeAtlas()</code> (via <code>execute_code</code> or a temporary
+  MenuItem) to change the room look. It overwrites <code>BCG_InteriorAtlas.png</code> in place — no further
+  wiring needed since the shader already references that path by name.</li>
+</ul>
+<hr>
+<h2 id="road-atlas--bcg_road_atlaspng">Road atlas — BCG_Road_Atlas.png</h2>
+<p>The <a href="BuildingGen_UserGuide.html#23-roads">Roads</a> feature uses its own <strong>1024 × 2048 px</strong> vertical
+strip atlas, laid out with the same top-origin-row convention as the facade atlas but split into
+<strong>eight equal 256 px bands</strong> — no per-band sub-splits or sub-sampling reservoir. Both the albedo
+atlas and its emission twin (<code>BCG_Road_Emission.png</code>) share the <strong>identical</strong> band layout, so a
+custom road emission map can be authored directly on top of a custom road albedo, exactly like the
+facade atlas's albedo/emission pair.</p>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Variable</th>
+<th>V range (normalized)</th>
+<th>Pixel rows (top-origin)</th>
+<th>Height</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EdgeLine</td>
+<td><code>bandEdgeLine</code></td>
+<td>0.0000 – 0.1250</td>
+<td>1792 – 2048</td>
+<td>256 px</td>
+<td>Solid lane-edge line, painted just inside each asphalt edge on the shadows-off markings renderer.</td>
+</tr>
+<tr>
+<td>DashLine</td>
+<td><code>bandDash</code></td>
+<td>0.1250 – 0.2500</td>
+<td>1536 – 1792</td>
+<td>256 px</td>
+<td>Center dash strip. One atlas tile paints exactly one dash period (<code>kDashPeriodMeters</code>); the edge's U is fitted (<code>FitDashU</code>) so both trimmed ends land on a whole dash.</td>
+</tr>
+<tr>
+<td>Crosswalk</td>
+<td><code>bandCrosswalk</code></td>
+<td>0.2500 – 0.3750</td>
+<td>1280 – 1536</td>
+<td>256 px</td>
+<td>Zebra crosswalk striping, emitted spanning the carriageway at every junction socket.</td>
+</tr>
+<tr>
+<td>Sidewalk</td>
+<td><code>bandSidewalk</code></td>
+<td>0.3750 – 0.5000</td>
+<td>1024 – 1280</td>
+<td>256 px</td>
+<td>Pedestrian sidewalk surface — the outer band of the ribbon, outside the curb.</td>
+</tr>
+<tr>
+<td>CurbTop</td>
+<td><code>bandCurbTop</code></td>
+<td>0.5000 – 0.6250</td>
+<td>768 – 1024</td>
+<td>256 px</td>
+<td>Flat curb top, between the curb face and the sidewalk.</td>
+</tr>
+<tr>
+<td>CurbFace</td>
+<td><code>bandCurbFace</code></td>
+<td>0.6250 – 0.7500</td>
+<td>512 – 768</td>
+<td>256 px</td>
+<td>Beveled curb face (a 0.2 m drivable ramp, <code>kCurbBevelRun</code>), junction curb-end faces, and the outer skirt walls (reused for both).</td>
+</tr>
+<tr>
+<td>Gutter</td>
+<td><code>bandGutter</code></td>
+<td>0.7500 – 0.8750</td>
+<td>256 – 512</td>
+<td>256 px</td>
+<td>Gutter strip just inside each carriageway edge — a fixed 0.3 m band per side (<code>kGutterWidth</code>).</td>
+</tr>
+<tr>
+<td>Asphalt</td>
+<td><code>bandAsphalt</code></td>
+<td>0.8750 – 1.0000</td>
+<td>0 – 256</td>
+<td>256 px</td>
+<td>Carriageway surface and the planar-mapped junction pad fill.</td>
+</tr>
+</tbody>
+</table>
+<p>All eight <code>BCG_RoadMeshCore</code> band constants are <code>Vector2</code> V ranges, exactly like the facade atlas's
+<code>bandStore</code>/<code>bandRoof</code>/etc. — every quad emitted by <code>SweepEdge</code>, <code>EmitJunction</code>, <code>EmitEndCap</code>,
+<code>EmitEdgeMarkings</code>, and <code>EmitCrosswalk</code> samples one of the eight bands verbatim.</p>
+<p><strong>Padding:</strong> every band is shrunk by the same <strong>6 px per edge</strong> mip-bleed guard as the facade atlas
+(<code>const float padV = 6f / 2048f</code> in <code>BCG_RoadMeshCore.cs</code>, applied via the identically-named
+<code>Pad(band)</code> helper) — same convention, same constant, different source file.</p>
+<p><strong>Tiling:</strong> one atlas U tile spans <strong>8 m</strong> of road (<code>kMetersPerTile</code>); the dash band paints one
+dash period per tile (<code>kDashPeriodMeters = 8</code>). Unlike the facade atlas there is no per-variant
+palette — one road atlas covers every generated road, and its bands are horizontally seamless (they
+tile cleanly at U = 0/1) rather than mapped to discrete window cells.</p>
+<p>Authored by <code>Tools~/gen_road_textures.py</code> — the same deterministic-generation approach as
+<code>gen_facade_textures.py</code>, with a single fixed seed and a fixed paint order per band.</p>
+<hr>
+<h2 id="authoring-a-custom-atlas">Authoring a custom atlas</h2>
+<ol>
+<li>Create a new 1024 × 2048 px image.</li>
+<li>Paint each band within its V row range (see band table above), leaving 6 px clear at
+   the top and bottom edge of each band as mip-bleed guard.</li>
+<li>In the Roof band (rows 0 – 128):
+   - Fill columns 0 – 511 with a flat-roof surface (gravel, membrane, etc.).
+   - Fill columns 512 – 1023 with a shingle tile that repeats cleanly.
+   - Leave 6 px clear on each side of the column-512 seam.</li>
+<li>Name the file to match one of the four expected paths
+   (<code>BCG_Facade_Albedo_{A..D}.png</code>) and drop it into
+   <code>Assets/BCG/BuildingGen/Textures/</code>.</li>
+<li>Run <strong>Fix Materials (Active Pipeline)</strong> from the Building Generator window to rebind
+   the materials to the new textures.</li>
+<li>Optionally author a matching emission atlas at the same resolution and band layout and
+   place it as <code>BCG_Facade_Emission_{A..D}.png</code>.</li>
+</ol>
+</div>
+<div class="footer">
+Generated from: BuildingGen_AtlasLayout.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

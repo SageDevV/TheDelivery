@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6ef4570c07cecdc4eb166d6c6047e859
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Presets/BCG_Preset_OldTown.asset
+  uploadId: 962654

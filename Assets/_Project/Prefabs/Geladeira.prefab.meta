@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0c9a1e2143fea7b47b489b1237fefc27
+timeCreated: 1541512223
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 132647
+  packageName: vintage refrigerator Type1
+  packageVersion: 1.0.1
+  assetPath: Assets/openplay/vintageRefrigeratorT1/prefab/vintage_RefrigeratorT1_defaultSet.prefab
+  uploadId: 277279

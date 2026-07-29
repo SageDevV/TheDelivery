@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How It Works</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="how-it-works">How It Works</h1>
+<p>There are about six ideas behind this tool. Once they click, every pane in the window makes sense
+and you can stop reading documentation. This page is those six ideas.</p>
+<h2 id="a-building-is-a-recipe-not-a-model">A building is a recipe, not a model</h2>
+<p>The package contains no building models. There is no library of prefabs to browse, and nothing was
+modelled in Blender. Instead there is a <strong>generator</strong> that builds a mesh from four ingredients:</p>
+<figure><img alt="Four inputs — archetype, size, seed and palette — feed the generator, which always produces the same building from the same inputs, as a single mesh with a single material and therefore one draw call." src="images/diagram_recipe.png"><figcaption>Four inputs — archetype, size, seed and palette — feed the generator, which always produces the same building from the same inputs, as a single mesh with a single material and therefore one draw call.</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>Ingredient</th>
+<th>What it decides</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Archetype</strong></td>
+<td>The kind of building: Tower, Shop, Apartment or House</td>
+</tr>
+<tr>
+<td><strong>Size</strong></td>
+<td>Cells X × Cells Z × Floors — a cell is one window column, 3 m wide by default</td>
+</tr>
+<tr>
+<td><strong>Seed</strong></td>
+<td>One integer that decides every random choice inside the building</td>
+</tr>
+<tr>
+<td><strong>Palette</strong></td>
+<td>Which of the four texture variants (A–D) it wears</td>
+</tr>
+</tbody>
+</table>
+<p>Change any ingredient and you get a different building. Keep them all the same and you get the
+<em>identical</em> building, every time, on every machine, forever.</p>
+<p>That is why sizes are expressed in <strong>cells</strong> rather than metres. A tower is "7 cells wide, 5 deep,
+9 floors" — the generator turns that into 21 × 15 m using the cell width. Thinking in cells means
+windows always land on a sensible grid instead of being stretched to fit an arbitrary width.</p>
+<h2 id="the-seed-is-the-whole-random-system">The seed is the whole random system</h2>
+<p>Every random decision a building makes — its massing shape, which facade style each floor gets,
+where the roof clutter sits, whether a house has a chimney — is drawn from a single sequence of
+random numbers started from the seed. Nothing else is random. There is no hidden state and no
+dependence on time or scene order.</p>
+<p>This has three practical consequences:</p>
+<ul>
+<li><strong>Randomize is just "pick a new seed."</strong> It is not a re-roll of some deeper randomness. Note down
+  a seed you liked and you can reproduce that exact building next year.</li>
+<li><strong>A city is reproducible too.</strong> A city's seed derives a stable seed for every block, so the same
+  City Seed rebuilds the same city, and each block can be regenerated on its own without disturbing
+  its neighbours.</li>
+<li><strong>Order matters internally, so the tool never reorders it.</strong> The sequence of random draws is a
+  fixed contract; features added in later versions append to the end rather than inserting in the
+  middle. That is what lets you upgrade the package without your existing seeds producing different
+  buildings. The full ordering is written down in
+  <a href="BuildingGen_12_Reference.html#the-seed-contract">Reference ▸ The seed contract</a> if you ever need it.</li>
+</ul>
+<h2 id="one-mesh-one-material-one-draw-call">One mesh, one material, one draw call</h2>
+<p>Every generated building is a single mesh using a single material. The facade textures live in a
+shared <strong>atlas</strong> — one image holding every wall, window, storefront and roof surface — and the
+generator maps each face to the right patch of that atlas as it builds the geometry.</p>
+<p>This is the reason the tool exists. A hundred buildings cost a hundred draw calls before Unity's
+static batching or the SRP Batcher does anything at all, and because they share four materials
+between them, batching then collapses them much further. It is also why you cannot assign a
+different material to one wall of a building: there is only one material, by design.</p>
+<p>The trade-off is that buildings are <em>exteriors</em>. There are no interiors, no openable doors and no
+separate window objects. What you do get is a convincing illusion of interiors — a shader trick
+that paints rooms behind the glass without adding a single triangle. See
+<a href="BuildingGen_08_MaterialsAndLighting.html#fake-interiors">Fake interiors</a>.</p>
+<h2 id="everything-is-generated-in-the-editor">Everything is generated in the Editor</h2>
+<p>The tool runs entirely at edit time. When you generate, it writes real Unity assets and puts real
+GameObjects in your scene. When you are done, you can delete the tool from your project and your
+city keeps working, because nothing in it depends on the generator at runtime.</p>
+<p>The only things that ship inside your build are a few tiny data-only components — most importantly
+a hidden <strong>marker</strong> stamped on every generated building recording what it is (archetype, palette,
+seed, footprint). Those markers are how the tool recognises its own output later: how the health
+dashboard finds your buildings, how <em>Select All Generated</em> works, and how the anti-overlap system
+knows what is already there.</p>
+<p>There is also a <strong>runtime API</strong> for games that need to generate buildings while playing — endless
+runners, streaming worlds, procedural cities. Same engine, same seeds, same results. See
+<a href="BuildingGen_12_Reference.html#runtime-api">Reference ▸ Runtime API</a>.</p>
+<h3 id="what-gets-written-to-disk">What gets written to disk</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>What happens when you generate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Save As Prefab Assets</strong> on <em>(default)</em></td>
+<td>A mesh asset and a prefab asset are written under <code>Generated/</code>, and an instance is placed in your scene. Regenerating the same recipe overwrites the same files, so nothing accumulates.</td>
+</tr>
+<tr>
+<td><strong>Save As Prefab Assets</strong> off</td>
+<td>The building is placed straight into the scene. No files are written and <code>Generated/</code> is untouched.</td>
+</tr>
+</tbody>
+</table>
+<p>Turn it off when you are filling a large scene with background geometry you will never reuse —
+there is no point writing eight hundred prefab assets you will never reference.</p>
+<blockquote>
+<p><strong>One caveat if you turn it off.</strong> Scene-only buildings live in the scene file and nowhere else.
+A script recompile or an Editor restart destroys unsaved scene objects. <strong>Save the scene</strong> right
+after generating, or you will lose them.</p>
+</blockquote>
+<h2 id="the-four-stage-pipeline">The four-stage pipeline</h2>
+<p>The window is laid out in the order a city actually gets built, as four stages you work through
+left to right:</p>
+<figure><img alt="The four-stage City Pipeline: Plan lays out where the city goes, Build fills it with buildings, Dress handles materials and street props, Ship audits and optimises. Every pane stays loaded, so switching stages never loses anything." src="images/diagram_pipeline.png"><figcaption>The four-stage City Pipeline: Plan lays out where the city goes, Build fills it with buildings, Dress handles materials and street props, Ship audits and optimises. Every pane stays loaded, so switching stages never loses anything.</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Sub-tabs</th>
+<th>Use it to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1 Plan</strong></td>
+<td>City Grid · Zones · Paths</td>
+<td>Decide <em>where</em> buildings go — the one-click city grid, district markers, street paths</td>
+</tr>
+<tr>
+<td><strong>2 Build</strong></td>
+<td>Single · Street · Districts · Greybox</td>
+<td>Actually make buildings — one at a time, along a street, into districts, or from a blockout</td>
+</tr>
+<tr>
+<td><strong>3 Dress</strong></td>
+<td>Mood · Furniture · Probes</td>
+<td>Materials and night look, street furniture, light probes</td>
+</tr>
+<tr>
+<td><strong>4 Ship</strong></td>
+<td>Health · Finalize</td>
+<td>Audit what is in the scene, then work down a pre-ship checklist</td>
+</tr>
+</tbody>
+</table>
+<p>You are not forced through it. If all you want is one building, go straight to <strong>2 Build ▸ Single</strong>
+and ignore the rest. The ordering exists because it is the order that avoids rework — laying out
+roads after you have filled a district means moving buildings.</p>
+<p>Every pane is built when the window opens and simply hidden when you switch away, so nothing you
+typed is ever lost by clicking around. The stage you were on is remembered per project.</p>
+<h2 id="the-parts-of-the-window">The parts of the window</h2>
+<figure><img alt="The generator window on Plan ▸ City Grid, showing the title row, the output row, the City Ledger status band, the stage strip, the sub-tab strip, the pane itself, and the pinned Generate City button at the bottom." src="images/window_plan_citygrid.png"><figcaption>The generator window on Plan ▸ City Grid, showing the title row, the output row, the City Ledger status band, the stage strip, the sub-tab strip, the pane itself, and the pinned Generate City button at the bottom.</figcaption></figure>
+<p>Top to bottom, the frame around every pane is always the same:</p>
+<ol>
+<li><strong>Title row</strong> — the tool name and version, plus three small buttons: <code>ⓘ</code> (what this tool is),
+   <code>⌕</code> (command search) and <code>⚙</code> (preferences).</li>
+<li><strong>Output row</strong> — where generated assets get written. Click the path to choose a different folder
+   anywhere inside <code>Assets</code>; <code>↺</code> puts it back. Changing it never moves assets you already made.</li>
+<li><strong>City Ledger</strong> — the one status band. It shows scene totals (<code>100 bldgs · 35.1k tris · ~100
+   draws · 5 zones</code>), a material-health badge with an inline <strong>[Fix]</strong> button when something needs
+   fixing, and — while a fill is running — a progress bar carrying the only <strong>Cancel</strong> button in the
+   window.</li>
+<li><strong>Identity strip</strong> — appears only when you select a generated building, showing its recipe
+   (<code>Tower 7×5 F9 · seed 12345 · 6.2k tris</code>) with buttons to copy the seed or load the recipe back
+   into <strong>Build ▸ Single</strong>.</li>
+<li><strong>Stage strip</strong>, then that stage's <strong>sub-tab strip</strong>.</li>
+<li><strong>The pane</strong> — scrolls vertically only.</li>
+<li><strong>Action bar</strong> — pinned to the bottom, holding exactly one primary button whose label follows the
+   pane you are on (<em>Generate City</em>, <em>Generate Building</em>, <em>Populate Selected Zones</em>…). When it
+   cannot run, it greys out and a short reason appears beside it.</li>
+</ol>
+<h3 id="finding-a-command">Finding a command</h3>
+<p>There is deliberately no catch-all menu. Every command lives on the pane it belongs to. If you
+cannot remember where something is, press <code>⌕</code> in the title row and type — the palette matches
+loosely (<code>fixmat</code> finds <em>Fix Materials</em>), and each result tells you <strong>which pane it lives on</strong>, so
+it teaches as well as launches.</p>
+<p>Four commands are also mirrored as ordinary Unity menu items so they work with no window open:
+<em>Fix Materials (Active Pipeline)</em>, <em>Regenerate All…</em>, <em>Clean Unused…</em> and <em>Select All Generated</em>,
+all under <code>Tools ▸ BoneCracker Games ▸ Building Generator</code>.</p>
+<h2 id="buildings-never-overlap-each-other">Buildings never overlap each other</h2>
+<p>Every placement path checks the ground before it puts a building down. Before each building is
+placed, its footprint is tested against every generated building already in the scene; if the spot
+is taken, the building is moved to the nearest free spot by searching outward in rings. If it fits
+where you asked, it stays exactly there.</p>
+<p>Two things are worth knowing:</p>
+<ul>
+<li><strong>This is always on and costs no randomness.</strong> Relocation happens after the random draws, so a
+  seeded layout stays identical whether or not anything had to move.</li>
+<li><strong>By default it only avoids the tool's own buildings.</strong> Your own scenery is invisible to it. To
+  keep buildings off your roads, props or terrain features, point <strong>Obstacle Layers</strong> at the
+  physics layers that scenery lives on — then a blocked spot relocates, or is skipped entirely if
+  nothing nearby is clear.</li>
+</ul>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_03_SingleBuilding.html">Creating a Single Building</a></strong> — the recipe idea in practice.</li>
+<li><strong><a href="BuildingGen_05_CitiesAndDistricts.html">Cities and Districts</a></strong> — the same idea at city scale.</li>
+<li><strong><a href="BuildingGen_07_Customizing.html">Customising Buildings</a></strong> — what each archetype and detail level
+  actually changes.</li>
+<li><strong><a href="BuildingGen_12_Reference.html">Reference</a></strong> — every setting, the seed contract, the runtime API.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_02_HowItWorks.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0896e263c01092f4bb2567a5608b5924
+timeCreated: 1541512114
+licenseType: Store
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 132647
+  packageName: vintage refrigerator Type1
+  packageVersion: 1.0.1
+  assetPath: Assets/openplay/vintageRefrigeratorT1/MUST_readme_v1.0.txt
+  uploadId: 277279

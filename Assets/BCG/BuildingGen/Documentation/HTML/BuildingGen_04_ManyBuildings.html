@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creating Many Buildings</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="creating-many-buildings">Creating Many Buildings</h1>
+<p>Once you know what a good building looks like, you rarely place them one at a time. This page
+covers the two "many at once" tools that are not a whole city — lining a street, and controlling
+how much variety a big fill produces without drowning your project in mesh files.</p>
+<p>For a whole city grid or a district you can shape, see
+<a href="BuildingGen_05_CitiesAndDistricts.html">Cities and Districts</a>.</p>
+<h2 id="lining-a-street-street-rows">Lining a street (street rows)</h2>
+<p><strong>2 Build ▸ Street</strong> fills one or both sides of a road with seeded buildings, all facing the
+carriageway. It is the right tool for a single stretch of road — an approach to a track, a scripted
+drive-past, a boulevard you want to control by hand.</p>
+<figure><img alt="The Build ▸ Street pane in Straight mode, showing the Road settings, the weighted Archetype Mix with its live percentage readout, the Variant Mix palette checkboxes, and the pinned Generate Street Row button." src="images/window_build_street.png"><figcaption>The Build ▸ Street pane in Straight mode, showing the Road settings, the weighted Archetype Mix with its live percentage readout, the Variant Mix palette checkboxes, and the pinned Generate Street Row button.</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scatter Seed</td>
+<td>12345</td>
+<td>Drives everything: which archetype each plot gets, its size, its palette, the gaps</td>
+</tr>
+<tr>
+<td>Road Length (m)</td>
+<td>120</td>
+<td>Plots are placed until this length is filled</td>
+</tr>
+<tr>
+<td>Road Width (m)</td>
+<td>16</td>
+<td>The clear carriageway between the two rows</td>
+</tr>
+<tr>
+<td>Both Sides</td>
+<td>on</td>
+<td>Line the far side of the road as well</td>
+</tr>
+<tr>
+<td>Generate road surface</td>
+<td>off</td>
+<td>Also build real road geometry — see <a href="BuildingGen_06_PathsAndRoads.html#roads">Roads</a></td>
+</tr>
+<tr>
+<td>Gap Range (m)</td>
+<td>4 – 10</td>
+<td>Random spacing between neighbouring buildings</td>
+</tr>
+</tbody>
+</table>
+<p>Press <strong>Generate Street Row</strong>. Everything lands under one parent named <code>BCG_StreetRow_{seed}</code>, and
+the whole row is a single Undo step.</p>
+<h3 id="controlling-the-mix">Controlling the mix</h3>
+<p><strong>Archetype Mix (weighted)</strong> sets how likely each kind of building is. The defaults are Tower 0.35,
+Shop 0.30, Apartment 0.35, House 0.25.</p>
+<p>The numbers are <strong>relative weights, not percentages</strong> — the tool normalises them, and shows you
+what they actually work out to underneath, e.g. <code>≈ Tower 28% · Shop 24% · Apartment 28% · House
+20%</code>. Setting all four to 1.0 gives an even mix; setting House to 0 removes houses entirely.</p>
+<p><strong>Variant Mix</strong> below it is the palette allowlist — untick B and no brick buildings appear in this
+row. Tick only C for a uniform glass-curtain financial district.</p>
+<h3 id="curved-streets">Curved streets</h3>
+<p>The <strong>Straight | Along Path</strong> toolbar at the top of the pane switches between the straight row
+above and buildings that follow a polyline you draw in the scene. That is how you line a bend, a
+racing line, or any road that is not a straight segment — see
+<a href="BuildingGen_06_PathsAndRoads.html#following-a-path">Paths and Roads</a>.</p>
+<h2 id="filling-a-district">Filling a district</h2>
+<p>For anything bigger than one street, use a <strong>district</strong>: a box you draw in the scene that gets
+filled with buildings in alternating rows, like a real city block. Select the box, go to
+<strong>2 Build ▸ Districts</strong>, and press <strong>Populate Selected Zones</strong>.</p>
+<p>Districts are the subject of their own page, because they are also where per-neighbourhood style
+lives — see <a href="BuildingGen_05_CitiesAndDistricts.html#districts-zones-you-can-shape">Cities and Districts</a>.</p>
+<h2 id="big-fills-do-not-freeze-the-editor">Big fills do not freeze the Editor</h2>
+<p>Any fill that produces a lot of buildings runs <strong>asynchronously — one building per frame</strong>. This
+matters more than it sounds: writing a mesh and prefab asset costs roughly a tenth of a second, so
+a five-hundred-building district done in one go would lock Unity up for the best part of a minute.</p>
+<p>While a fill is running:</p>
+<ul>
+<li>Progress appears in the <strong>City Ledger</strong> at the top of the window (<code>Populating 240/512</code>), which
+  carries the <strong>only</strong> Cancel button in the tool.</li>
+<li>Commands that would fight the running job grey out. A few that cannot conflict stay live,
+  including <em>Fix Materials</em> and <em>Select All Generated</em>.</li>
+<li><strong>Closing the window does not stop the job.</strong> It keeps going and finishes.</li>
+<li><strong>Cancel</strong> stops it where it is. The buildings placed so far stay in the scene and can be removed
+  with a single Undo.</li>
+</ul>
+<h2 id="keeping-variety-under-control">Keeping variety under control</h2>
+<p>A thousand-building city that writes a thousand unique meshes is slow to generate and heavy on
+disk. Two settings in <strong>Generation Settings ▸ Saving</strong> control that trade-off.</p>
+<h3 id="reuse-existing-assets">Reuse Existing Assets</h3>
+<p><strong>On by default.</strong> When a building's mesh and prefab already exist for the same archetype, size,
+seed and cell width — <em>and</em> those assets still match your current options — they are loaded instead
+of being rebuilt. This skips the per-building asset write, which is the expensive part, and makes
+repeat fills feel near-instant.</p>
+<p>The "still match your current options" check is important and it is strict. Mesh files carry a name
+tag recording which content options built them, so a props-on mesh and a props-off mesh are
+different files and can never overwrite each other. If you flip an option, the affected buildings
+are genuinely rebuilt rather than silently reused.</p>
+<p>After you update the package itself, run <strong>Regenerate All</strong> so your existing assets pick up any
+improvements in the generator — reuse cannot detect that the <em>generator</em> changed, only that your
+settings did.</p>
+<h3 id="mesh-variety">Mesh Variety</h3>
+<p>Available on every generating pane except Single, and <strong>0 by default, meaning unlimited</strong>. Set it
+to a number and that becomes the cap on how many <em>distinct building designs</em> a fill may draw per
+archetype.</p>
+<p>With a pool of, say, 12, buildings that share a footprint reuse the same mesh. You get:</p>
+<ul>
+<li>far fewer asset files,</li>
+<li>instant repeats, because the mesh is already built,</li>
+<li>and identical scene-only meshes that static-batch together.</li>
+</ul>
+<p>What you do <strong>not</strong> get is a visibly repetitive city, for two reasons: palettes are still mixed
+across the pool, and rows alternate their facing, so the same mesh rarely reads as the same
+building twice in one view. Placement, sizes, gaps and palettes are unaffected — the layout of a
+given seed is identical at any pool size.</p>
+<p>A good starting point for background filler is somewhere between 8 and 20 per archetype. Use 0
+(unlimited) for hero areas the camera lingers on.</p>
+<h2 id="where-the-output-goes">Where the output goes</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Parent object</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single / Variation Row</td>
+<td><em>(scene root)</em></td>
+<td>Loose buildings, grouped as "(loose)" in the health dashboard</td>
+</tr>
+<tr>
+<td>Street Row</td>
+<td><code>BCG_StreetRow_{seed}</code></td>
+<td>One Undo step for the whole row</td>
+</tr>
+<tr>
+<td>Along Path</td>
+<td><code>BCG_StreetPathRow_{pathName}_{seed}</code></td>
+<td>Regenerating <strong>replaces</strong> the previous output</td>
+</tr>
+<tr>
+<td>District fill</td>
+<td><code>BCG_Zone_{markerName}_{seed}</code></td>
+<td>Repopulating replaces the previous output</td>
+</tr>
+</tbody>
+</table>
+<p>Straight street rows <strong>stack</strong> — generate twice and you have two rows. Path and district fills
+<strong>replace</strong>, because they are tied to a specific piece of scene geometry that remembers what it
+last produced.</p>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>Some buildings are missing from my row.</strong> Either the plots were too small — the tool needs about
+7.8 m of frontage for a building — or an Obstacle Layers mask rejected those spots. The Console
+reports how many were relocated and how many were skipped after every fill.</p>
+<p><strong>Everything came out the same size.</strong> Check that you have not narrowed the archetype mix to one
+type with a fixed footprint. Street rows jitter cell width from a small pool (2.6, 3.0 or 3.4 m),
+so variety mostly comes from mixing archetypes.</p>
+<p><strong>Can I fill several districts at once?</strong> Yes — select them all and press <strong>Populate Selected
+Zones</strong>. There is also <strong>Populate All In Scene</strong>, which finds every district in the open scene and
+refills each with its own settings.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_05_CitiesAndDistricts.html">Cities and Districts</a></strong> — the one-button city and
+  per-district styling.</li>
+<li><strong><a href="BuildingGen_06_PathsAndRoads.html">Paths and Roads</a></strong> — curved streets and real road geometry.</li>
+<li><strong><a href="BuildingGen_09_Optimizing.html">Optimising</a></strong> — LODs, combining, and what to do before you ship.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_04_ManyBuildings.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

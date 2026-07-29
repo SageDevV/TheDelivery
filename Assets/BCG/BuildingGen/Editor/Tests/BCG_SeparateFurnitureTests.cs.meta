@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 34a33e594b7e0e84b993df099812cc5b
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Editor/Tests/BCG_SeparateFurnitureTests.cs
+  uploadId: 962654

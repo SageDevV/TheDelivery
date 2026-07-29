@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f9350e450ed2a5d49be1722ec1ffb7fc
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Documentation/HTML/BuildingGen_Changelog.html
+  uploadId: 962654

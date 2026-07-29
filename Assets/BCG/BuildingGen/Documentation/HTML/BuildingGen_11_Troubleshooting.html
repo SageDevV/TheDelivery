@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Troubleshooting and FAQ</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="troubleshooting-and-faq">Troubleshooting and FAQ</h1>
+<p>Problems first, then the questions people ask most. Every message the tool prints is prefixed
+<code>[BCG BuildingGen]</code>, so filtering the Console on that string shows you everything it has to say.</p>
+<h2 id="rendering-problems">Rendering problems</h2>
+<p>Anything to do with how buildings and roads look on screen — wrong shaders, missing
+textures, night glow and z-fighting.</p>
+<h3 id="buildings-are-pink-or-magenta">Buildings are pink or magenta</h3>
+<p><strong>Cause:</strong> the facade materials reference a shader that does not exist in the active render
+pipeline. It happens when you import into a URP or HDRP project, or switch pipeline afterwards.</p>
+<p><strong>Fix:</strong> click <strong>[Fix]</strong> beside the material badge in the City Ledger, or press <strong>Apply Materials</strong>
+on <strong>3 Dress ▸ Mood</strong>, or run <code>Tools ▸ BoneCracker Games ▸ Building Generator ▸ Fix Materials
+(Active Pipeline)</code> with no window open. All three rebuild the materials in place, and every existing
+reference survives because the GUIDs do not change.</p>
+<p>Full detail: <a href="BuildingGen_08_MaterialsAndLighting.html#fix-materials-the-one-button-that-solves-pink">Fix Materials</a>.</p>
+<h3 id="console-shader-not-found-falling-back">Console: "shader not found; falling back"</h3>
+<p>The tool could not resolve the expected shader for your pipeline, so it fell back to the other
+pipeline's lit shader rather than leaving you with magenta. This usually means the pipeline package
+is still importing. Wait for the import to finish, then run <strong>Fix Materials</strong> once.</p>
+<h3 id="console-facade-albedo-not-found-at">Console: "Facade albedo not found at …"</h3>
+<p>The texture atlases are missing from <code>Assets/BCG/BuildingGen/Textures/</code>. Reimport the package, or
+restore that folder from your version control. The same message shape appears for the road atlas.</p>
+<h3 id="windows-do-not-glow-at-night-in-my-baked-lighting">Windows do not glow at night in my baked lighting</h3>
+<p>Emission is read from whatever materials are assigned <strong>at bake time</strong>. The <code>_Night</code> material
+variants always glow; the base materials only glow when the Night Lights <strong>Intensity</strong> is above
+zero. Set the look you want first, then bake.</p>
+<h3 id="road-markings-flicker-at-a-distance">Road markings flicker at a distance</h3>
+<p>Markings sit 15 mm above the asphalt, which is enough for any sane setup — but a very low camera
+near-clip plane starves the depth buffer at city scale. Set your camera's near plane to about 0.5
+rather than 0.01.</p>
+<h2 id="placement-problems">Placement problems</h2>
+<p>Buildings ending up in the wrong place, being skipped, or sitting at the wrong height.</p>
+<h3 id="buildings-ended-up-somewhere-i-did-not-put-them">Buildings ended up somewhere I did not put them</h3>
+<p>They were relocated because the spot was taken. Every placement path tests a building's footprint
+against existing generated buildings and moves it to the nearest free spot rather than letting two
+intersect. In open ground it places exactly where you asked. The Console reports how many moved.</p>
+<h3 id="buildings-are-sitting-on-my-roads--scenery">Buildings are sitting on my roads / scenery</h3>
+<p>By default the tool only avoids <strong>its own</strong> buildings; your scenery is invisible to it. Point
+<strong>Obstacle Layers</strong> (in the <strong>Where</strong> section) at the physics layers your scenery lives on.</p>
+<p>Two things to check if that does not work:</p>
+<ul>
+<li><strong>The test is physics-based</strong> — obstacles need a <em>collider</em>. A visual-only mesh is invisible to it.</li>
+<li><strong>Trigger colliders are ignored</strong>, deliberately.</li>
+</ul>
+<h3 id="console-n-buildings-blocked-by-obstacle-layers">Console: "N building(s) blocked by Obstacle Layers"</h3>
+<p>Working as intended: those spots had no clear alternative nearby, so the buildings were skipped
+rather than forced. Skips never shift the rest of the layout — every other building stays exactly
+where that seed put it. Widen the area, lower the Edge Margin, or narrow the obstacle mask.</p>
+<h3 id="console-zone--is-too-small-to-populate">Console: "Zone … is too small to populate"</h3>
+<p>The district's box is smaller than the minimum plot the tool needs — roughly <strong>7.8 m</strong> in each
+direction, before the Edge Margin is subtracted. Make the box bigger or reduce Edge Margin.</p>
+<h3 id="console-zone--has-no-boxcollider--skipped">Console: "Zone … has no BoxCollider — skipped"</h3>
+<p>A district needs a <code>BoxCollider</code> on the same GameObject. Adding a <code>BCG_BuildingZone</code> component
+requires one, so this usually means the collider was removed afterwards.</p>
+<h3 id="console-snap-to-ground-found-no-ground">Console: "Snap To Ground found no ground"</h3>
+<p>The rays under those plots hit nothing on the <strong>Ground Layers</strong> mask. Check that your terrain or
+ground mesh is on a layer included in the mask, and that it is actually beneath the district.
+Colliders are not required — visible meshes work too — but the object has to be on the mask.</p>
+<p>Those buildings keep their flat placement rather than failing.</p>
+<h3 id="buildings-are-buried-in-my-hillside">Buildings are buried in my hillside</h3>
+<p>That is the pre-2.3 behaviour, or a building moved onto a slope by hand. Ground snapping now raises
+the base to the <strong>highest</strong> ground hit on slopes steeper than 5°, and fills the cut below with a
+basement wall.</p>
+<p>To repair existing buildings without regenerating: open <strong>4 Ship ▸ Health</strong> with <strong>Snap To Ground</strong>
+on, and press <strong>Skirts</strong> in the fix row. It re-probes the ground and re-derives the base height for
+every flagged building in one Undo-able step.</p>
+<h3 id="console-buildings-with-skirt-damage-were-renamed-away-from-the-generators-naming">Console: "building(s) with skirt damage were renamed away from the generator's naming"</h3>
+<p>The repair needs to parse a building's original recipe out of its name, and those objects were
+renamed. Rename them back, or regenerate them.</p>
+<h2 id="generation-problems">Generation problems</h2>
+<p>Problems while generating, and things that did not change when you expected them to.</p>
+<h3 id="the-editor-froze-while-filling-a-district">The Editor froze while filling a district</h3>
+<p>It should not — fills run one building per frame precisely to avoid that. If it happens, check
+whether you are running a fill from a script or a menu path that bypasses the job runner. Normal
+fills show progress in the City Ledger and can be cancelled there.</p>
+<h3 id="console-a-populate-job-is-already-running">Console: "A populate job is already running"</h3>
+<p>Only one fill runs at a time. Let it finish, or press <strong>Cancel</strong> in the City Ledger. Commands that
+would fight a running job are greyed out while it runs; <em>Fix Materials</em> and <em>Select All Generated</em>
+stay available because they cannot conflict.</p>
+<h3 id="my-buildings-disappeared-after-a-script-recompile">My buildings disappeared after a script recompile</h3>
+<p>You generated with <strong>Save As Prefab Assets</strong> off, and did not save the scene. Scene-only buildings
+live in the scene file and nowhere else; a domain reload from a recompile or an Editor restart
+destroys unsaved scene objects.</p>
+<p><strong>Save the scene immediately</strong> after generating scene-only buildings. There is no recovery
+afterwards.</p>
+<h3 id="console-skipping-unparseable-prefab-name">Console: "Skipping unparseable prefab name"</h3>
+<p>Regenerate All works out what to rebuild from each prefab's name. A renamed prefab cannot be parsed,
+so it is skipped rather than guessed at. Rename it back to the generator's pattern, or leave it —
+being skipped does no harm.</p>
+<h3 id="flipping-an-option-did-not-change-my-existing-buildings">Flipping an option did not change my existing buildings</h3>
+<p>Nothing changes retroactively. Content options apply when a building is generated. Regenerate those
+buildings, or refill the district, to pick up new options.</p>
+<p>Note that <strong>Regenerate All</strong> deliberately does <em>not</em> apply your current toggles — it preserves what
+each asset was authored with. To change content options you must regenerate from a pane with the new
+settings.</p>
+<h2 id="lighting-problems">Lighting problems</h2>
+<p>Baked GI, lightmap UVs and light probes.</p>
+<h3 id="my-buildings-were-dropped-from-the-lightmap-bake">My buildings were dropped from the lightmap bake</h3>
+<p>Unity's lightmapper rejects meshes whose vertex layout is not the standard float format, and reports
+<code>Invalid Mesh was removed from light baking input</code>.</p>
+<p>If you generated with <strong>version 2.3.0</strong>, its buildings carry a lightmap UV set the lightmapper cannot
+read. They are counted as <strong>missing</strong> lightmap UVs, so the fix is: <strong>4 Ship ▸ Finalize ▸ Bake
+Lightmap UVs… ▸ Bake Missing</strong>, once. You do not need Renew All and you do not need to regenerate
+your library.</p>
+<h3 id="console-lightmap-unwrap-failed-for">Console: "Lightmap unwrap failed for …"</h3>
+<p>That mesh could not be unwrapped, so it was left without a UV set and Contribute GI stays off for
+it — deliberately, since enabling GI on a mesh with no valid UV2 produces worse results than leaving
+it dynamic. Usually the mesh is degenerate or unusually large; regenerating it often clears it.</p>
+<h3 id="everything-went-dark-after-i-baked">Everything went dark after I baked</h3>
+<p>Check the light probes. A probe buried inside a building bakes black and drags everything
+interpolating against it dark. The probe generator pushes probes out of building volumes
+automatically and reports how many it relocated — if you placed probes by hand, check for any
+sitting inside geometry.</p>
+<h3 id="baked-lighting-vanished-after-optimize-city">Baked lighting vanished after Optimize City</h3>
+<p>Expected. Combining discards the existing lightmaps and re-unwraps the combined geometry. <strong>Combine
+first, then bake</strong> — the other order wastes the bake.</p>
+<h2 id="road-constructor-integration">Road Constructor integration</h2>
+<p><em>(Only relevant if you own Road Constructor by Pampel Games.)</em></p>
+<h3 id="some-road-segments-failed-with-a-heightrange-cause">Some road segments failed with a "HeightRange" cause</h3>
+<p>This was caused by the tool itself and is fixed. Every district carries an invisible collider that
+sat on the same layer Road Constructor raycasts for ground height, so a ray could hit a district's
+collider top instead of the ground and read a height delta outside Road Constructor's tolerance. The
+grid backend now disables district colliders for the construction pass and re-enables them
+immediately afterwards.</p>
+<p>If you still see occasional HeightRange failures on genuinely non-flat terrain, that is Road
+Constructor's own validation working correctly — widen its <strong>Height Range</strong> tolerance to match your
+terrain's elevation spread.</p>
+<h3 id="generation-stops-saying-a-road-name-is-missing">Generation stops saying a road name is missing</h3>
+<p>The grid backend looks up two exact names in your assigned RoadSet: <strong><code>Side Street Asphalt</code></strong> for
+streets and <strong><code>Boulevard Asphalt</code></strong> for avenues. Road Constructor's shipped demo set has both. If
+yours uses different names, rename or duplicate entries so those names exist — the tool reports the
+missing name rather than silently building nothing.</p>
+<h3 id="a-road-constructor-update-broke-compilation">A Road Constructor update broke compilation</h3>
+<p>Compile errors will be confined to <code>Assets/BCG/BuildingGen/Editor/RC/</code>, the only folder allowed to
+reference Road Constructor's types.</p>
+<p><strong>Delete that <code>Editor/RC/</code> folder.</strong> That is the procedure while Road Constructor is still installed.
+Removing the <code>BCG_URBUGE_RC</code> scripting define instead does <strong>not</strong> work — the detector re-adds it
+after every compile, because Road Constructor is genuinely present. With the folder gone there is no
+assembly left for the define to gate.</p>
+<h3 id="a-fresh-clone-or-ci-checkout-fails-to-compile">A fresh clone or CI checkout fails to compile</h3>
+<p>Different situation, opposite fix. If the project was cloned <strong>without</strong> Road Constructor but the
+<code>BCG_URBUGE_RC</code> define is still baked into <code>ProjectSettings</code>, the bridge assembly tries to compile
+against types that are not there — and the auto-detector cannot correct itself while the project is
+stuck mid-compile-error.</p>
+<p><strong>Remove <code>BCG_URBUGE_RC</code> from Player Settings manually.</strong> Compilation recovers, and the detector will
+add the define back automatically the next time Road Constructor is actually present.</p>
+<h2 id="frequently-asked-questions">Frequently asked questions</h2>
+<p>The questions that come up most, about what the tool can and cannot do.</p>
+<h3 id="can-i-use-this-at-runtime">Can I use this at runtime?</h3>
+<p>Yes. The geometry engine ships in the Runtime assembly, so you can generate buildings while your
+game is playing — endless runners, streaming worlds, procedural cities. Same engine, same seeds, same
+results. Runtime output has no static flags, lightmap UVs or LODGroup, since those are editor
+concerns. See <a href="BuildingGen_12_Reference.html#runtime-api">Reference ▸ Runtime API</a>.</p>
+<h3 id="do-i-need-the-tool-in-my-final-build">Do I need the tool in my final build?</h3>
+<p>No. Generation happens in the Editor and produces ordinary meshes and prefabs. The only things that
+ship are a few tiny data-only components — most importantly the marker that records each building's
+recipe. You could delete the Editor folder entirely and your city would still work.</p>
+<h3 id="can-i-go-inside-the-buildings">Can I go inside the buildings?</h3>
+<p>No. These are exteriors — one mesh, one material, no interiors and no openable doors. The rooms you
+can see through the windows are a shader effect with no geometry behind them. This is what keeps a
+building at one draw call.</p>
+<h3 id="can-i-change-the-material-on-one-wall">Can I change the material on one wall?</h3>
+<p>No, for the same reason. A building is a single mesh with a single material. You can repaint the
+shared texture atlas — see <a href="BuildingGen_AtlasLayout.html">Atlas Layout</a> — or parent your own objects
+to a generated building in the scene.</p>
+<h3 id="will-updating-the-package-change-my-existing-city">Will updating the package change my existing city?</h3>
+<p>No. Existing scenes and assets are never modified retroactively. When you <em>want</em> to pick up
+improvements, run <strong>Regenerate All</strong>, which rebuilds every prefab in place while preserving each
+one's authored content options and GUIDs — so scene placements survive.</p>
+<h3 id="is-the-same-seed-guaranteed-to-give-the-same-building">Is the same seed guaranteed to give the same building?</h3>
+<p>Yes, and it is enforced by automated tests. The random sequence is a fixed contract; new features
+append to the end of it rather than inserting in the middle, so upgrading does not silently change
+what your existing seeds produce. The one exception is deliberate: turning on a content option that
+did not exist before (props, extras, signage) adds geometry, and that is documented at each option.</p>
+<h3 id="how-many-buildings-can-i-generate">How many buildings can I generate?</h3>
+<p>There is no hard limit; the practical one is your scene. Generation is asynchronous at one building
+per frame, so a very large city takes time but never freezes. For scale, keep <strong>Mesh Variety</strong>
+finite and run <strong>Optimize City</strong> at the end.</p>
+<h3 id="does-it-work-with-terrain">Does it work with terrain?</h3>
+<p>Yes — turn on <strong>Snap To Ground</strong>. It works against colliders <em>and</em> against visible meshes with no
+collider, handles slopes with automatic basement walls, and reports plots where it found no ground.
+Roads, however, are flat-ground only.</p>
+<h3 id="which-render-pipelines-are-supported">Which render pipelines are supported?</h3>
+<p>Built-in, URP and HDRP. The only pipeline-coupled part is the facade materials, which <strong>Fix
+Materials</strong> rebuilds for whichever pipeline is active. Fake Interiors is the one feature not
+available on HDRP, where it falls back gracefully rather than breaking.</p>
+<h3 id="can-i-sell-a-game-made-with-this">Can I sell a game made with this?</h3>
+<p>Yes — that is what it is for. The usual Unity Asset Store licence applies: you ship the <em>output</em> in
+your game, you do not redistribute the tool itself.</p>
+<h2 id="getting-more-help">Getting more help</h2>
+<p>If none of the above covers it:</p>
+<ol>
+<li><strong>Filter the Console on <code>[BCG BuildingGen]</code></strong> — the tool reports relocations, skips, missing
+   ground and failed unwraps rather than failing silently.</li>
+<li><strong>Check the health dashboard</strong> (<strong>4 Ship ▸ Health</strong>) — it will usually name the problem for you
+   and offer a one-click fix.</li>
+<li><strong>Note your versions</strong> — the asset version is in the generator window's title row, and you will
+   want your Unity version and active render pipeline too.</li>
+<li><strong>Get in touch</strong> at <a href="https://www.bonecrackergames.com/contact/">bonecrackergames.com/contact</a>.</li>
+</ol>
+</div>
+<div class="footer">
+Generated from: BuildingGen_11_Troubleshooting.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

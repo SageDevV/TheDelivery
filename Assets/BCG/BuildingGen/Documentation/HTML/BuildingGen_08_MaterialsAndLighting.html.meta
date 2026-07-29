@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c478bf7b8333eca40a4969ca46fe35d8
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Documentation/HTML/BuildingGen_08_MaterialsAndLighting.html
+  uploadId: 962654

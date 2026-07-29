@@ -1,0 +1,14 @@
+{
+    "name": "BCG_BuildingGen.Runtime",
+    "rootNamespace": "BoneCrackerGames.BuildingGen",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

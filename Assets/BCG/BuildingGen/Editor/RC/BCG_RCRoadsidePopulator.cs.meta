@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 267b6f29e083f424aa34f9e69e22cc5a
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Editor/RC/BCG_RCRoadsidePopulator.cs
+  uploadId: 962654

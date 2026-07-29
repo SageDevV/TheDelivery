@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="reference">Reference</h1>
+<p>Lookup material: every setting with its default and range, the components, the deterministic seed
+contract, the runtime API, and what ships in the package. If you are learning the tool, start with
+<a href="BuildingGen_02_HowItWorks.html">How It Works</a> instead.</p>
+<p>All values on this page were read from the shipping source of <strong>version 2.5.0</strong>.</p>
+<h2 id="menu-items">Menu items</h2>
+<p>Everything under <code>Tools ▸ BoneCracker Games ▸ Building Generator ▸</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Menu item</th>
+<th>What it opens or does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Welcome Window</td>
+<td>The onboarding panel</td>
+</tr>
+<tr>
+<td>Building Generator</td>
+<td>The main tool window</td>
+</tr>
+<tr>
+<td>Replace Greyboxes With Buildings</td>
+<td>Converts selected blockout boxes into buildings</td>
+</tr>
+<tr>
+<td>Generate Light Probes…</td>
+<td>Opens the probe density prompt</td>
+</tr>
+<tr>
+<td>Remove Light Probes</td>
+<td>Deletes the generated probe group</td>
+</tr>
+<tr>
+<td>Optimize City (Combine Meshes)</td>
+<td>Merges generated buildings into district chunks</td>
+</tr>
+<tr>
+<td>De-Combine City</td>
+<td>Restores the source buildings</td>
+</tr>
+<tr>
+<td>Generate Street Furniture</td>
+<td>Lamps, benches, shelters and trees along pavements</td>
+</tr>
+<tr>
+<td>Remove Street Furniture</td>
+<td>Clears generated furniture</td>
+</tr>
+<tr>
+<td>Street Furniture As Separate Props</td>
+<td>Toggles one-prefab-per-prop mode</td>
+</tr>
+<tr>
+<td>Fix Materials (Active Pipeline)</td>
+<td>Rebuilds materials for the active render pipeline</td>
+</tr>
+<tr>
+<td>Regenerate All…</td>
+<td>Rebuilds every generated prefab in place</td>
+</tr>
+<tr>
+<td>Clean Unused…</td>
+<td>Finds and deletes orphaned generated assets</td>
+</tr>
+<tr>
+<td>Select All Generated</td>
+<td>Selects every generated building and road in the scene</td>
+</tr>
+</tbody>
+</table>
+<p>The last four also exist inside the window; they are mirrored as menu items so they work with no
+window open.</p>
+<h2 id="window-structure">Window structure</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Sub-tabs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1 Plan</strong></td>
+<td>City Grid · Zones · Paths</td>
+</tr>
+<tr>
+<td><strong>2 Build</strong></td>
+<td>Single · Street · Districts · Greybox</td>
+</tr>
+<tr>
+<td><strong>3 Dress</strong></td>
+<td>Mood · Furniture · Probes</td>
+</tr>
+<tr>
+<td><strong>4 Ship</strong></td>
+<td>Health · Finalize</td>
+</tr>
+</tbody>
+</table>
+<h3 id="primary-button-per-pane">Primary button per pane</h3>
+<table>
+<thead>
+<tr>
+<th>Pane</th>
+<th>Primary button</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plan ▸ City Grid</td>
+<td>Generate City</td>
+</tr>
+<tr>
+<td>Plan ▸ Zones</td>
+<td>Create Zone Marker</td>
+</tr>
+<tr>
+<td>Plan ▸ Paths</td>
+<td>Create Street Path</td>
+</tr>
+<tr>
+<td>Build ▸ Single</td>
+<td>Generate Building</td>
+</tr>
+<tr>
+<td>Build ▸ Street</td>
+<td>Generate Street Row / Generate Along Path</td>
+</tr>
+<tr>
+<td>Build ▸ Districts</td>
+<td>Populate Selected Zones</td>
+</tr>
+<tr>
+<td>Build ▸ Greybox</td>
+<td>Replace Greyboxes (n)</td>
+</tr>
+<tr>
+<td>Dress ▸ Mood</td>
+<td>Apply Materials</td>
+</tr>
+<tr>
+<td>Dress ▸ Furniture</td>
+<td>Generate Street Furniture</td>
+</tr>
+<tr>
+<td>Dress ▸ Probes</td>
+<td>Generate Light Probes…</td>
+</tr>
+<tr>
+<td>Ship ▸ Health / Finalize</td>
+<td><em>(none — Ship is a read-only audit stage)</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="settings">Settings</h2>
+<p>Every field in the window, grouped by the pane it appears on. Defaults are what a fresh
+install gives you; ranges are the hard limits the controls enforce.</p>
+<h3 id="build--single">Build ▸ Single</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Archetype</td>
+<td>enum</td>
+<td>Tower</td>
+<td>Tower / Shop / Apartment / House</td>
+</tr>
+<tr>
+<td>Texture Variant</td>
+<td>enum</td>
+<td>A — Light Gray</td>
+<td>A / B / C / D</td>
+</tr>
+<tr>
+<td>Cells X (Width)</td>
+<td>int</td>
+<td>7</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cells Z (Depth)</td>
+<td>int</td>
+<td>5</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Floors</td>
+<td>int</td>
+<td>9</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Seed</td>
+<td>int</td>
+<td>0</td>
+<td>any integer</td>
+</tr>
+<tr>
+<td>Cell Width (m)</td>
+<td>float</td>
+<td>3.0</td>
+<td>2 – 5</td>
+</tr>
+<tr>
+<td>Floor Height (m)</td>
+<td>float</td>
+<td>3.2</td>
+<td>2.4 – 5</td>
+</tr>
+<tr>
+<td>Ground Floor (m)</td>
+<td>float</td>
+<td>4.0</td>
+<td>2.8 – 6</td>
+</tr>
+<tr>
+<td>Parapet Height (m)</td>
+<td>float</td>
+<td>0.9</td>
+<td>0.2 – 2</td>
+</tr>
+<tr>
+<td>Parapet Thick (m)</td>
+<td>float</td>
+<td>0.35</td>
+<td>0.15 – 1</td>
+</tr>
+</tbody>
+</table>
+<p>Archetype presets (applied when you switch archetype; every field stays editable):</p>
+<table>
+<thead>
+<tr>
+<th>Archetype</th>
+<th style="text-align: right;">Floors</th>
+<th style="text-align: right;">Cells X × Z</th>
+<th style="text-align: right;">Floor Height</th>
+<th style="text-align: right;">Ground Floor</th>
+<th style="text-align: right;">Parapet Height</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tower</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">7 × 5</td>
+<td style="text-align: right;">3.2</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">0.9</td>
+</tr>
+<tr>
+<td>Shop</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5 × 4</td>
+<td style="text-align: right;">3.2</td>
+<td style="text-align: right;">4.2</td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>Apartment</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">8 × 4</td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">0.7</td>
+</tr>
+<tr>
+<td>House</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4 × 3</td>
+<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: right;"><em>(ignored)</em></td>
+</tr>
+</tbody>
+</table>
+<h3 id="build--street">Build ▸ Street</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scatter Seed</td>
+<td>int</td>
+<td>12345</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Road Length (m)</td>
+<td>float</td>
+<td>120</td>
+<td>30 – 600</td>
+</tr>
+<tr>
+<td>Road Width (m)</td>
+<td>float</td>
+<td>16</td>
+<td>6 – 40</td>
+</tr>
+<tr>
+<td>Both Sides</td>
+<td>bool</td>
+<td>on</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Generate road surface</td>
+<td>bool</td>
+<td>off</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Gap Range (m)</td>
+<td>float pair</td>
+<td>4 – 10</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Tower / Shop / Apartment / House weight</td>
+<td>float</td>
+<td>0.35 / 0.30 / 0.35 / 0.25</td>
+<td>relative weights</td>
+</tr>
+<tr>
+<td>Variant Mix A / B / C / D</td>
+<td>bool</td>
+<td>all on</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="plan--city-grid">Plan ▸ City Grid</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>City Seed</td>
+<td>int</td>
+<td>97531</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Blocks X</td>
+<td>int</td>
+<td>4</td>
+<td>2 – 12</td>
+</tr>
+<tr>
+<td>Blocks Z</td>
+<td>int</td>
+<td>4</td>
+<td>2 – 12</td>
+</tr>
+<tr>
+<td>Block Width (m)</td>
+<td>float</td>
+<td>60</td>
+<td>40 – 200</td>
+</tr>
+<tr>
+<td>Block Depth (m)</td>
+<td>float</td>
+<td>50</td>
+<td>40 – 200</td>
+</tr>
+<tr>
+<td>Street Width (m)</td>
+<td>float</td>
+<td>12</td>
+<td>8 – 30</td>
+</tr>
+<tr>
+<td>Avenue Every N</td>
+<td>int</td>
+<td>3</td>
+<td>0 – 6</td>
+</tr>
+<tr>
+<td>Avenue Width (m)</td>
+<td>float</td>
+<td>24</td>
+<td>12 – 50</td>
+</tr>
+<tr>
+<td>Core Preset</td>
+<td>asset</td>
+<td>none</td>
+<td>any <code>BCG_GenerationPreset</code></td>
+</tr>
+<tr>
+<td>Edge Preset</td>
+<td>asset</td>
+<td>none</td>
+<td>any <code>BCG_GenerationPreset</code></td>
+</tr>
+<tr>
+<td>Core Radius</td>
+<td>float</td>
+<td>0.35</td>
+<td>0 – 1</td>
+</tr>
+<tr>
+<td>Skyline Falloff</td>
+<td>bool</td>
+<td>on</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Min Height Scale</td>
+<td>float</td>
+<td>0.4</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Create Ground</td>
+<td>bool</td>
+<td>on</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Create Roads</td>
+<td>bool</td>
+<td>on</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Sidewalk Width (m)</td>
+<td>float</td>
+<td>2.5</td>
+<td>1 – 4</td>
+</tr>
+<tr>
+<td>Road Backend</td>
+<td>enum</td>
+<td>Built-in (grid roads)</td>
+<td>only shown with Road Constructor installed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="plan--zones--build--districts">Plan ▸ Zones / Build ▸ Districts</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Zone Seed</td>
+<td>int</td>
+<td>24680</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Edge Margin (m)</td>
+<td>float</td>
+<td>1</td>
+<td>0 – 8</td>
+</tr>
+<tr>
+<td>Row Gap (m)</td>
+<td>float pair</td>
+<td>6 – 10</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Markers After</td>
+<td>enum</td>
+<td>Disable</td>
+<td>Disable / Delete</td>
+</tr>
+</tbody>
+</table>
+<h3 id="generation-settings--geometry">Generation Settings ▸ Geometry</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Detail</td>
+<td>Standard</td>
+<td>Simple / Standard / Detailed</td>
+</tr>
+<tr>
+<td>Rooftop Props</td>
+<td>on</td>
+<td>Off reproduces pre-props geometry exactly</td>
+</tr>
+<tr>
+<td>Facade Extras</td>
+<td>on</td>
+<td>Off reproduces pre-extras geometry exactly</td>
+</tr>
+<tr>
+<td>Lit Signage</td>
+<td>on for new work</td>
+<td>The engine default is off, for byte-compatibility</td>
+</tr>
+<tr>
+<td>Generate LODs</td>
+<td>off</td>
+<td>Adds an LODGroup and simplified child meshes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="generation-settings--saving">Generation Settings ▸ Saving</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Save As Prefab Assets</td>
+<td>on</td>
+<td>Off places buildings in the scene with no assets written</td>
+</tr>
+<tr>
+<td>Bake Lightmap UVs</td>
+<td>off</td>
+<td>The unwrap is the most expensive part of generating</td>
+</tr>
+<tr>
+<td>Reuse Existing Assets</td>
+<td>on</td>
+<td>Loads matching assets instead of rebuilding</td>
+</tr>
+<tr>
+<td>Mesh Variety</td>
+<td>0</td>
+<td>0 = unlimited. Caps distinct designs per archetype. Not on Single</td>
+</tr>
+</tbody>
+</table>
+<h3 id="where-placement">Where (placement)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Obstacle Layers</td>
+<td>Nothing</td>
+<td>Physics layers treated as "do not build here"</td>
+</tr>
+<tr>
+<td>Snap To Ground</td>
+<td>off</td>
+<td>Places buildings on the ground surface beneath them</td>
+</tr>
+<tr>
+<td>Ground Layers</td>
+<td>Everything</td>
+<td>What counts as ground when snapping</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dress--mood">Dress ▸ Mood</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Night Lights Intensity</td>
+<td>0.8 (Dusk)</td>
+<td>0 turns windows off</td>
+</tr>
+<tr>
+<td>Window Color</td>
+<td>warm</td>
+<td>The glow colour</td>
+</tr>
+<tr>
+<td>Fake Interiors</td>
+<td>off</td>
+<td>Not available on HDRP</td>
+</tr>
+</tbody>
+</table>
+<p>Presets: <strong>Day</strong> = intensity 0 · <strong>Dusk</strong> = 0.8, warm (shipped default) · <strong>Night</strong> = 2.5, warm.</p>
+<h3 id="dress--probes">Dress ▸ Probes</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quality</td>
+<td>High (12 m)</td>
+<td>Low 24 m / Medium 16 m / High 12 m / Ultra 8 m / Custom</td>
+</tr>
+<tr>
+<td>Custom spacing</td>
+<td>—</td>
+<td>1 m minimum</td>
+</tr>
+<tr>
+<td>Probe Budget</td>
+<td>4096</td>
+<td>up to 65536</td>
+</tr>
+<tr>
+<td>Coverage</td>
+<td>Whole city</td>
+<td>Whole city / Near roads + buildings (15 m band)</td>
+</tr>
+</tbody>
+</table>
+<p>Probe heights: street level <strong>1.5 m</strong>, mid-rise <strong>8 m</strong>, rooftop <strong>tallest roof + 2 m</strong> (only where a
+building stands nearby).</p>
+<h2 id="components">Components</h2>
+<p>The two components the tool puts in your scene. Both are data-only and safe to ship in a
+build — neither contains any generation logic.</p>
+<h3 id="bcg_buildingzone-district-component">BCG_BuildingZone (district component)</h3>
+<p>A Runtime <code>MonoBehaviour</code> that gives a <code>BoxCollider</code> area its own district settings. Requires a
+<code>BoxCollider</code> on the same GameObject; carries no generation logic, so it is safe in a build.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>towerWeight</code></td>
+<td>float</td>
+<td>0.35</td>
+<td>0 – 1</td>
+<td>Relative chance a plot becomes a Tower</td>
+</tr>
+<tr>
+<td><code>shopWeight</code></td>
+<td>float</td>
+<td>0.30</td>
+<td>0 – 1</td>
+<td>Relative chance a plot becomes a Shop</td>
+</tr>
+<tr>
+<td><code>apartmentWeight</code></td>
+<td>float</td>
+<td>0.35</td>
+<td>0 – 1</td>
+<td>Relative chance a plot becomes an Apartment</td>
+</tr>
+<tr>
+<td><code>houseWeight</code></td>
+<td>float</td>
+<td>0.25</td>
+<td>0 – 1</td>
+<td>Relative chance a plot becomes a gabled House</td>
+</tr>
+<tr>
+<td><code>variantA</code></td>
+<td>bool</td>
+<td>true</td>
+<td>—</td>
+<td>Allow the A — Light Gray palette</td>
+</tr>
+<tr>
+<td><code>variantB</code></td>
+<td>bool</td>
+<td>true</td>
+<td>—</td>
+<td>Allow the B — Brick palette</td>
+</tr>
+<tr>
+<td><code>variantC</code></td>
+<td>bool</td>
+<td>true</td>
+<td>—</td>
+<td>Allow the C — Graphite Curtain palette</td>
+</tr>
+<tr>
+<td><code>variantD</code></td>
+<td>bool</td>
+<td>true</td>
+<td>—</td>
+<td>Allow the D — White Plaster palette</td>
+</tr>
+<tr>
+<td><code>seed</code></td>
+<td>int</td>
+<td>0</td>
+<td>—</td>
+<td>0 = auto; a stable seed is written on first fill</td>
+</tr>
+<tr>
+<td><code>edgeMargin</code></td>
+<td>float</td>
+<td>1</td>
+<td>0 – 8</td>
+<td>Distance (m) buildings keep from the zone bounds</td>
+</tr>
+<tr>
+<td><code>gapMin</code></td>
+<td>float</td>
+<td>4</td>
+<td>—</td>
+<td>Minimum spacing (m) between plots along a row</td>
+</tr>
+<tr>
+<td><code>gapMax</code></td>
+<td>float</td>
+<td>10</td>
+<td>—</td>
+<td>Maximum spacing (m) between plots along a row</td>
+</tr>
+<tr>
+<td><code>rowGapMin</code></td>
+<td>float</td>
+<td>6</td>
+<td>—</td>
+<td>Minimum alley width (m) between rows</td>
+</tr>
+<tr>
+<td><code>rowGapMax</code></td>
+<td>float</td>
+<td>10</td>
+<td>—</td>
+<td>Maximum alley width (m) between rows</td>
+</tr>
+<tr>
+<td><code>obstacleLayers</code></td>
+<td>LayerMask</td>
+<td>Nothing</td>
+<td>—</td>
+<td>Layers treated as obstacles for this zone</td>
+</tr>
+<tr>
+<td><code>heightFalloff</code></td>
+<td>AnimationCurve</td>
+<td>flat at 1</td>
+<td>—</td>
+<td>X = distance from centre (0–1), Y = floor multiplier</td>
+</tr>
+<tr>
+<td><code>snapToGround</code></td>
+<td>bool</td>
+<td>false</td>
+<td>—</td>
+<td>Snap each building's base to the ground surface</td>
+</tr>
+<tr>
+<td><code>groundLayers</code></td>
+<td>LayerMask</td>
+<td>Everything</td>
+<td>—</td>
+<td>What counts as ground when snapping</td>
+</tr>
+<tr>
+<td><code>detail</code></td>
+<td>enum</td>
+<td>Full (Standard)</td>
+<td>—</td>
+<td>Geometry tier for this district</td>
+</tr>
+<tr>
+<td><code>facadeExtras</code></td>
+<td>bool</td>
+<td>true</td>
+<td>—</td>
+<td>AC units and wall vents on Tower/Shop/Apartment</td>
+</tr>
+</tbody>
+</table>
+<p><code>lastPopulated</code> is hidden in the Inspector and managed by the tool.</p>
+<p><strong>Gizmo colours:</strong> cyan <code>(0.2, 0.9, 1.0)</code> while empty, green <code>(0.3, 1.0, 0.4)</code> once populated, with
+an 8%-alpha solid fill when selected.</p>
+<h3 id="bcg_buildingmarker-per-building-tag">BCG_BuildingMarker (per-building tag)</h3>
+<p>Stamped on every generated building. Hidden from the Add Component menu and the Inspector; data-only
+and safe in a build. It is how the tool finds, audits and cleans up its own output.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>archetype</code></td>
+<td>enum</td>
+<td>—</td>
+<td>What kind of building this is</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td>int</td>
+<td>—</td>
+<td>Palette index, 0 = A</td>
+</tr>
+<tr>
+<td><code>seed</code></td>
+<td>int</td>
+<td>—</td>
+<td>The seed that produced it</td>
+</tr>
+<tr>
+<td><code>rooftopProps</code></td>
+<td>bool</td>
+<td>false</td>
+<td>Whether it was generated with props</td>
+</tr>
+<tr>
+<td><code>detail</code></td>
+<td>enum</td>
+<td>Full</td>
+<td>The tier it was generated at</td>
+</tr>
+<tr>
+<td><code>facadeExtras</code></td>
+<td>bool</td>
+<td>false</td>
+<td>Whether it was generated with extras</td>
+</tr>
+<tr>
+<td><code>litSigns</code></td>
+<td>bool</td>
+<td>false</td>
+<td>Whether it was generated with signage</td>
+</tr>
+<tr>
+<td><code>footprintWidth</code></td>
+<td>float</td>
+<td>—</td>
+<td>Local footprint width</td>
+</tr>
+<tr>
+<td><code>footprintDepth</code></td>
+<td>float</td>
+<td>—</td>
+<td>Local footprint depth</td>
+</tr>
+<tr>
+<td><code>footprintHeight</code></td>
+<td>float</td>
+<td>—</td>
+<td>Local footprint height</td>
+</tr>
+</tbody>
+</table>
+<p>The three option flags default to <strong>false</strong> so buildings made before those features existed
+deserialise honestly rather than claiming content they do not have.</p>
+<h2 id="the-seed-contract">The seed contract</h2>
+<p>Every building is built from a single <code>System.Random(seed)</code> sequence, consumed in a fixed order.
+This is the load-bearing invariant behind "same seed = same building", so the order is never
+changed — new features append to the end.</p>
+<ol>
+<li><strong>Massing plan</strong> — setback / podium / L-plan picks. Tower only, and only when eligible. House
+   short-circuits to a slab <strong>without consuming any draws</strong>; its roof pitch is a pure function of the
+   seed, not a draw.</li>
+<li><strong>Facade style pair</strong> — a primary and secondary style rolled from the archetype's pool.</li>
+<li><strong>Per block, in plan order</strong> — four per-side U offsets, then one band/style roll per floor.</li>
+<li><strong>Rooftop / storefront props</strong> — gated on <code>rooftopProps</code>, non-House only. Fixed draw counts
+   depending only on archetype and floor count, drawn <em>before</em> the tail so a Simple build can
+   truncate without desyncing. With props off, this step is skipped entirely.</li>
+<li><strong>Tail</strong> — either <strong>5a</strong> per-block roof clutter (non-House), or <strong>5b</strong> the House chimney rolls
+   (always 3 draws: presence, side, position — regardless of outcome).</li>
+<li><strong>Facade extras</strong> — gated on <code>facadeExtras</code>, non-House only. Appended after the tail. Per side
+   (0–3), always 3 draws: presence, density, phase — 12 total, fixed regardless of outcome.</li>
+<li><strong>Lit signage</strong> — gated on <code>litSigns</code>. Shop = 2 draws; Tower with 10+ floors = 7 draws; Apartment,
+   shorter Towers and House consume nothing.</li>
+</ol>
+<p><strong>Simple</strong> is a strict <em>prefix</em>: it consumes identical draws through step 4 and truncates from there.
+It is never a different roll sequence.</p>
+<p><strong>Detailed adds nothing to this list.</strong> Every Detailed-only feature is either always-present geometry
+or a pure function of the seed, consuming zero draws. Standard and Detailed are byte-identical
+through steps 1–6; only the vertex count differs.</p>
+<p><strong>Road generation consumes nothing</strong> from any seeded sequence, which is why toggling roads never
+reshuffles a building.</p>
+<h3 id="mesh-name-content-tags">Mesh name content tags</h3>
+<p>Generated mesh assets are name-tagged whenever their geometry departs from the untagged baseline, so
+flipping an option can never overwrite a different combination's shared mesh. Tags compose in this
+fixed order:</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Meaning</th>
+<th>Applied when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_P</code></td>
+<td>Rooftop / storefront props</td>
+<td><code>rooftopProps == true</code>, at every detail tier</td>
+</tr>
+<tr>
+<td><code>_D</code></td>
+<td>Detailed tier</td>
+<td><code>detail == Detailed</code></td>
+</tr>
+<tr>
+<td><code>_S</code></td>
+<td>Simple tier</td>
+<td><code>detail == Simple</code></td>
+</tr>
+<tr>
+<td><code>_X</code></td>
+<td>Facade extras</td>
+<td><code>facadeExtras == true</code> <strong>and</strong> tier is not Simple</td>
+</tr>
+<tr>
+<td><code>_G</code></td>
+<td>Lit signage</td>
+<td><code>litSigns == true</code> <strong>and</strong> tier is not Simple</td>
+</tr>
+<tr>
+<td><code>_LOD1</code></td>
+<td>First LOD child mesh</td>
+<td>Generate LODs on</td>
+</tr>
+<tr>
+<td><code>_LOD2</code></td>
+<td>Second LOD child mesh</td>
+<td>Generate LODs on <strong>and</strong> tier is Detailed</td>
+</tr>
+</tbody>
+</table>
+<p>A mesh's full name is <code>BCG_BuildingMesh_{baseId}{tags}</code> — for example a Detailed building with props
+and extras is <code>..._P_D_X</code>. Extras and signage are suppressed at the Simple tier, which is why they
+are not tagged there: a Simple mesh with extras on is byte-identical to one with extras off, and
+tagging it would create a spurious duplicate.</p>
+<h2 id="lod-transition-points">LOD transition points</h2>
+<table>
+<thead>
+<tr>
+<th>Detail tier</th>
+<th style="text-align: right;">LOD0 holds to</th>
+<th style="text-align: right;">LOD1 holds to</th>
+<th style="text-align: right;">Culls below</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple / Standard</td>
+<td style="text-align: right;">0.10</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.01</td>
+</tr>
+<tr>
+<td>Detailed</td>
+<td style="text-align: right;">0.55</td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">0.01</td>
+</tr>
+</tbody>
+</table>
+<p>Values are fractions of screen height.</p>
+<h2 id="runtime-api">Runtime API</h2>
+<p>The geometry engine lives in the Runtime assembly, so buildings can be generated in-game.</p>
+<pre><code class="language-csharp">using BoneCrackerGames.BuildingGen;
+
+public class CitySpawner : MonoBehaviour {
+
+    //  Assign one of the shipped facade materials (Generated/BCG_Building_Facade_A..D.mat)
+    //  in the Inspector — runtime code cannot create pipeline-aware materials itself.
+    public Material facadeMaterial;
+
+    void Start() {
+
+        BCG_BuildingParams p = new BCG_BuildingParams {
+            archetype = BCG_BuildingArchetype.Tower,
+            cellsX = 7,
+            cellsZ = 5,
+            floors = 12,
+            seed = 4242
+        };
+
+        GameObject building = BCG_RuntimeBuildingFactory.Build(p, facadeMaterial);
+        building.transform.position = new Vector3(30f, 0f, 0f);
+
+    }
+
+}
+</code></pre>
+<h3 id="entry-points">Entry points</h3>
+<pre><code class="language-csharp">//  Just the mesh.
+Mesh BCG_BuildingMeshCore.BuildMesh(BCG_BuildingParams p);
+Mesh BCG_BuildingMeshCore.BuildMesh(BCG_BuildingParams p, BCG_BuildingDetail detail);
+
+//  The whole GameObject: mesh, material, per-block colliders, identity marker.
+GameObject BCG_RuntimeBuildingFactory.Build(
+    BCG_BuildingParams p,
+    Material material,
+    bool addColliders = true,
+    BCG_BuildingDetail detail = BCG_BuildingDetail.Full);
+</code></pre>
+<h3 id="bcg_buildingparams">BCG_BuildingParams</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>archetype</code></td>
+<td>Tower</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td>0 (A)</td>
+</tr>
+<tr>
+<td><code>cellsX</code></td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>cellsZ</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>floors</code></td>
+<td>9</td>
+</tr>
+<tr>
+<td><code>seed</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>cellWidth</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>floorHeight</code></td>
+<td>3.2</td>
+</tr>
+<tr>
+<td><code>groundFloorHeight</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>parapetHeight</code></td>
+<td>0.9</td>
+</tr>
+<tr>
+<td><code>parapetThickness</code></td>
+<td>0.35</td>
+</tr>
+<tr>
+<td><code>rooftopProps</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>detail</code></td>
+<td>Full</td>
+</tr>
+<tr>
+<td><code>facadeExtras</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>litSigns</code></td>
+<td>false</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes">Notes</h3>
+<ul>
+<li><strong>The same seed produces the same building everywhere.</strong> The Editor and the runtime share one
+  engine.</li>
+<li><strong>Runtime output has no static flags, lightmap UVs or LODGroup.</strong> Those are editor-time concerns;
+  runtime output is meant to be dynamic.</li>
+<li><strong>Generation is main-thread</strong> (it uses Unity's mesh API). A large tower costs a few milliseconds,
+  so spread bulk generation across frames.</li>
+</ul>
+<h2 id="enumerations">Enumerations</h2>
+<pre><code class="language-csharp">enum BCG_BuildingArchetype { Tower, Shop, Apartment, House }
+enum BCG_BuildingDetail    { Full, Simple, Detailed }        //  UI: Standard, Simple, Detailed
+enum BCG_FacadeStyle       { OfficeDark, OfficeLit, Punched, Ribbon, Balcony, Mullion }
+</code></pre>
+<h2 id="stored-preferences">Stored preferences</h2>
+<p>Settings are stored per user in <code>EditorPrefs</code> under the <code>BCG.BuildingGen.</code> prefix — for example
+<code>BCG.BuildingGen.Stage</code>, <code>BCG.BuildingGen.DetailLevel</code>, <code>BCG.BuildingGen.GenerateLODs</code>,
+<code>BCG.BuildingGen.SaveAsPrefab</code>, <code>BCG.BuildingGen.FakeInteriors</code>, <code>BCG.BuildingGen.ProbeBudget</code>.</p>
+<p>Three of them are stored <strong>per project</strong> (the key carries the project's GUID) because they reference
+project-specific things: the output root, the obstacle layer mask and the ground layer mask.</p>
+<p>Nothing about your city depends on these — they are UI state. A teammate opening your scene sees the
+same city with their own tool preferences.</p>
+<h2 id="package-contents">Package contents</h2>
+<table>
+<thead>
+<tr>
+<th>Folder</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Editor/</code></td>
+<td>The generator window and every tool: mesh builder, zone populator, placement guard, road builder, greybox replacer, probe placer, city optimizer, furniture builder, scene inventory, asset cleanup, onboarding, UI theme</td>
+</tr>
+<tr>
+<td><code>Editor/RC/</code></td>
+<td>The optional Road Constructor bridge. Only compiles when Road Constructor is present</td>
+</tr>
+<tr>
+<td><code>Runtime/</code></td>
+<td>The geometry core and runtime factory, plus data-only components: <code>BCG_BuildingZone</code>, <code>BCG_BuildingMarker</code>, <code>BCG_RoadNetwork</code>, <code>BCG_RoadMarker</code>, the enums and the version stamp</td>
+</tr>
+<tr>
+<td><code>Shaders/</code></td>
+<td><code>BCG_FacadeInterior.shader</code> and its include (Built-in + URP SubShaders)</td>
+</tr>
+<tr>
+<td><code>Textures/</code></td>
+<td>The facade atlases (albedo, emission, normal, specular × A–D), the window mask, the interior room atlas, and the road atlas and emission maps</td>
+</tr>
+<tr>
+<td><code>Presets/</code></td>
+<td>The four shipped district presets</td>
+</tr>
+<tr>
+<td><code>Demo/</code></td>
+<td>The demo scene and its playable rig scripts</td>
+</tr>
+<tr>
+<td><code>Documentation/</code></td>
+<td>This documentation set and its HTML mirrors</td>
+</tr>
+<tr>
+<td><code>Generated/</code></td>
+<td>Materials, plus the meshes and prefabs you generate</td>
+</tr>
+<tr>
+<td><code>Addons/</code></td>
+<td>The optional City Demo package, imported on demand</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not shipped:</strong> the Edit Mode tests, the internal Python texture-authoring scripts, and the
+development documents outside <code>Assets/</code>.</p>
+<h2 id="version">Version</h2>
+<p>The authoritative version is <code>BuildingGen_Version.Version</code> in
+<code>Runtime/BuildingGen_Version.cs</code> — currently <strong>2.5.0</strong>. The generator window shows it in its title
+row. See the <a href="BuildingGen_Changelog.html">Changelog</a> for what changed in each release.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><strong><a href="BuildingGen_02_HowItWorks.html">How It Works</a></strong> — the concepts behind this reference.</li>
+<li><strong><a href="BuildingGen_AtlasLayout.html">Atlas Layout</a></strong> — the texture atlas band layout.</li>
+<li><strong><a href="BuildingGen_11_Troubleshooting.html">Troubleshooting</a></strong> — every Console message explained.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_12_Reference.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

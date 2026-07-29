@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 4901a678afa73c940949f6b3b6466f7e
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Editor/BCG_MeshPacker.cs
+  uploadId: 962654

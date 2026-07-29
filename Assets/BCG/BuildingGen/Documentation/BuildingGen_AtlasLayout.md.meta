@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c2511faf5cab0fa4d9a762eac7c31ffd
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Documentation/BuildingGen_AtlasLayout.md
+  uploadId: 962654

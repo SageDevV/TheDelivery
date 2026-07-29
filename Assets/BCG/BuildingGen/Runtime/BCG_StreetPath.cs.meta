@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 879bfd3da404a7a4993a1327a7d2a08d
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Runtime/BCG_StreetPath.cs
+  uploadId: 962654

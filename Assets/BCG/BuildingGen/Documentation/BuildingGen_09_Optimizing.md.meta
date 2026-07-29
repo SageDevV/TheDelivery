@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 494fa1d8fb186a24d90f1a9d237fd915
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Documentation/BuildingGen_09_Optimizing.md
+  uploadId: 962654

@@ -1,0 +1,244 @@
+/* BCG Building Generator dark theme. Single source of visual truth for all three windows.
+   Loaded by GUID via BCG_UITheme (path-independent, same pattern the old guiskin used). */
+
+.bcg-root {
+    --bcg-bg: #1B1B1D;
+    --bcg-panel: #232326;
+    --bcg-field: #2A2A2E;
+    --bcg-accent: #E8862D;
+    --bcg-accent-hover: #F59A45;
+    --bcg-danger: #C74B42;
+    --bcg-ok: #6DAE6D;
+    --bcg-text: #D8D8D8;
+    --bcg-text-dim: #9A9A9E;
+    background-color: var(--bcg-bg);
+    color: var(--bcg-text);
+}
+
+.bcg-section {
+    -unity-font-style: bold;
+    font-size: 12px;
+    color: var(--bcg-accent);
+    margin: 8px 4px 2px 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 0, 0, 0.35);
+    padding-bottom: 2px;
+}
+
+.bcg-row { flex-direction: row; margin: 1px 4px; align-items: center; }
+.bcg-row > .bcg-row-label { width: 150px; color: var(--bcg-text); }
+.bcg-row > .bcg-row-field { flex-grow: 1; }
+
+.bcg-hint { color: var(--bcg-text-dim); font-size: 10px; margin: 0 8px 2px 12px; white-space: normal; }
+
+.bcg-primary {
+    height: 30px;
+    -unity-font-style: bold;
+    font-size: 13px;
+    background-color: var(--bcg-accent);
+    color: #1B1B1D;
+    border-radius: 3px;
+    margin: 4px;
+}
+.bcg-primary:hover:enabled { background-color: var(--bcg-accent-hover); }
+.bcg-primary:focus:enabled { border-color: var(--bcg-accent-hover); }
+.bcg-primary:disabled { opacity: 0.4; }
+
+/* Strong secondary — tinted outline; the pinned action-bar button stays the ONLY filled primary. */
+.bcg-secondary {
+    height: 26px;
+    -unity-font-style: bold;
+    font-size: 12px;
+    background-color: rgba(232, 134, 45, 0.10);
+    color: var(--bcg-accent);
+    border-color: var(--bcg-accent);
+    border-radius: 3px;
+    margin: 4px;
+}
+.bcg-secondary:hover:enabled { background-color: rgba(232, 134, 45, 0.22); }
+.bcg-secondary:disabled { opacity: 0.4; }
+
+.bcg-danger {
+    color: var(--bcg-danger);
+    background-color: rgba(199, 75, 66, 0.14);
+    border-color: rgba(199, 75, 66, 0.55);
+}
+.bcg-danger:hover:enabled { background-color: rgba(199, 75, 66, 0.28); }
+
+.bcg-badge { flex-direction: row; align-items: center; margin: 2px 6px; }
+.bcg-badge-dot { width: 8px; height: 8px; border-radius: 4px; margin-right: 5px; }
+.bcg-badge-label { font-size: 10px; color: var(--bcg-text-dim); }
+
+/* Why-is-Generate-disabled one-liner in the pinned bar; truncates before crowding Tools. */
+.bcg-bar-reason {
+    font-size: 10px;
+    color: var(--bcg-text-dim);
+    -unity-font-style: italic;
+    margin-left: 8px;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bcg-separator { height: 1px; background-color: rgba(0, 0, 0, 0.35); margin: 4px 0; }
+
+.bcg-summary-foldout > .unity-foldout__content { margin-left: 8px; }
+
+/* Fixed chrome bands of the generator window (title row + output row), joining .bcg-ledger,
+   .cp-identity-strip and .bcg-actionbar in never absorbing the window's height deficit. A stage
+   host's flex-basis is "auto" = its own unconstrained content height (a whole pane inside a
+   ScrollView, hundreds of px), so at the 418x480 minimum Yoga's shrink maths hands these small
+   rows a proportional share of a several-hundred-pixel deficit: measured, they collapsed to ~50%
+   of their natural height and their contents spilled onto the pane below. flex-shrink: 0 makes the
+   host — the only element that CAN scroll or clamp — absorb the whole deficit instead. */
+.cp-title-row, .cp-output-row { flex-shrink: 0; }
+
+.bcg-actionbar {
+    border-top-width: 1px;
+    border-top-color: rgba(0, 0, 0, 0.45);
+    background-color: var(--bcg-panel);
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+/* Tab strips come in three tiers so stage / sub-tab / layout scopes read differently at a glance:
+   base (level 1, Plan|Build|Dress|Ship) = filled orange block; --sub (level 2, the stage's sub-tabs,
+   e.g. Single|Street|Districts|Greybox) = orange underline; --tertiary (level 3, Straight|Along Path)
+   = quiet pill. The modifier rules rely on appearing AFTER the base rules (equal specificity — order
+   decides); neither modifier declares flex-shrink, so the base rule's value below reaches all three. */
+/* flex-shrink: 0 for the same reason the chrome rows above carry it: a strip is a fixed band, and
+   at the 418x480 minimum a shrunk strip does not scale its buttons — they keep their 22-24px height
+   and overflow onto whatever is drawn next (the Build strip, the only one with an extra Reset
+   button, made this visible first). */
+.bcg-tab-strip { flex-direction: row; margin: 2px 4px; flex-shrink: 0; }
+.bcg-tab-strip > Button { flex-grow: 1; height: 24px; border-radius: 0; }
+.bcg-tab-strip > Button:focus:enabled { border-color: rgba(232, 134, 45, 0.6); }
+.bcg-tab-strip > .bcg-tab-active {
+    background-color: var(--bcg-accent);
+    color: #1B1B1D;
+    -unity-font-style: bold;
+}
+
+.bcg-tab-strip--sub > Button {
+    background-color: transparent;
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: transparent;
+    color: var(--bcg-text-dim);
+    height: 22px;
+}
+.bcg-tab-strip--sub > Button:hover:enabled { color: var(--bcg-text); }
+.bcg-tab-strip--sub > .bcg-tab-active {
+    background-color: transparent;
+    color: var(--bcg-accent);
+    border-bottom-color: var(--bcg-accent);
+    -unity-font-style: bold;
+}
+
+.bcg-tab-strip--tertiary > Button {
+    background-color: transparent;
+    border-width: 0;
+    color: var(--bcg-text-dim);
+    height: 18px;
+    font-size: 11px;
+}
+.bcg-tab-strip--tertiary > .bcg-tab-active {
+    background-color: rgba(232, 134, 45, 0.12);
+    color: var(--bcg-accent);
+    border-radius: 9px;
+    -unity-font-style: bold;
+}
+
+/* The mode-aware Reset riding the sub-mode strip row: fixed-width quiet text button, exempt from
+   the strip's grow/underline styling (two-class selector outranks the tier rules). */
+.bcg-tab-strip > .bcg-strip-reset {
+    flex-grow: 0;
+    width: 56px;
+    background-color: transparent;
+    border-width: 0;
+    color: var(--bcg-text-dim);
+    font-size: 10px;
+}
+.bcg-tab-strip > .bcg-strip-reset:hover:enabled { color: var(--bcg-text); }
+
+/* Popup that hosts an overlaid swatch in its left padding (Single's Texture Variant). */
+.bcg-swatch-popup .unity-base-popup-field__text { padding-left: 24px; }
+
+/* Day|Dusk|Night presets: one-shot setters whose highlight tracks the live intensity/tint — styled
+   as a tinted outline pill so they don't read as a persistent mode tab. */
+.bcg-preset-strip { flex-direction: row; margin: 2px 4px; }
+.bcg-preset-strip > Button { flex-grow: 1; height: 22px; }
+.bcg-preset-strip > .bcg-tab-active {
+    background-color: rgba(232, 134, 45, 0.12);
+    color: var(--bcg-accent);
+    border-color: var(--bcg-accent);
+    -unity-font-style: bold;
+}
+
+/* Street Variant Mix: kill the stock BaseField label column (min-width ~120px — four toggles can
+   never fit a docked panel with it) and let the cells wrap 2x2 at narrow widths. */
+.bcg-variant-mix { flex-direction: row; flex-wrap: wrap; align-items: center; margin: 2px 4px; }
+.bcg-variant-cell { flex-direction: row; align-items: center; margin-right: 12px; }
+.bcg-variant-cell .unity-base-field__label { min-width: 14px; }
+
+/* Foldouts join the themed header family (bold text, orange arrow); the hover/focus chains mirror
+   the editor defaults' selector depth so the stock Unity-blue focus tint loses. */
+.bcg-root .unity-foldout__text {
+    -unity-font-style: bold;
+    color: var(--bcg-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.bcg-root .unity-foldout__checkmark,
+.bcg-root .unity-foldout__toggle .unity-toggle__checkmark { -unity-background-image-tint-color: var(--bcg-accent); }
+.bcg-root .unity-foldout__toggle:hover:enabled > .unity-toggle__input > .unity-toggle__text { color: var(--bcg-accent-hover); }
+.bcg-root .unity-foldout__toggle:focus:enabled > .unity-toggle__input > .unity-toggle__text { color: var(--bcg-accent); }
+
+.bcg-list { flex-grow: 1; background-color: var(--bcg-panel); }
+
+/*  Seed Bar — uniform seed idiom (value . Copy . Rnd) used by every pane.  */
+.bcg-seedbar-btn { width: 42px; margin-left: 2px; font-size: 10px; }
+
+/*  City Ledger — persistent status band under the header.  */
+.bcg-ledger { background-color: var(--bcg-panel); border-bottom-width: 1px; border-bottom-color: #151517; padding: 4px 8px 4px 8px; flex-shrink: 0; }
+.bcg-ledger-stats { font-size: 10px; color: var(--bcg-text-dim); }
+.bcg-ledger-job { margin-top: 2px; }
+
+/*  Plan / Zones authoring + Build / Districts iteration — one card per selected district zone.  */
+.bcg-plan-card { background-color: var(--bcg-panel); border-width: 1px; border-color: #151517; border-radius: 3px; padding: 4px 6px; margin: 3px 0; }
+
+/*  Header gear menu — quiet icon button beside the ⓘ blurb (window prefs + utilities + docs).  */
+.cp-gear { background-color: transparent; border-width: 0; width: 22px; font-size: 13px; color: var(--bcg-text-dim); margin-left: 2px; }
+.cp-gear:hover:enabled { color: var(--bcg-accent); }
+
+/*  Ship / Finalize checklist — the ordered pre-ship audit and its fenced danger zone.
+    Rows wrap rather than overflow: at the 418px window minimum the action buttons drop to a second
+    line instead of pushing the label off the right edge (the body never scrolls horizontally).  */
+.bcg-checklist-row { flex-direction: row; align-items: center; flex-wrap: wrap; padding: 4px 2px; border-bottom-width: 1px; border-bottom-color: #232326; }
+.cp-finalize-num { width: 13px; font-size: 10px; color: var(--bcg-text-dim); flex-shrink: 0; }
+.cp-finalize-glyph { width: 14px; -unity-text-align: middle-center; flex-shrink: 0; }
+/*  flex-basis 0 alongside the growth: an "auto" basis reports the label's full natural width and
+    dominates Yoga's shrink maths, collapsing the count and the action buttons at the minimum size.  */
+.cp-finalize-label { flex-grow: 1; flex-basis: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-finalize-note { font-size: 9px; -unity-font-style: italic; color: var(--bcg-text-dim); margin-right: 6px; flex-shrink: 0; }
+.cp-finalize-count { font-size: 10px; color: var(--bcg-text-dim); margin-right: 4px; flex-shrink: 0; }
+.cp-finalize-btn, .cp-finalize-btn--compact { height: 20px; font-size: 10px; margin: 2px; padding-left: 6px; padding-right: 6px; flex-shrink: 0; }
+
+.bcg-dangerzone { background-color: rgba(199, 75, 66, 0.10); border-width: 1px; border-color: rgba(199, 75, 66, 0.45); border-radius: 3px; padding: 6px; margin-top: 10px; }
+.bcg-dangerzone-title { -unity-font-style: bold; font-size: 11px; color: var(--bcg-danger); }
+
+/*  Identity strip — selected building's recipe, directly under the City Ledger.  */
+.cp-identity-strip { flex-direction: row; align-items: center; background-color: var(--bcg-panel); border-bottom-width: 1px; border-bottom-color: #151517; padding: 3px 8px; flex-shrink: 0; }
+/*  flex-basis 0 alongside flex-grow: an "auto" basis reports the label's full natural text width and
+    dominates Yoga's shrink maths in this horizontal row, collapsing the two buttons beside it.  */
+.cp-identity-label { flex-grow: 1; flex-basis: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--bcg-text-dim); margin-right: 6px; }
+
+/*  Command search overlay (Task 12) — fast launcher + relocation training; each row shows the
+    label plus a dim "home" readout for where the command actually lives now.  */
+.cp-cmd-row { flex-direction: row; align-items: center; padding: 3px 6px; }
+.cp-cmd-row:disabled { opacity: 0.4; }
+.cp-cmd-label { flex-grow: 1; flex-basis: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-cmd-home { font-size: 10px; color: var(--bcg-text-dim); margin-left: 8px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+
+/*  Task 13 — City Ledger's transient third line (ShowLedgerToast).  */
+.bcg-ledger-toast { font-size: 10px; color: var(--bcg-accent); }

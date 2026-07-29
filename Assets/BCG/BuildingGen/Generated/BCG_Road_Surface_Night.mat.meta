@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 626df426531510147bf7d7f8950f33c1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Generated/BCG_Road_Surface_Night.mat
+  uploadId: 962654

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finishing and Shipping</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="finishing-and-shipping">Finishing and Shipping</h1>
+<p><strong>4 Ship</strong> is the end of the pipeline: a read-only audit of what is actually in your scene, and an
+ordered checklist of the things worth doing before you bake, build or hand the scene to someone
+else. Nothing in this stage generates buildings, which is why it is the one stage with no primary
+button.</p>
+<h2 id="ship--health--what-is-actually-in-the-scene">Ship ▸ Health — what is actually in the scene</h2>
+<figure><img alt="The Ship ▸ Health dashboard: scene totals at the top, archetype and palette breakdowns, a search and filter toolbar, a district-grouped list of every generated building, a Fix row, bulk-action buttons, and the Add-ons panel." src="images/window_ship_health.png"><figcaption>The Ship ▸ Health dashboard: scene totals at the top, archetype and palette breakdowns, a search and filter toolbar, a district-grouped list of every generated building, a Fix row, bulk-action buttons, and the Add-ons panel.</figcaption></figure>
+<p>The dashboard lists every generated building in the open scene, grouped by district. The inventory
+is scanned once and cached, rebuilt only when the scene hierarchy actually changes or when you press
+<strong>Refresh</strong> — never on every repaint, because a large city is expensive to walk.</p>
+<h3 id="reading-the-header">Reading the header</h3>
+<ul>
+<li><strong><code>N buildings · X tris · ~N draw calls (pre-batching)</code></strong> — the totals. The draw-call figure is
+  one per building <em>before</em> static batching or the SRP Batcher, so treat it as the ceiling, not the
+  measurement.</li>
+<li><strong>Archetype line</strong> — how many Towers, Shops, Apartments and Houses.</li>
+<li><strong>Palette line</strong> — the four palette swatches with a count each. A quick way to spot that your
+  "mixed" city is 80% variant A.</li>
+</ul>
+<h3 id="finding-things">Finding things</h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Search field</td>
+<td>Matches a building's GameObject name <strong>or</strong> its seed</td>
+</tr>
+<tr>
+<td><strong>Type</strong> filter</td>
+<td>All / Tower / Shop / Apartment / House</td>
+</tr>
+<tr>
+<td><strong>Palette</strong> filter</td>
+<td>All / A / B / C / D</td>
+</tr>
+<tr>
+<td><strong>Flat</strong> toggle</td>
+<td>Off (default) groups by district; on gives one flat list</td>
+</tr>
+<tr>
+<td>Sort <em>(flat only)</em></td>
+<td>By triangles, floors, name or footprint</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td>Rescan the scene</td>
+</tr>
+</tbody>
+</table>
+<p>With any filter active, a <code>showing X of N</code> line appears above the list.</p>
+<p>In the grouped view, each district folds out with its building count, combined triangles, a <code>(!)</code>
+if anything inside has an issue, and an <strong>Isolate</strong> button that selects and frames that district in
+the Scene view. Loose buildings — from Single and Variation Row — collect in a <strong>(loose)</strong> bucket
+at the end.</p>
+<p>Single-click a row to select and ping the building; double-click to frame it.</p>
+<h3 id="health-flags">Health flags</h3>
+<p>Every building is checked for the following. A warning icon with a tooltip lists whichever apply:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Missing mesh</strong></td>
+<td>No MeshFilter, or its mesh reference is empty</td>
+</tr>
+<tr>
+<td><strong>Missing / magenta material</strong></td>
+<td>No renderer, an empty material or shader slot, or Unity's error shader</td>
+</tr>
+<tr>
+<td><strong>Pipeline mismatch</strong></td>
+<td>The facade shader does not match the active render pipeline — the pink-under-URP trap</td>
+</tr>
+<tr>
+<td><strong>Not marked static</strong></td>
+<td>The Batching Static flag was cleared, so the building loses static batching</td>
+</tr>
+<tr>
+<td><strong>Overlapping</strong></td>
+<td>Its footprint clips another building's, by the same test the placement guard uses</td>
+</tr>
+<tr>
+<td><strong>Foundation skirt lost its mesh or material</strong></td>
+<td>The skirt child is still there but its content is gone. A <em>removed</em> skirt component is treated as deliberate and never flagged</td>
+</tr>
+<tr>
+<td><strong>Missing foundation skirt</strong></td>
+<td>A fresh ground probe says one is needed but there is none. Only checked while Snap To Ground is on</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-fix-row">The fix row</h3>
+<p>When anything is flagged, a <strong>Fix:</strong> row appears above the bulk actions with one-click repairs. Each
+shows a live count and acts on <strong>every</strong> flagged building in the scene, not just the filtered list.</p>
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th>What it repairs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Static</strong></td>
+<td>Re-applies the generator's static flags. Flags the object already carries — including Contribute GI — are kept</td>
+</tr>
+<tr>
+<td><strong>Materials</strong></td>
+<td>Re-points buildings with a missing or wrong-pipeline material at the correct facade material, rebuilding the shared materials first if they themselves mismatch. Buildings using a deliberately custom shader are never touched</td>
+</tr>
+<tr>
+<td><strong>Overlaps</strong></td>
+<td>Moves each overlapping building to the nearest free spot, using the same search generation uses. Unflagged buildings never move</td>
+</tr>
+<tr>
+<td><strong>Skirts</strong></td>
+<td>Re-probes the ground under each flagged building, replaces a damaged skirt or attaches a missing one, and re-derives the base height exactly as Snap To Ground would — so a building buried in a hillside pops its ground floor clear</td>
+</tr>
+<tr>
+<td><strong>Roads</strong></td>
+<td>Rebuilds broken road networks from their stored layout and deletes ownerless broken road objects</td>
+</tr>
+</tbody>
+</table>
+<p>All of these are Undo-able as a single step. The Materials fix has one exception: the scene changes
+undo, but the material <em>asset</em> rebuild does not.</p>
+<h3 id="bulk-actions">Bulk actions</h3>
+<ul>
+<li><strong><code>N issue(s)</code> / Select flagged</strong> — select every building with at least one health flag.</li>
+<li><strong>Select shown</strong> — select everything currently listed, respecting filters.</li>
+<li><strong>Isolate</strong> — select the shown buildings and frame them in the Scene view.</li>
+<li><strong>Delete shown</strong> — after confirmation, delete every listed building and any container left empty.
+  Undo-able.</li>
+</ul>
+<h3 id="add-ons">Add-ons</h3>
+<p>At the bottom of this pane, the <strong>Add-ons</strong> panel installs optional content that ships compressed so
+the base package imports quickly. Currently that is the <strong>City Demo</strong> — a large playable scene with
+hundreds of buildings, drivable roads and baked lighting. Press <strong>Import</strong> and it unpacks into the
+Demo folder.</p>
+<h2 id="ship--finalize--the-pre-ship-checklist">Ship ▸ Finalize — the pre-ship checklist</h2>
+<figure><img alt="The Ship ▸ Finalize pane: a six-row pre-ship checklist with live counts and tick marks, a danger zone containing Destroy All Generated, and a &quot;Ship checks: 3/4&quot; tally in the action bar." src="images/window_ship_finalize.png"><figcaption>The Ship ▸ Finalize pane: a six-row pre-ship checklist with live counts and tick marks, a danger zone containing Destroy All Generated, and a &quot;Ship checks: 3/4&quot; tally in the action bar.</figcaption></figure>
+<p>Six rows, in the order they should be done. Rows 1–4 are <em>states</em> your city can be in and show a
+tick or an empty circle; the action bar mirrors the tally as <code>Ship checks: k/4</code>. Rows 5 and 6 are
+things you <em>do</em>, so they never claim a tick.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Row</th>
+<th>Buttons</th>
+<th>What the count tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Bake Lightmap UVs</strong></td>
+<td>Bake…</td>
+<td>How many unique meshes still need an unwrap</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>LOD coverage</strong></td>
+<td>—</td>
+<td>How many generated buildings carry an LODGroup. Informational — a city built without LODs is perfectly valid</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Light Probes</strong></td>
+<td>Generate…</td>
+<td>The generated probe group over the city, if any</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Optimize City</strong></td>
+<td>Combine, De-Combine</td>
+<td>Whether the city is currently combined. Marked <em>run last</em></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Clean Unused</strong></td>
+<td>Scan, Open…</td>
+<td>Reads <code>not scanned</code> until you press Scan</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Regenerate All</strong></td>
+<td>Run…</td>
+<td>An action, not a state. Marked <em>not undoable</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Order matters, and the pane says so.</strong> Optimize City (4) freezes the geometry that the unwrap in
+(1) writes into, so leave combining until last. Similarly, generate all your buildings before
+combining, because the placement guard cannot see disabled source buildings.</p>
+<p>Counts are re-read when the pane becomes visible, when you press <strong>Refresh</strong>, and after every row
+action — never on a timer, because row 1 has to walk every render mesh under every generated root.</p>
+<p>Every button on this pane greys out while a fill is running.</p>
+<h3 id="regenerate-all">Regenerate All</h3>
+<p>Rebuilds every generated prefab in place. Mesh and prefab assets are overwritten at their existing
+paths, so GUIDs — and therefore every scene reference — survive.</p>
+<p><strong>Every content option is preserved as authored</strong>, read back from the asset itself rather than from
+your current toggles: rooftop props from the building's marker, LODs from the presence of an
+LODGroup, lightmap intent from the mesh's UV set. A lightmapped LOD prefab is rebuilt with fresh UVs
+on every LOD; a library made without lightmap UVs is rebuilt without the expensive unwrap and keeps
+Contribute GI off.</p>
+<p>Use it after updating the package, to pick up geometry or size improvements without losing a single
+scene placement. It asks for confirmation first, and <strong>it cannot be undone</strong>.</p>
+<h3 id="clean-unused">Clean Unused</h3>
+<p><em>Destroy All</em> removes buildings from the <strong>scene</strong>; <strong>Clean Unused</strong> reclaims the <strong>asset files</strong>
+they leave behind. Over time, regenerating and deleting buildings leaves mesh and prefab assets that
+no scene references any more.</p>
+<ol>
+<li>Press <strong>Scan</strong> for the orphan count and reclaimable size, or <strong>Open…</strong> to go straight to the
+   window. You will be asked to save any modified scenes first, so the scan sees their current state.</li>
+<li>The tool scans <strong>every scene in your project</strong> — open <em>and</em> closed — and lists the generated
+   meshes and prefabs nothing references, with the total disk space you can reclaim. This is why it
+   only ever runs on demand and never on a timer.</li>
+<li>Review the list (everything is ticked by default; untick anything you want to keep) and press
+   <strong>Delete Selected</strong>.</li>
+</ol>
+<p><strong>It is safe by design.</strong> Any mesh or prefab used by a building placed in <em>any</em> scene, including the
+demo, is kept. Facade and ground materials are never touched, and neither are the street-furniture
+prefabs. A prefab that exists only in your Project window and was never placed in a scene counts as
+unused — untick it if you want it.</p>
+<p>Deletion is permanent and not undoable, which is why there is a preview and a confirmation.</p>
+<h3 id="destroy-all-generated">Destroy All Generated</h3>
+<p>In its own <strong>danger zone</strong> at the bottom of the pane. After confirmation, it deletes every generated
+building and road in the open scene, plus any container objects left empty. It <strong>can</strong> be reverted
+with Undo.</p>
+<p>For anything more surgical — deleting one district, or only the flagged buildings — use the health
+dashboard's filters and <strong>Delete shown</strong> instead.</p>
+<h2 id="a-suggested-ship-sequence">A suggested ship sequence</h2>
+<ol>
+<li>Finish generating. All buildings, all roads, all districts.</li>
+<li><strong>Ship ▸ Health</strong> — clear every flag. Fix static flags, materials, overlaps and skirts.</li>
+<li><strong>Dress ▸ Mood</strong> — set your final day/night look and press Apply Materials.</li>
+<li><strong>Dress ▸ Furniture</strong> — generate street furniture if you want it.</li>
+<li><strong>Bake Lightmap UVs</strong> (row 1) on whatever should receive baked light.</li>
+<li><strong>Generate Light Probes</strong> (row 3), then bake your lighting.</li>
+<li><strong>Optimize City</strong> (row 4) — last, once nothing else will be generated.</li>
+<li><strong>Clean Unused</strong> (row 5) to reclaim disk.</li>
+<li>Save the scene. Especially if you generated anything with <em>Save As Prefab Assets</em> off.</li>
+</ol>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>The dashboard says my buildings are not static.</strong> Something cleared the flag — often a prefab
+revert or a hand edit. Press <strong>Static</strong> in the fix row.</p>
+<p><strong>Delete shown deleted more than I expected.</strong> It acts on everything <em>listed</em>, which respects your
+filters but not your selection. Narrow the filters first, then check the <code>showing X of N</code> line.</p>
+<p><strong>Can I undo Clean Unused?</strong> No. Asset deletion is permanent; that is why it previews first.</p>
+<p><strong>Regenerate All did not turn on LODs for my old buildings.</strong> By design — it preserves what each
+asset was authored with. To add LODs, regenerate those buildings from the pane with the toggle on,
+or refill the district.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_09_Optimizing.html">Optimising</a></strong> — what combining does and does not buy you.</li>
+<li><strong><a href="BuildingGen_08_MaterialsAndLighting.html">Materials and Lighting</a></strong> — the baking steps in detail.</li>
+<li><strong><a href="BuildingGen_11_Troubleshooting.html">Troubleshooting</a></strong> — if a flag will not clear.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_10_Finishing.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

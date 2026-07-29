@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: a3f0e0999fa072449aaee6e441607127
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Editor/BCG_AssetCleanupWindow.cs
+  uploadId: 962654

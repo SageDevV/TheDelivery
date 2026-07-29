@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Materials and Lighting</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="materials-and-lighting">Materials and Lighting</h1>
+<p>Almost everything about how a generated city <em>looks</em> — as opposed to how it is shaped — lives in
+<strong>3 Dress</strong>. This page covers the render-pipeline material fix, the night look, the fake window
+interiors, light probes and baked lighting.</p>
+<figure><img alt="The Dress ▸ Mood pane, showing the Night Lights intensity slider and window colour with Day, Dusk and Night preset buttons, the Fake Interiors toggle, and the pinned Apply Materials button." src="images/window_dress_mood.png"><figcaption>The Dress ▸ Mood pane, showing the Night Lights intensity slider and window colour with Day, Dusk and Night preset buttons, the Fake Interiors toggle, and the pinned Apply Materials button.</figcaption></figure>
+<h2 id="fix-materials-the-one-button-that-solves-pink">Fix Materials: the one button that solves pink</h2>
+<p>If your buildings render <strong>pink</strong> (magenta), the fix takes one click. Nothing is broken.</p>
+<p>Meshes and UVs are pipeline-agnostic; the <em>materials</em> are not. A material built for Built-in
+references the <code>Standard</code> shader, which does not exist in a URP or HDRP project — so Unity falls
+back to its magenta error shader. This happens when you import into a URP/HDRP project, or switch
+pipeline after importing.</p>
+<p><strong>The fix</strong>, any of these three:</p>
+<ul>
+<li>Click the <strong>[Fix]</strong> button that appears beside the material badge in the City Ledger whenever it
+  is needed.</li>
+<li>Press <strong>Apply Materials</strong> — the primary button on <strong>3 Dress ▸ Mood</strong>.</li>
+<li>Run <code>Tools ▸ BoneCracker Games ▸ Building Generator ▸ Fix Materials (Active Pipeline)</code>, which
+  works with no window open.</li>
+</ul>
+<p>All three do the same thing: rebuild the facade materials for whichever pipeline is currently
+active, overwriting them in place. Because the material GUIDs do not change, every existing prefab
+and scene reference survives the rebuild — nothing needs reassigning.</p>
+<table>
+<thead>
+<tr>
+<th>Active pipeline</th>
+<th>Shader used</th>
+<th>Key properties</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Built-in</strong></td>
+<td><code>Standard</code></td>
+<td><code>_MainTex</code>, <code>_Glossiness</code></td>
+</tr>
+<tr>
+<td><strong>URP</strong></td>
+<td><code>Universal Render Pipeline/Lit</code></td>
+<td><code>_BaseMap</code>, <code>_BaseColor</code>, <code>_Smoothness</code></td>
+</tr>
+<tr>
+<td><strong>HDRP</strong></td>
+<td><code>HDRP/Lit</code></td>
+<td><code>_BaseColorMap</code>, <code>_BaseColor</code>, <code>_Smoothness</code>, <code>_EmissiveColorMap</code>, <code>_EmissiveColor</code></td>
+</tr>
+</tbody>
+</table>
+<p>It rebuilds the four facade materials, their <code>_Day</code> and <code>_Night</code> variants, the demo ground material
+and the road surface material — and it re-applies your current Night Lights and Fake Interiors
+settings while it is at it, so those survive a pipeline switch too. Smoothness is set to 0.12 on all
+pipelines, and emission is enabled from the matching emission atlas.</p>
+<p>The City Ledger's badge turns green immediately afterwards. The health dashboard also flags
+individual buildings whose material does not match the active pipeline; see
+<a href="BuildingGen_10_Finishing.html">Finishing and Shipping</a>.</p>
+<h2 id="night-lights">Night Lights</h2>
+<p>The <strong>Night Lights</strong> dial on <strong>3 Dress ▸ Mood</strong> sets one global window glow for <strong>every</strong> building
+at once. It works by tinting the shared facade materials, which is why it costs nothing — the
+one-material, one-draw-call guarantee is untouched, and there are no real lights involved.</p>
+<figure><img alt="The same avenue at night: window grids glowing warm and cool, rooms visible behind the glass, with the road markings still readable." src="images/city_streetlevel_night.png"><figcaption>The same avenue at night: window grids glowing warm and cool, rooms visible behind the glass, with the road markings still readable.</figcaption></figure>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Intensity</strong></td>
+<td>Emission brightness. <code>0</code> turns the windows off entirely</td>
+</tr>
+<tr>
+<td><strong>Window Color</strong></td>
+<td>The glow colour. Warm amber reads as a lived-in night skyline</td>
+</tr>
+<tr>
+<td><strong>Day / Dusk / Night</strong></td>
+<td>One-click presets. The active one is highlighted</td>
+</tr>
+</tbody>
+</table>
+<p>The presets are <strong>Day</strong> (intensity 0, windows off), <strong>Dusk</strong> (0.8, warm) and <strong>Night</strong> (2.5, warm).
+The package ships on <strong>Dusk</strong>.</p>
+<p>The setting is stored per user and honoured by Fix Materials, so your night look survives a material
+rebuild or a pipeline switch. Dragging the slider or picking a colour marks the materials dirty
+(saved with your next project save); the preset buttons save immediately.</p>
+<blockquote>
+<p><strong>On HDRP</strong>, physically-based exposure means you may need a higher intensity than under Built-in
+or URP to read the same on screen.</p>
+</blockquote>
+<h3 id="daynight-switching-at-runtime">Day/night switching at runtime</h3>
+<p>Each facade material has a <code>_Day</code> and a <code>_Night</code> variant. Swapping a renderer's material between
+them is how the demo scene's <strong>N</strong> key works, and it is the pattern to copy for an in-game day/night
+cycle — swap the shared material, not per-building state. Road surfaces follow the same convention.</p>
+<h2 id="fake-interiors">Fake interiors</h2>
+<p><strong>Fake Interiors</strong> paints rooms behind the window glass. There is no extra geometry and no extra
+draw call — the shader ray-traces into a virtual room per window cell and samples a pre-baked room
+atlas.</p>
+<p>Turn it on with the <strong>Fake Interiors</strong> checkbox on <strong>3 Dress ▸ Mood</strong>. That immediately rebuilds the
+shared facade materials with the interior shader; every building using a stock facade material picks
+it up at once, still at one material and one draw call each. Turning it off rebuilds them as
+ordinary lit materials.</p>
+<p>Because rooms are derived from each window's UV cell, they align correctly on every building no
+matter its cell width, floor height or ground-floor height. A per-window hash decides which room
+variant appears, its tint, and whether it reads as lit at night — so it integrates with the Night
+Lights dial rather than fighting it.</p>
+<h3 id="how-it-looks">How it looks</h3>
+<p>Rooms are composited <strong>behind</strong> the tinted glass, not instead of it. The glass keeps its tint and
+specular highlight, a view-angle (Fresnel) term fades rooms out at grazing angles so windows read as
+reflective from the side, and every window rolls a stable "openness" so roughly a third read as
+blinds-drawn while the rest vary in clarity.</p>
+<p>Daytime interiors are a subtle hint. At night, with the glow on, lit rooms show through clearly —
+including through curtained windows, which read as sheer.</p>
+<p>Two material properties control the balance. Fix Materials sets them; you can tweak them on the
+facade materials directly:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Interior Visibility (day)</code></td>
+<td>0.45</td>
+<td>Master daytime interior strength. <code>1.0</code> with curtains at <code>0</code> gives fully clear rooms</td>
+</tr>
+<tr>
+<td><code>Curtained Window Fraction</code></td>
+<td>0.30</td>
+<td>Fraction of windows reading as blinds-drawn dark glass</td>
+</tr>
+</tbody>
+</table>
+<h3 id="support-and-cost">Support and cost</h3>
+<table>
+<thead>
+<tr>
+<th>Pipeline</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Built-in</strong></td>
+<td>Fully supported</td>
+</tr>
+<tr>
+<td><strong>URP</strong></td>
+<td>Fully supported</td>
+</tr>
+<tr>
+<td><strong>HDRP</strong></td>
+<td><strong>Not supported.</strong> The toggle is disabled with a notice and materials stay stock <code>HDRP/Lit</code></td>
+</tr>
+</tbody>
+</table>
+<p>The parallax maths runs per facade fragment — the result is only <em>visible</em> on glass texels, but the
+cost is paid across the whole facade. That is fine on mid-range desktop and up. <strong>On mobile, leave
+it off</strong> (the default) or test on device first; it is not part of the low-cost filler baseline.</p>
+<h2 id="light-probes">Light probes</h2>
+<p>Static buildings can be lightmapped, but the <em>dynamic</em> objects driving past them — the cars this
+tool exists to serve — need light probes to pick up that baked light. <strong>3 Dress ▸ Probes</strong> drops one
+tuned probe group over the whole generated city, working out the extents automatically from your
+road networks, districts and buildings.</p>
+<p>Generating opens a small prompt first, because probe count is the one number worth thinking about.</p>
+<table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>Spacing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Low</td>
+<td>24 m</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>16 m</td>
+</tr>
+<tr>
+<td>High <em>(default)</em></td>
+<td>12 m</td>
+</tr>
+<tr>
+<td>Ultra</td>
+<td>8 m</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Anything from 1 m up</td>
+</tr>
+</tbody>
+</table>
+<p>The prompt shows the estimated probe count for <strong>your</strong> city, live, as you switch presets, using the
+real placement maths rather than an approximation.</p>
+<h3 id="why-spacing-does-not-always-come-back-as-you-asked">Why spacing does not always come back as you asked</h3>
+<p>Probe count grows with the <strong>square</strong> of density: halve the spacing and you roughly quadruple the
+probes. Over a kilometre-scale city, 1 m spacing would need millions, which no lightmapper will
+bake. So the prompt gives you two levers:</p>
+<ul>
+<li><strong>Probe Budget</strong> — the ceiling on probe count (default <strong>4096</strong>, up to <strong>65536</strong>). While your
+  requested spacing fits the budget it is used <em>exactly</em>; when it does not, the spacing widens
+  automatically and the prompt tells you precisely how many probes your request would have needed.
+  Bake time and scene size scale with this number.</li>
+<li><strong>Coverage</strong> — <em>Whole city</em> fills the entire bounding area, empty blocks included. <em>Near roads +
+  buildings</em> spends the budget only within 15 m of a road or a facade, which is where dynamic
+  objects actually travel. The same budget then buys a much tighter spacing where it matters.</li>
+</ul>
+<p>If the effective spacing comes back wider than you asked for: raise the budget, switch to
+<em>Near roads + buildings</em>, or accept that the city is too large for that density.</p>
+<h3 id="what-gets-placed">What gets placed</h3>
+<p>Per grid column, the tool places a street-level probe at 1.5 m and a mid-rise probe at 8 m, plus a
+rooftop probe <strong>only where a building actually stands nearby</strong> (tallest roof plus 2 m). There are no
+wasted probes in empty sky.</p>
+<p>Probes are also <strong>never left inside a building</strong>. Every position is tested against the buildings'
+own rotated footprint volumes; a probe landing in solid geometry is pushed out to the nearest open
+spot — typically right beside the facade, which is where things drive — and dropped only if its
+whole neighbourhood is solid. The Console reports how many were relocated or dropped. This matters
+more than raw count: a buried probe bakes black and drags everything interpolating against it dark.</p>
+<p>The generated group is selected in the scene afterwards so you can see the cloud. Regenerating
+replaces it, identified by an internal marker, so a probe group <strong>you</strong> authored is never touched
+even if it shares the name. <strong>Remove Light Probes</strong> deletes the generated one.</p>
+<p><strong>Re-bake your lighting after generating probes</strong> — placing them does not fill them.</p>
+<h2 id="baked-lighting-lightmap-uvs">Baked lighting (lightmap UVs)</h2>
+<p>By default, generation <strong>skips</strong> the per-building lightmap UV unwrap. City-filler background
+buildings rarely need to receive baked GI, and the unwrap is the single most expensive part of
+generating a building.</p>
+<p>If you later decide some or all of them should be lightmapped, you do not have to regenerate
+anything. Use <strong>Bake Lightmap UVs…</strong> — row 1 of the checklist on <strong>4 Ship ▸ Finalize</strong> — which adds
+lightmap UVs and GI contribution to meshes that already exist.</p>
+<p><strong>What it operates on:</strong> your current selection. Selecting a street-row or district parent includes
+all its buildings; selecting an LOD child or a foundation skirt climbs to its owning building. With
+nothing generated selected, it processes every generated root in the open scene.</p>
+<p><strong>It asks before writing anything.</strong> A dialog reports the real workload — how many <strong>unique meshes</strong>
+lack a UV set versus already have one, which is what costs you time (two buildings sharing a mesh
+are one unwrap) — and offers:</p>
+<ul>
+<li><strong>Bake Missing</strong> — unwrap only the meshes with no UV set. This is the everyday choice.</li>
+<li><strong>Renew All</strong> — also re-unwrap meshes that already have one, discarding it. Use this after
+  changing lightmap resolution, or when a mesh was hand-edited.</li>
+<li><strong>Cancel</strong> — nothing is written.</li>
+</ul>
+<p>A renderer only gets <strong>Contribute GI</strong> once its own mesh has a valid, lightmapper-safe UV set; a
+failed unwrap leaves GI off and says so in the Console. The renderer flag changes can be undone; the
+<strong>mesh UV write cannot</strong> — it is an asset modification, like Regenerate All.</p>
+<p>Roads can be lightmapped too: with the <strong>Bake Lightmap UVs</strong> toggle on during generation, road
+surfaces get their own UV set and contribute to GI, with a lightmap scale tuned for their much
+larger surface area. The markings renderer is deliberately excluded.</p>
+<blockquote>
+<p><strong>Upgrading from version 2.3.0.</strong> Buildings generated by that version carry a lightmap UV set
+Unity's lightmapper cannot read, so they baked to nothing. They are counted as <strong>missing</strong> UVs
+rather than as already unwrapped — run <strong>Bake Missing</strong> once and they are repaired in place. You
+do not need Renew All and you do not need to regenerate your library.</p>
+</blockquote>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>Everything went pink after I switched to URP.</strong> Press <strong>[Fix]</strong> in the City Ledger. See
+<a href="#fix-materials-the-one-button-that-solves-pink">Fix Materials</a>.</p>
+<p><strong>My night windows do not glow in the baked lighting.</strong> Emission is read from the materials assigned
+<em>at bake time</em>. The <code>_Night</code> variants always glow; the base materials only glow with the Night Lights
+intensity above zero. Set the look you want, then bake.</p>
+<p><strong>Fake Interiors is greyed out.</strong> You are on HDRP, where it is not supported. The materials stay
+stock <code>HDRP/Lit</code> rather than breaking.</p>
+<p><strong>Should I use light probes or lightmaps?</strong> Both, for different things — lightmaps light your static
+buildings, probes light the moving objects between them. A driving game needs probes.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_09_Optimizing.html">Optimising</a></strong> — LODs, combining, and mobile guidance.</li>
+<li><strong><a href="BuildingGen_10_Finishing.html">Finishing and Shipping</a></strong> — the pre-ship checklist, in order.</li>
+<li><strong><a href="BuildingGen_AtlasLayout.html">Atlas Layout</a></strong> — how the facade textures are organised.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_08_MaterialsAndLighting.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

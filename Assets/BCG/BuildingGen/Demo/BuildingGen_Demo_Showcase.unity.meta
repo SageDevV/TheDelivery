@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 89c3725cf0a92e348b0a21861833c82e
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Demo/BuildingGen_Demo_Showcase.unity
+  uploadId: 962654

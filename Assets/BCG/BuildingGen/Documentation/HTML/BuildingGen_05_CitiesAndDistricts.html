@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cities and Districts</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="cities-and-districts">Cities and Districts</h1>
+<p>This is the page most people need. It covers generating a whole city in one press, then breaking
+that down into districts you can style individually — a dense downtown here, houses over there.</p>
+<figure><img alt="A generated city seen from above: a grid of blocks separated by streets, with every third street widened into an avenue, crossings at every junction, and a mix of towers, apartments, shops and houses." src="images/city_topdown_grid.png"><figcaption>A generated city seen from above: a grid of blocks separated by streets, with every third street widened into an avenue, crossings at every junction, and a mix of towers, apartments, shops and houses.</figcaption></figure>
+<h2 id="the-one-button-city">The one-button city</h2>
+<p>Open <strong>1 Plan ▸ City Grid</strong>, press <strong>Generate City</strong>, and you get a complete city: a grid of
+district blocks separated by streets, roads and pavements filling the gaps, a skyline that peaks in
+the middle, and a ground plane under the whole thing.</p>
+<figure><img alt="The Plan ▸ City Grid pane, showing City Seed, the blocks and block-size sliders, street and avenue widths, the core and edge preset slots, skyline falloff, the ground and roads toggles, a live city-size readout, and the pinned Generate City button." src="images/window_plan_citygrid.png"><figcaption>The Plan ▸ City Grid pane, showing City Seed, the blocks and block-size sliders, street and avenue widths, the core and edge preset slots, skyline falloff, the ground and roads toggles, a live city-size readout, and the pinned Generate City button.</figcaption></figure>
+<p>Above the button, a readout tells you what you are about to get — the city's footprint in metres,
+the block count, and a rough building estimate — so you can adjust before committing. Grids larger
+than 10 blocks a side ask for confirmation first.</p>
+<p><strong>Ctrl+Z</strong> once removes the buildings; twice removes the grid itself.</p>
+<h3 id="the-settings">The settings</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Range</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>City Seed</td>
+<td>97531</td>
+<td>—</td>
+<td>Reproduces the whole city. Each block derives its own stable seed from this</td>
+</tr>
+<tr>
+<td>Blocks X / Blocks Z</td>
+<td>4 / 4</td>
+<td>2 – 12</td>
+<td>How many district blocks in each direction</td>
+</tr>
+<tr>
+<td>Block Width (m)</td>
+<td>60</td>
+<td>40 – 200</td>
+<td>Size of each block</td>
+</tr>
+<tr>
+<td>Block Depth (m)</td>
+<td>50</td>
+<td>40 – 200</td>
+<td>Size of each block</td>
+</tr>
+<tr>
+<td>Street Width (m)</td>
+<td>12</td>
+<td>8 – 30</td>
+<td>The gap between ordinary blocks</td>
+</tr>
+<tr>
+<td>Avenue Every N</td>
+<td>3</td>
+<td>0 – 6</td>
+<td>Every Nth street is widened into an avenue. 0 disables avenues</td>
+</tr>
+<tr>
+<td>Avenue Width (m)</td>
+<td>24</td>
+<td>12 – 50</td>
+<td>The gap for those wider streets</td>
+</tr>
+<tr>
+<td>Core Preset</td>
+<td><em>(none)</em></td>
+<td>—</td>
+<td>District style used near the centre</td>
+</tr>
+<tr>
+<td>Edge Preset</td>
+<td><em>(none)</em></td>
+<td>—</td>
+<td>District style used on the outer blocks</td>
+</tr>
+<tr>
+<td>Core Radius</td>
+<td>0.35</td>
+<td>0 – 1</td>
+<td>How far the core reaches, measured in rectangular rings</td>
+</tr>
+<tr>
+<td>Skyline Falloff</td>
+<td>on</td>
+<td>—</td>
+<td>Scale building heights down with distance from the centre</td>
+</tr>
+<tr>
+<td>Min Height Scale</td>
+<td>0.4</td>
+<td>—</td>
+<td>The height multiplier at the city edge</td>
+</tr>
+<tr>
+<td>Create Ground</td>
+<td>on</td>
+<td>—</td>
+<td>One flat ground plane under the whole city</td>
+</tr>
+<tr>
+<td>Create Roads</td>
+<td>on</td>
+<td>—</td>
+<td>Fill every street and avenue gap with real road geometry</td>
+</tr>
+<tr>
+<td>Sidewalk Width (m)</td>
+<td>2.5</td>
+<td>1 – 4</td>
+<td>Pavement width per side. Only active while Create Roads is on</td>
+</tr>
+</tbody>
+</table>
+<h3 id="making-it-look-like-a-real-city">Making it look like a real city</h3>
+<p>Three of those settings do most of the work:</p>
+<p><strong>Avenues.</strong> A grid of identical streets reads as a spreadsheet. Widening every third one gives the
+city a hierarchy — main roads and side streets — which is most of what makes an aerial view read as
+a city rather than a pattern.</p>
+<p><strong>Skyline falloff.</strong> Real cities are tall in the middle and low at the edges. With falloff on,
+each block's buildings are scaled down by distance from the centre, bottoming out at <strong>Min Height
+Scale</strong>. Buildings never drop below one floor and never grow taller than their drawn height, so
+this only ever removes height, never adds it.</p>
+<p><strong>Core and Edge presets.</strong> This is the big one. Assign <code>BCG_Preset_Downtown</code> as the Core Preset and
+<code>BCG_Preset_Suburbs</code> as the Edge Preset, and the city genuinely changes character as you drive out
+of the middle — glass towers give way to brick apartments give way to houses with gardens. <strong>Core
+Radius</strong> controls where the changeover happens. Either slot may be left empty; with both empty,
+every block uses the zone defaults.</p>
+<h3 id="regenerating-parts-of-it">Regenerating parts of it</h3>
+<p>Each block is a real district with its own stable seed, so you can refill one block without
+touching its neighbours. For that to work, leave <strong>Markers After</strong> (on <strong>2 Build ▸ Districts</strong>) set
+to <strong>Disable</strong> rather than <strong>Delete</strong> — Delete removes the block markers, and with them any
+possibility of a per-block repopulate.</p>
+<p><strong>Regenerate Roads</strong>, also on this pane, rebuilds every road network in the open scene from its
+stored layout. See <a href="BuildingGen_06_PathsAndRoads.html#roads">Roads</a>.</p>
+<h2 id="districts-zones-you-can-shape">Districts: zones you can shape</h2>
+<p>A <strong>district</strong> is a box in your scene that gets filled with buildings. Everything the City Grid does
+is made of these, and you can make them by hand wherever you want a controlled neighbourhood.</p>
+<h3 id="creating-one">Creating one</h3>
+<ol>
+<li>Go to <strong>1 Plan ▸ Zones</strong> and press <strong>Create Zone Marker</strong>. A 40 × 30 m marker drops at your
+   scene-view pivot, already carrying the <code>BCG_BuildingZone</code> component. (Any GameObject with a
+   <code>BoxCollider</code> also works, if you would rather size one yourself.)</li>
+<li>Move and scale the box over the area you want filled. The wire cube in the Scene view is
+   <strong>cyan</strong> while the zone is empty and turns <strong>green</strong> once it has been filled, so you can see at a
+   glance what is done.</li>
+<li>Select it, switch to <strong>2 Build ▸ Districts</strong>, and press <strong>Populate Selected Zones</strong>.</li>
+</ol>
+<p>Buildings are placed in alternating rows — one row facing out, then back-to-back pairs — the way a
+real city block is organised, with random alleys between rows. Output lands under a parent named
+<code>BCG_Zone_{markerName}_{seed}</code>.</p>
+<h3 id="the-layout-settings">The layout settings</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Zone Seed</td>
+<td>24680</td>
+<td>Reproduces the block. <code>0</code> on a district means "assign me a stable seed on first fill"</td>
+</tr>
+<tr>
+<td>Edge Margin (m)</td>
+<td>1</td>
+<td>How far buildings stay from the zone's edges (range 0 – 8)</td>
+</tr>
+<tr>
+<td>Row Gap (m)</td>
+<td>6 – 10</td>
+<td>Random alley or street width between rows</td>
+</tr>
+<tr>
+<td>Gap Range (m)</td>
+<td>4 – 10</td>
+<td>Random spacing between neighbours along a row</td>
+</tr>
+<tr>
+<td>Markers After</td>
+<td>Disable</td>
+<td>What happens to the marker once its area is filled</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Markers After</strong> deserves a note. <strong>Disable</strong> keeps the marker but switches off its collider — the
+bounds stay visible and you can refill or clear the district later. <strong>Delete</strong> removes the marker
+GameObject entirely, which is tidier but permanent. Buildings are unaffected either way; they live
+in their own object.</p>
+<p>Each district's card on <strong>2 Build ▸ Districts</strong> also carries <strong>Select output</strong> and <strong>Clear output</strong>
+for that district alone, and there is a <strong>Populate All In Scene</strong> button that refills every district
+in the open scene using each one's own settings (it asks for confirmation past ten zones).</p>
+<h3 id="per-district-style">Per-district style</h3>
+<p>Select a district and its component gives that neighbourhood its own character, independent of
+every other district:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tower / Shop / Apartment / House weight</td>
+<td>0.35 / 0.30 / 0.35 / 0.25</td>
+<td>Relative chance of each kind. Normalised internally, so all-1.0 is an even mix</td>
+</tr>
+<tr>
+<td>Variant A / B / C / D</td>
+<td>all on</td>
+<td>Which palettes this district is allowed to use</td>
+</tr>
+<tr>
+<td>Height Falloff</td>
+<td>flat</td>
+<td>A curve: X is distance from the district centre (0 centre, 1 edge), Y is a floor multiplier. Slope it down to peak the skyline at the district's core</td>
+</tr>
+<tr>
+<td>Detail</td>
+<td>Standard</td>
+<td>Geometry tier for this district — see <a href="BuildingGen_07_Customizing.html#detail-levels">Customising</a></td>
+</tr>
+<tr>
+<td>Facade Extras</td>
+<td>on</td>
+<td>Air-conditioning units and wall vents</td>
+</tr>
+<tr>
+<td>Obstacle Layers</td>
+<td>Nothing</td>
+<td>Layers this district treats as "don't build here"</td>
+</tr>
+<tr>
+<td>Snap To Ground</td>
+<td>off</td>
+<td>Place buildings on the ground surface instead of the zone floor</td>
+</tr>
+<tr>
+<td>Ground Layers</td>
+<td>Everything</td>
+<td>What counts as ground when snapping</td>
+</tr>
+</tbody>
+</table>
+<p>A district always uses <strong>its own</strong> obstacle mask — the window-wide one never cascades into it.</p>
+<h2 id="district-presets">District presets</h2>
+<p>Presets save a complete district style as an asset you can reuse. Four ship with the package:</p>
+<table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>Style</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BCG_Preset_Downtown</code></td>
+<td>Dense high-rise core — towers and graphite curtain glass, tight plots, wide avenues, skyline peaking at the centre</td>
+</tr>
+<tr>
+<td><code>BCG_Preset_Suburbs</code></td>
+<td>Residential sprawl — gabled houses with corner shops, roomy plots</td>
+</tr>
+<tr>
+<td><code>BCG_Preset_OldTown</code></td>
+<td>Historic quarter — mid-rise brick and plaster apartments over shops, narrow alleys</td>
+</tr>
+<tr>
+<td><code>BCG_Preset_CommercialStrip</code></td>
+<td>Roadside retail — low storefront boxes with wide parking gaps</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>District Presets</strong> section on <strong>1 Plan ▸ Zones</strong> is where you use them:</p>
+<ul>
+<li>The <strong>preset popup</strong> lists every preset asset in your project. The dropdown hides the
+  <code>BCG_Preset_</code> prefix, so <em>Downtown</em> is <code>BCG_Preset_Downtown.asset</code> on disk.</li>
+<li><strong>Apply to Selected Zones</strong> copies the preset onto every selected district, as one Undo step.</li>
+<li><strong>Save As Preset…</strong> captures the first selected district (or, with nothing selected, the window's
+  current settings) into a new asset under <code>Assets/BCG/BuildingGen/Presets/</code>.</li>
+</ul>
+<p>A preset captures the archetype mix, palettes, margins, gap ranges, obstacle layers, height falloff
+curve and ground-snap settings. It deliberately <strong>never captures the seed</strong>, so applying a new style
+to a district you have already laid out keeps the same layout and just re-skins it.</p>
+<h2 id="placing-buildings-on-uneven-ground">Placing buildings on uneven ground</h2>
+<p>By default buildings sit at a flat height. Turn on <strong>Snap To Ground</strong> — in the <strong>Where</strong> section for
+the Single, Row and Street tools and plain box zones, or the district's own <code>snapToGround</code> field —
+and each building is placed on the ground surface beneath it.</p>
+<p>How it works, and why it behaves differently on slopes:</p>
+<ul>
+<li>Five downward rays probe the building's footprint (four corners plus the centre) against
+  <strong>Ground Layers</strong>. The tool's own buildings, roads and zone markers are always ignored, so nothing
+  ever snaps onto itself.</li>
+<li><strong>Colliders are not required.</strong> Each probe tries physics first; where nothing answers, it
+  raycasts the <em>visible meshes</em> on those layers instead. Display-only ground — an imported city
+  mesh, a landscape whose collision comes later — snaps just as well.</li>
+<li><strong>On flat-enough ground</strong> the base lands on the <strong>lowest</strong> hit, so a building never floats and
+  its uphill side sinks in slightly. If the corners differ by more than half a metre, a
+  <strong>foundation skirt</strong> — a concrete plinth using the same facade atlas — automatically fills the
+  gap on the downhill side.</li>
+<li><strong>On real slopes (steeper than 5°)</strong> the base rises to the <strong>highest</strong> hit instead, and the skirt
+  grows into a full <strong>basement wall</strong> filling the cut below. This is what stops ground-floor windows
+  and doors being buried in a hillside. The basement is solid, with a collider per ground-touching
+  block, so the exposed downhill face is not drive-through scenery.</li>
+<li>Where no ground is found at all, the building keeps its flat placement, and a district fill that
+  missed the ground under some plots says so in the Console rather than failing quietly.</li>
+</ul>
+<p>The skirt is a scene-only child object. No asset is written for it, and the tool's marker-driven
+commands ignore it.</p>
+<blockquote>
+<p>Buildings that were placed before you had a slope there — or moved by hand onto one — can be
+repaired without regenerating. The health dashboard flags them and its <strong>Skirts</strong> button fixes
+them in one Undo-able step. See <a href="BuildingGen_10_Finishing.html#the-fix-row">Finishing and Shipping</a>.</p>
+</blockquote>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>My city generated but the blocks are empty.</strong> The blocks are probably too small for the archetype
+mix — a building needs roughly 7.8 m of frontage. Increase Block Width/Depth, or lower Edge Margin.</p>
+<p><strong>Buildings are sitting on my roads.</strong> The tool avoids its own buildings automatically, but not
+your scenery. Point <strong>Obstacle Layers</strong> at the layer your roads are on.</p>
+<p><strong>How do I make a district that is only houses?</strong> Set the Tower, Shop and Apartment weights to 0 and
+leave House above 0, or apply <code>BCG_Preset_Suburbs</code>.</p>
+<p><strong>Can I get the same city back later?</strong> Yes — the City Seed reproduces it exactly, provided the
+block dimensions and presets are the same.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_06_PathsAndRoads.html">Paths and Roads</a></strong> — road geometry, curved streets and the
+  Road Constructor bridge.</li>
+<li><strong><a href="BuildingGen_07_Customizing.html">Customising Buildings</a></strong> — archetypes, detail levels and props.</li>
+<li><strong><a href="BuildingGen_08_MaterialsAndLighting.html">Materials and Lighting</a></strong> — night look, probes, baked
+  lighting.</li>
+<li><strong><a href="BuildingGen_12_Reference.html#bcg_buildingzone-district-component">Reference ▸ BCG_BuildingZone</a></strong> —
+  every district field with its type, default and range.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_05_CitiesAndDistricts.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

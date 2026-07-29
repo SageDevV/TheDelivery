@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 2e64b10c83981f84ba9d0c723f4c0f85
+timeCreated: 1541336666
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 132647
+  packageName: vintage refrigerator Type1
+  packageVersion: 1.0.1
+  assetPath: Assets/openplay/vintageRefrigeratorT1/mesh/Materials/tex_vintage_RefrigeratorT1.mat
+  uploadId: 277279

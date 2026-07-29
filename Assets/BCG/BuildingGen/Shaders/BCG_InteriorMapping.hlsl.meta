@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1a7f434b3efd00d47913d5b8cc10fe25
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Shaders/BCG_InteriorMapping.hlsl
+  uploadId: 962654

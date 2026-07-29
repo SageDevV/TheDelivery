@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCG Building Generator — Changelog</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="bcg-building-generator--changelog">BCG Building Generator — Changelog</h1>
+<p>All notable changes to Urban Building Generator are listed here, newest first.</p>
+<hr>
+<h2 id="version-250">Version 2.5.0</h2>
+<h3 id="new-features">New Features</h3>
+<ul>
+<li><strong>The generator window is now a City Pipeline</strong> — the old <strong>Build | Manage</strong> split is replaced by
+  four ordered stages that follow how a city is actually made: <strong>1 Plan</strong> (City Grid · Zones ·
+  Paths) → <strong>2 Build</strong> (Single · Street · Districts · Greybox) → <strong>3 Dress</strong> (Mood · Furniture ·
+  Probes) → <strong>4 Ship</strong> (Health · Finalize). A stage strip picks the stage, a sub-tab strip picks the
+  pane, and both are remembered per-user. Every pane is built up front, so switching never loses
+  what you had typed. Every band of the new chrome — title row, output row, City Ledger, identity
+  strip, and both strips — holds its height, so when the window is squeezed to its 418 × 480 minimum
+  the squeeze lands on the pane, which scrolls. Nothing overlaps and no control goes out of reach.</li>
+<li><strong>City Ledger</strong> — one status band under the header, visible in <em>every</em> stage: scene stats
+  (<code>N bldgs · X tris · ~N draws (pre-batch) · N zones</code>), the pipeline / material-health badge with an
+  inline <strong>[Fix]</strong> button that appears exactly when the materials need rebuilding, and the populate
+  job's progress bar with the window's only <strong>Cancel</strong>. Result readouts ("12 built · 0 skipped")
+  arrive as a transient toast on the same band and clear themselves after five seconds.</li>
+<li><strong>Identity strip</strong> — select a generated building and its recipe appears directly under the ledger:
+  palette swatch, archetype, cells × floors (or footprint in metres for a renamed object), seed and
+  triangle count. <strong>Copy</strong> puts the seed on the clipboard; <strong>Edit in Building</strong> loads the recipe into
+  Build ▸ Single. The strip is hidden whenever the selection is not a generated building.</li>
+<li><strong>Build ▸ Districts is now card-based</strong> — every selected district zone gets its own card with
+  Preset, Seed, Edge Margin, Row Gap, <strong>Select output (n)</strong> and <strong>Clear output</strong>, each edit written
+  straight to the <code>BCG_BuildingZone</code> component as one Undo step. The window-level defaults that seed
+  <em>new</em> zones moved to <strong>Plan ▸ Zones ▸ Defaults for new zones</strong>, alongside a list of every zone in
+  the scene and the District Presets row.</li>
+<li><strong>Build ▸ Greybox</strong> — greybox replacement is now a browsable pane instead of a menu-only command,
+  and from there it honours the pane's own <strong>Where</strong> and <strong>Generation Settings</strong> (detail, props,
+  extras, lit signage, LODs, lightmap UVs, Save As Prefab Assets, obstacle layers) rather than the
+  quick-blockout defaults. The standalone menu item is unchanged. The four rows that genuinely do not
+  apply to a greybox run (Snap To Ground, Ground Layers, Mesh Variety, Reuse Existing Assets) now say
+  so on the pane instead of silently doing nothing.</li>
+<li><strong>Ship ▸ Finalize — a pre-ship checklist</strong> — six ordered rows, each with a live count read from
+  the open scene: Bake Lightmap UVs, LOD coverage, Light Probes, Optimize City (marked <em>run last</em>),
+  Clean Unused and Regenerate All. Rows 1–4 show ✓/○ and the pinned bar mirrors the tally as
+  <code>Ship checks: k/4</code>. <strong>Destroy All Generated…</strong> is fenced off below in its own danger zone. The
+  orphan scan behind Clean Unused reads every scene in the project, so it runs only when you press
+  <strong>[Scan]</strong> — never on a timer and never on window open.</li>
+<li><strong>Command search (<code>⌕</code>)</strong> — a floating palette listing every generator command. Type to filter
+  (<code>fixmat</code> finds <em>Fix Materials</em>), Enter runs the top hit — and each row shows <strong>which pane the
+  command lives on</strong>, so it doubles as a "where did that go?" reference.</li>
+<li><strong>Gear menu (<code>⚙</code>)</strong> — window preferences and the two utilities with no pane of their own:
+  Frame on generate, Select All Generated, Street Furniture As Separate Props, Open Manual, About.</li>
+<li><strong>Foundation-skirt health check + one-click fix</strong> — the Ship ▸ Health dashboard now watches foundation
+  skirts. A skirt that lost its mesh or material (scene-only skirt meshes can be stripped by
+  certain undo/prefab round-trips) is always flagged; with <strong>Snap To Ground</strong> on, every skirtless
+  building's footprint is ground-probed and flagged <strong>Missing foundation skirt</strong> where the terrain
+  needs one — a hand-moved building on a slope, or a city generated before basement mode existed.
+  The fix row gains <strong>Skirts (n)</strong>: each flagged building gets a fresh ground probe, a damaged
+  shell is replaced, a missing skirt attached, and the base height re-derived exactly as Snap To
+  Ground would place it there (basement mode on steep slopes). One Undo step; buildings renamed
+  away from the generator's naming are skipped with a Console warning. Probing over collider-less
+  display ground reuses one candidate scan for the whole pass, so the dashboard stays responsive
+  in large cities.</li>
+</ul>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Fake Interiors and the Night Lights dial moved to Dress ▸ Mood.</strong> Both are <em>global material</em>
+  states, not per-building options, so they no longer repeat inside every pane's Generation Settings
+  foldout (which is now Geometry + Saving only; its header summary drops the Interiors fragment).
+  Flipping Fake Interiors on that pane rebuilds the shared facade materials immediately — the extra
+  "now click Fix Materials" step is gone. Each Generation Settings foldout ends with a quiet
+  <code>Interiors &amp; Night Lights → Dress ▸ Mood</code> pointer.</li>
+<li><strong>The Tools ▾ catch-all menu is gone.</strong> Every command it held has a browsable home, and the four
+  with no natural pane are mirrored as native menu items so they work with the window closed.
+  Nothing was dropped, and the job-gating rule is unchanged (Fix Materials and Select All Generated
+  stay live during a populate job; everything else is greyed).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Old <strong>Tools ▾</strong> entry</th>
+<th>Where it lives now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fix Materials (Active Pipeline)</td>
+<td>City Ledger <strong>[Fix]</strong> · <strong>Dress ▸ Mood</strong> primary ("Apply Materials") · menu item</td>
+</tr>
+<tr>
+<td>Regenerate All</td>
+<td><strong>Ship ▸ Finalize</strong> row 6 · menu item <strong>Regenerate All…</strong></td>
+</tr>
+<tr>
+<td>Regenerate Roads</td>
+<td><strong>Plan ▸ City Grid ▸ Regenerate Roads</strong></td>
+</tr>
+<tr>
+<td>Bake Lightmap UVs…</td>
+<td><strong>Ship ▸ Finalize</strong> row 1</td>
+</tr>
+<tr>
+<td>Select All Generated</td>
+<td>Gear menu <code>⚙</code> · menu item</td>
+</tr>
+<tr>
+<td>Clean Unused…</td>
+<td><strong>Ship ▸ Finalize</strong> row 5 · menu item <strong>Clean Unused…</strong></td>
+</tr>
+<tr>
+<td>Frame on generate</td>
+<td>Gear menu <code>⚙</code></td>
+</tr>
+<tr>
+<td>Destroy All Generated…</td>
+<td><strong>Ship ▸ Finalize</strong> ▸ danger zone</td>
+</tr>
+<tr>
+<td>City Tools ▸ Generate / Remove Street Furniture</td>
+<td><strong>Dress ▸ Furniture</strong> · menu items</td>
+</tr>
+<tr>
+<td>City Tools ▸ Generate / Remove Light Probes</td>
+<td><strong>Dress ▸ Probes</strong> (Generate also on <strong>Ship ▸ Finalize</strong> row 3) · menu items</td>
+</tr>
+<tr>
+<td>City Tools ▸ Optimize City / De-Combine City</td>
+<td><strong>Ship ▸ Finalize</strong> row 4 · menu items</td>
+</tr>
+<tr>
+<td>City Tools ▸ Replace Selected Greyboxes</td>
+<td><strong>Build ▸ Greybox</strong> · menu item</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The Manage zone is now Ship ▸ Health</strong> — the same scene inventory, filters, health flags, bulk
+  actions and fix row, in the audit stage where it belongs. Its Materials panel moved to
+  <strong>Dress ▸ Mood</strong>; the material-health badge moved to the City Ledger.</li>
+<li><strong>Fix Materials moved off the Materials panel.</strong> It used to be a button inside that panel plus a
+  <strong>Tools ▾</strong> entry. It is now the City Ledger's contextual <strong>[Fix]</strong> — right beside the badge that
+  tells you to run it — and the <strong>Dress ▸ Mood</strong> primary <strong>Apply Materials</strong>, and it gained a native
+  menu item so it also works with the window closed. Same handler behind all three, and it still
+  stays live while a populate job runs.</li>
+<li><strong>Upgrade path.</strong> The first time the pipeline window opens on an install that used the two-zone
+  layout, the retired <code>BCG.BuildingGen.WindowZone</code> key is read <strong>once</strong> to pick a starting stage
+  (Manage → 4 Ship, Build → 2 Build) and the result is stored under the new <code>BCG.BuildingGen.Stage</code>.
+  The old key is never written and never deleted, so rolling back to an older build still finds the
+  zone you last used. A fresh install starts at <strong>1 Plan</strong>. Every other preference keeps its existing
+  key and value.</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong>The scene-inventory list sizes itself properly now.</strong> Its height used to be measured by hand
+  from layout events and floored at 200 px, which on a short window pushed the fix row, the
+  bulk-action row and the Add-ons panel below the fold — reachable only by scrolling the whole
+  window body. The list is plain flexbox now: it fills a tall dock and, on a short one, yields all
+  the way, because it is the one thing on that pane that can give space back. So at the 418 × 480
+  minimum the fixers, <strong>Select flagged / Select shown / Isolate / Delete shown</strong> and the Add-ons
+  <strong>Import</strong> button are all still there, with a shorter (scrollable) list above them.</li>
+<li><strong>The scene-inventory filter row no longer wraps onto a second line.</strong> The search box asked for its
+  full natural width before flexing, which at narrow widths pushed the <strong>Type</strong> and <strong>Palette</strong>
+  filters and <strong>Refresh</strong> down a row and cost the list about a row of its own height. All four now
+  share one line, the search box taking whatever is left.</li>
+<li>
+<p><strong>No more second Cancel button.</strong> The zone pane used to grow its own "Populating zones… [Cancel]"
+  row while a job ran. Job status is now one thing in one place — the City Ledger's progress bar and
+  its single Cancel, visible from every stage.</p>
+</li>
+<li>
+<p><strong>Baked lighting did nothing on generated buildings</strong> — buildings stayed flat grey with no charts
+  in the Scene view's <strong>Baked Lightmap</strong> mode and picked up no baked light at all, no matter how
+  often <strong>Bake Lightmap UVs</strong> was run. The unwrap itself was never the problem. Version 2.3.0 added
+  a vertex-buffer compression pass that ran on every generated mesh, and Unity's lightmapper
+  <strong>refuses</strong> any mesh whose vertex data is not in the standard full-precision layout — it drops the
+  building from the bake with <em>"Invalid Mesh was removed from light baking input due to failure
+  code: 'Invalid format for channel(s) in Mesh'"</em>. Every building with lightmap UVs was therefore
+  thrown out of every bake. (If you watched closely, the correct charts appeared for a single frame
+  between the unwrap and the compression.) A mesh that carries lightmap UVs is now left uncompressed
+  so the lightmapper accepts it. Meshes <strong>without</strong> lightmap UVs — the default, and how city filler
+  is normally generated — are still compressed exactly as before, so the download-size win is
+  unchanged for them; only buildings you explicitly bake for GI give it up, which is the correct
+  trade for a bake that actually works.</p>
+</li>
+<li><strong>Buildings generated by 2.3.0 repair themselves</strong> — their meshes carry a lightmap UV set the
+  lightmapper cannot use, which previously counted as "already unwrapped" and was skipped forever.
+  Such a mesh is now reported as <em>missing</em> its lightmap UVs, so the everyday <strong>Bake Missing</strong> button
+  re-solves it — no need to reach for <strong>Renew All</strong> or regenerate the library. Buildings generated
+  before 2.3.0 were never affected.</li>
+<li><strong>LOD1 and LOD2 now receive lightmap UVs</strong> — both generation and the post-hoc action previously
+  touched only the building root, leaving the lower LOD meshes UV2-less and outside baked GI. The
+  complete LOD chain is now unwrapped and marked Contribute GI when baking is requested; the prefab
+  reuse gate rejects an old root-only/partial bake so it self-heals instead of being reused forever.</li>
+<li><strong>Foundation skirts and basement walls are baked with their building</strong> — a skirt was always
+  generated with Contribute GI cleared, so on a baked city built over terrain every foundation ring
+  and basement wall stayed outside the lightmap and read as a flat, unlit band where the building
+  above it was fully lit. A skirt now follows its building's baked-GI intent: it gets its own
+  lightmap UV set and contributes to the bake whenever the building does, and stays out of it
+  whenever the building does.</li>
+<li><strong>The post-hoc bake now covers the complete generated hierarchy</strong> — foundation skirts and
+  optimized-city chunks are included along with LOD0/1/2. Selecting an LOD/skirt/chunk resolves its
+  owning generated root, and a scene-wide pass no longer double-processes the disabled sources
+  behind an optimized city.</li>
+<li><strong>Failed or oversized unwraps no longer produce false GI state</strong> — Contribute GI is enabled only
+  after that renderer's mesh has a lightmapper-safe UV2. The unwrap path temporarily widens UInt16
+  meshes because chart splitting can push them beyond 65,535 vertices, then narrows them again when
+  possible; an actual failure leaves GI off and reports the mesh in the Console. Generated roads use
+  the same guarded path, so a road surface whose unwrap failed is no longer flagged for a bake it
+  cannot take part in.</li>
+<li><strong>Bake Lightmap UVs no longer saves unrelated dirty assets</strong> — persistent UV changes are flushed
+  one targeted mesh at a time instead of calling the project-wide <code>AssetDatabase.SaveAssets</code>.</li>
+<li><strong>Optimize City produces valid combined lightmap charts</strong> — concatenating source UV2 made charts
+  overlap, and a skirt could accidentally clear GI for a whole chunk. GI-enabled combined chunks now
+  receive a fresh unwrap over the final mesh, while same-material GI-on/GI-off sources are split so
+  both states are preserved. Existing combined cities can also be repaired by Bake Lightmap UVs.</li>
+</ul>
+<h3 id="improved">Improved</h3>
+<ul>
+<li><strong>The documentation is rewritten around tasks instead of features.</strong> The single 1,800-line user
+  guide is replaced by a set of short, task-first documents you can actually read end to end:
+  Getting Started, How It Works, Creating a Single Building, Creating Many Buildings, Cities and
+  Districts, Paths and Roads, Customising Buildings, Materials and Lighting, Optimising, Finishing
+  and Shipping, Troubleshooting and FAQ, and a Reference for lookups. <code>BuildingGen_UserGuide.md</code>
+  is now a landing page with an <strong>"I want to…"</strong> table that routes straight to the right page, so
+  existing links and the Welcome window's <em>User Guide</em> button keep working. The engine internals
+  that used to sit in the reader's path — the seed contract, mesh name tags, the runtime API,
+  package contents — moved into the Reference document rather than being deleted. Nine editor
+  screenshots and two diagrams were added, and every default, range and menu path was re-verified
+  against the shipping source.</li>
+<li><strong>Documentation accuracy fixes found during that rewrite</strong> — the LOD0 transition is documented as
+  <strong>0.10</strong> screen height (it was changed from 0.60 to stop visible popping, but the guide still
+  said 60%); the Detailed-tier vertex budgets now match the regression pins (Tower 7×5 F9 is
+  <strong>5,764</strong>, not 6,044; House 4×3 F2 Standard is <strong>86</strong>, not ~470); the <code>BCG_BuildingZone</code> field
+  table gained the four fields it was missing (<code>snapToGround</code>, <code>groundLayers</code>, <code>detail</code>,
+  <code>facadeExtras</code>); road markings are described as crossings, dashed centreline and edge lines
+  (there are no stop lines); and Getting Started now says the large playable City demo arrives via
+  <strong>Ship ▸ Health ▸ Add-ons</strong> rather than being present on import.</li>
+<li><strong>Bake Lightmap UVs now asks first, and can renew existing UVs</strong> — the <strong>Ship ▸ Finalize</strong> row-1
+  action (previously "Bake UVs (Existing)", a name that read as the opposite of what it did) now
+  opens a dialog before
+  writing anything. It reports the real workload — how many <strong>unique meshes</strong> lack a lightmap UV set
+  versus already have one, which is what costs time, not the building count — and offers <strong>Bake
+  Missing</strong> (unwraps only meshes without a UV set, the old behaviour), <strong>Renew All</strong> (also re-unwraps
+  meshes that already have one, discarding the current set) or <strong>Cancel</strong>. Renewing is the missing
+  path for a changed lightmap resolution or a hand-edited mesh, which previously meant regenerating
+  the buildings outright. Workload counts include LODs, foundation skirts, and optimized chunks.
+  When every targeted mesh is already unwrapped, only Renew and Cancel are offered. Mesh UV writes
+  still cannot be undone — which is exactly why the action now confirms.</li>
+</ul>
+<h3 id="roadmap">Roadmap</h3>
+<p>Two ideas from the City Pipeline design are deliberately <strong>not</strong> in this release; both are additive
+and neither changes the stage layout:</p>
+<ul>
+<li><strong>Draw a zone by dragging in the Scene view</strong> — Plan ▸ Zones would gain a drag-rectangle tool that
+  drops a correctly-sized <code>BCG_BuildingZone</code> where you drew it. It needs a custom <code>EditorTool</code> to do
+  properly, so it was held back rather than bolted on.</li>
+<li><strong>A Scene-view overlay</strong> — a small always-available panel with the current stage's primary action,
+  for working without the window docked.</li>
+</ul>
+<hr>
+<h2 id="version-230">Version 2.3.0</h2>
+<h3 id="new-features_1">New Features</h3>
+<ul>
+<li><strong>Replace Greyboxes With Buildings</strong> — block out a skyline with plain boxes, select them, one
+  click swaps every box for a generated building matching its footprint, height, base and
+  (90°-snapped) yaw. Seeds are a stable hash of each box's name, so a re-blocked scene reproduces
+  the same buildings; placement is anti-clip-guarded; one Undo restores the boxes.</li>
+<li><strong>Generate Light Probes</strong> — drops a capped <code>LightProbeGroup</code> grid over the generated city
+  (street + mid-rise layers everywhere, rooftop probes only where buildings stand) so dynamic
+  objects pick up baked GI. A density prompt asks for quality first — Low / Medium / High / Ultra
+  presets or a custom spacing (floor 1 m), with a live probe-count estimate for your city. The
+  spacing you ask for is now honoured <strong>exactly</strong> whenever it fits the <strong>probe budget</strong> (a new
+  field, default 4096, up to 65536) — previously a fixed 4096 cap silently widened every request on
+  a large city. A new <strong>Coverage</strong> option spends the budget only near roads and buildings instead
+  of over the whole bounding area, which is what makes a tight spacing affordable at city scale;
+  when the budget does force a widen, the prompt reports how many probes the requested spacing
+  would actually have needed. Probes are footprint-aware: a position landing inside a building is pushed out to the
+  nearest open air beside the facade (reported in the console) instead of baking black inside solid
+  geometry. The new group is selected in the scene afterwards. Regenerate replaces only its own
+  group — a probe group you authored is never touched.</li>
+<li><strong>Optimize City (Combine Meshes)</strong> — a reversible finalize pass that merges generated buildings
+  into a few material-bucketed, 65k-vertex-capped district meshes (renderer/GameObject count
+  collapse for mobile). Sources are disabled, never destroyed; <strong>De-Combine City</strong> restores them
+  exactly. Re-bake lighting after combining if the city uses baked GI.</li>
+<li><strong>Generate Street Furniture</strong> — lamps, benches, bus shelters and trees along both sidewalks of
+  every road network, with junction clearance, per-edge deterministic layout and static colliders,
+  combined into a few draw calls per network. Lamp heads and shelter glass ride the facade atlas's
+  window bands, so lamp heads glow at night through the existing day/night material swap — no real
+  Lights. Trees appear only on sidewalks ≥ 2 m and use two new solid-colour pipeline-aware
+  materials. To guarantee the glow on every palette, the night emission atlas gains a "beacon"
+  pane — one always-lit window pane (cell 7 of the office-lit band) in all four variants that
+  lamp heads and signage sample; night scenes show one extra lit pane per office-lit tile, the
+  day look is untouched.</li>
+<li><strong>Street Furniture — Separate Props mode</strong> — opt-in <code>Street Furniture As Separate Props</code> menu
+  toggle: props become instances of 4 user-editable, Rigidbody-ready prefabs
+  (<code>BCG_Furniture_{Lamp,Bench,Shelter,Tree}</code> with convex colliders, created once in the configured
+  output folder) so developers can make lamps/benches/shelters/trees crashable. A prefab edit —
+  e.g. adding a Rigidbody — survives every regenerate and applies to every instance; the layout is
+  identical to combined mode, and combined chunks stay the default.</li>
+<li><strong>Lit signage (seed-contract step 7)</strong> — optional <code>litSigns</code> generation layer: up to two vertical
+  corner sign strips on the upper shaft of 10+-floor Towers and a lit fascia strip over Shop
+  storefronts, UV-mapped into the lit-window band so they glow at night via the existing <code>_Night</code>
+  emission path. Off by default — output stays byte-identical to previous versions; signs-on mesh
+  assets carry a <code>_G</code> name tag and the asset-reuse gate rebuilds honestly on a toggle flip.</li>
+</ul>
+<p>All five tools live in the generator window's <strong>Tools ▾ ▸ City Tools</strong> submenu and under
+<strong>Tools ▸ BoneCracker Games ▸ Building Generator</strong>. Lit signage has a <strong>Lit Signage</strong> toggle in
+Generation Settings ▸ Geometry (new EditorPref <code>BCG.BuildingGen.LitSigns</code>), default ON for new
+generations — existing scenes/assets are untouched, and with it on a given seed's tall-Tower/Shop
+output differs from 2.1 (the rooftop-props release-note precedent). See the user guide's new §25.</p>
+<h3 id="improved_1">Improved</h3>
+<ul>
+<li><strong>Ground snapping works without colliders, and no longer buries ground floors</strong> — Snap To Ground
+  had two sharp edges on real terrain. It now tries physics per probe point and falls back to
+  raycasting the <strong>visible meshes</strong> on Ground Layers, so display-only ground (an imported city mesh,
+  a landscape whose collision is added later) snaps like any collider surface. And where the ground
+  under a footprint is steeper than 5°, the base now rises to the <strong>highest</strong> probe hit instead of
+  the lowest — the foundation skirt grows into a solid <strong>basement wall</strong> filling the cut below, so
+  ground-floor windows and doors clear the hillside instead of being swallowed by it. The
+  skirt/basement is collided per ground-touching massing block, so the exposed downhill band is not
+  drive-through scenery. Flat ground behaves exactly as before, and a zone fill that finds no ground
+  under some plots now warns in the console instead of silently leaving those buildings flat.</li>
+<li><strong>Smaller builds — 16-bit mesh indices</strong> — generated building and road meshes now use the
+  narrowest index format their vertex count allows, instead of always reserving 32-bit indices.
+  Ordinary city filler sits far below the 65,535-vertex threshold, so its index buffer halves:
+  across a 1,758-mesh city library that is <strong>2.3 MB less mesh data</strong> (4.7 MB → 2.3 MB of index
+  data) with <strong>byte-identical geometry</strong> — vertex data, vertex counts and the seed contract are
+  all unchanged. Very large Detailed buildings that genuinely cross the threshold still switch to
+  32-bit automatically. Existing assets keep their old format until you run <strong>Tools ▾ ▸
+  Regenerate All</strong>.</li>
+<li><strong>Smaller builds — compressed window mask</strong> — <code>BCG_Facade_WindowMask</code> was set to import
+  uncompressed, which made it the single largest asset in a build at 8 MB. It is a pure
+  black-and-white mask, so block compression reproduces it exactly (verified: zero error against
+  the source image). It now imports compressed at <strong>1.4 MB on desktop / 2.4 MB on mobile and
+  WebGL</strong>, saving roughly <strong>5.6–6.7 MB per build</strong> depending on platform, with no visual change
+  to the fake-interiors glass.</li>
+<li><strong>Smaller builds — specular maps halved on mobile and web</strong> — the four facade specular/
+  smoothness atlases imported at full 1024×2048 on every platform (9.5 MB — the largest remaining
+  texture cost after the window mask). Halving them visibly softens thin balcony railings, window
+  frames and mullions, so <strong>desktop keeps full resolution</strong>; Android, iOS and WebGL now import them
+  at 512×1024, saving <strong>7.1 MB per build</strong> on exactly the platforms where download size matters and
+  the softening is not resolvable on screen.</li>
+<li><strong>Smaller builds — packed mesh vertex format</strong> — generated building meshes now store normals and
+  tangents as signed bytes and both UV sets as half-floats, halving the vertex stride (56 → 28 bytes
+  with lightmap UVs, 48 → 24 without). Positions keep full 32-bit precision, so nothing shifts.
+  Across a 1,758-mesh city library the mesh payload drops <strong>44.5 MB → 23.4 MB (−50%)</strong> with no change
+  to vertex counts, geometry or the seed contract — the same seed still produces the same building.
+  Existing assets keep the old format until you run <strong>Tools ▾ ▸ Regenerate All</strong>.</li>
+</ul>
+<hr>
+<h2 id="version-210">Version 2.1.0</h2>
+<h3 id="new-features_2">New Features</h3>
+<ul>
+<li><strong>Cinematic demo intro</strong> — the demo city now opens with a skippable ~75 s guided feature
+  tour: six authored camera shots with on-screen caption cards covering live runtime
+  generation (buildings grow out of an empty plot via <code>BCG_RuntimeBuildingFactory</code>), the road
+  network, baked lighting, night emission, and fake interiors. The tour opens and closes with
+  a soft fade to black and hands control back under the fade — and fading is selectable per
+  shot (Fade In / Fade Out on each shot), so any cut can become a dip-to-black. Any key skips straight to the
+  explorable fly camera — except the very first run on a machine, which plays in full
+  (<strong>First Run Cant Skip</strong>, default on, PlayerPrefs-tracked) — and the scene is always handed back exactly as authored (the night
+  beats are mid-tour only — daylight is restored by the finale); <strong>C</strong> replays the tour. A
+  <strong>Playback Speed</strong> multiplier on the director scales the whole tour (shots, captions, and
+  the generation timelapse together). Built with zero new dependencies — no Cinemachine or
+  Timeline required.</li>
+<li><strong>Configurable output folder</strong> — the <code>Output:</code> line in the window header is now interactive:
+  click it (or the <code>…</code> button) to choose any folder inside <code>Assets</code> for generated mesh/prefab
+  assets; <code>↺</code> resets to the default <code>Generated/</code> location. Stored per-user, per-project.
+  Already-generated assets are never moved; <strong>Clean Unused…</strong> and <strong>Regenerate All</strong> scan both
+  the configured and the default folder, and the unused-asset scan now only considers assets
+  matching the generator's own naming (<code>BCG_Building*</code>), so your own assets in a chosen folder
+  are never offered for deletion.</li>
+</ul>
+<hr>
+<h2 id="version-200">Version 2.0.0</h2>
+<h3 id="new-features_3">New Features</h3>
+<ul>
+<li><strong>Drivable grid road networks</strong> — turn on <strong>Create Roads</strong> (Populate Zones ▸ City Blocks) or
+  <strong>Generate road surface</strong> (Street ▸ Straight) and every street/avenue gap becomes real road
+  geometry: an asphalt / gutter / curb / sidewalk ribbon, square-return junction pads with
+  dropped-curb crosswalk sockets, and a separate markings layer (zebra crosswalks, dash
+  centerline, edge lines) with shadows off. One drivable <code>MeshCollider</code> shares the exact mesh the
+  renderer draws, and curb faces are beveled (~33° at the default curb height) so vehicles mount
+  the sidewalk smoothly instead of striking a vertical wall. See user guide
+  <a href="BuildingGen_UserGuide.html#23-roads">§23, Roads</a>.</li>
+<li><strong>Baked GI for roads</strong> — with <strong>Bake Lightmap UVs</strong> on, generated road surfaces get a secondary
+  UV set and contribute to baked lighting; off keeps roads dynamically lit as before.</li>
+<li><strong><code>BCG_RoadNetwork</code> / <code>BCG_RoadMarker</code></strong> — new runtime components that make a road layout the
+  source of truth for <strong>Regenerate Roads</strong> (Tools ▾ menu) and let the placement guard, ground
+  snap, and Select All / Destroy All treat generated roads correctly.</li>
+<li><strong>Fix Materials (Active Pipeline)</strong> now also rebinds the road surface material family
+  (asphalt/markings atlas + a <code>_Night</code> variant) to the active pipeline.</li>
+<li><strong>Optional Road Constructor integration</strong> — if Road Constructor (Pampel Games, sold separately)
+  is imported, two extra UI rows appear automatically: routing City Blocks' grid through Road
+  Constructor's spline roads, and <strong>Populate Along RC Roads</strong> to line any Road Constructor road
+  already in the scene with a seeded row of buildings. Zero footprint if Road Constructor isn't
+  installed. See <a href="BuildingGen_UserGuide.html#24-road-constructor-integration">§24, Road Constructor integration</a>.</li>
+<li><strong>Demo re-authored</strong> — the demo city (also the WebGL build scene) now has 105 buildings across
+  31 fully drivable road edges, baked GI covering both buildings and roads, and glowing lane
+  markings in night mode.</li>
+<li><strong>Undo-safe road meshes + a Roads health fixer</strong> — every road create/destroy path (generation,
+  Regenerate Roads, Destroy All) tracks the scene-embedded road meshes through the same Undo step
+  as the road objects, so undo/redo can never leave invisible roads or empty <code>BCG_Roads</code> shells
+  behind, and a road mesh you have reused elsewhere is spared. The Manage dashboard's fix row
+  gained <strong>Roads (n)</strong>: rebuilds networks whose road meshes went missing (from their
+  <code>BCG_RoadNetwork</code> data) and deletes ownerless broken road objects.</li>
+</ul>
+<h3 id="determinism">Determinism</h3>
+<ul>
+<li>Road generation draws <strong>zero values from any seeded stream</strong> — the same seed produces the same
+  city whether or not Create Roads is on, and toggling roads never reshuffles a single building
+  (test-pinned byte-parity). Populate Along RC Roads is the one new seeded stream, since nothing
+  before this release ever lined an RC-built road.</li>
+</ul>
+<h3 id="upgrade-notes">Upgrade notes</h3>
+<ul>
+<li><strong>City Blocks generates roads by default</strong> (<code>Create Roads</code> defaults ON) — turn it off to restore
+  the pre-2.0 empty-gap layout; building placement is unaffected either way.</li>
+<li><strong>Street mode's road surface toggle defaults OFF</strong> and is byte-stable with 1.x until you turn it
+  on; turning it on widens each row's setback by one sidewalk width per side so buildings clear the
+  new sidewalk.</li>
+<li>New EditorPrefs: <code>BCG.BuildingGen.CreateRoads</code>, <code>BCG.BuildingGen.RoadSidewalkWidth</code>,
+  <code>BCG.BuildingGen.StreetRoadSurface</code>, <code>BCG.BuildingGen.RoadBackend</code>.</li>
+</ul>
+<h3 id="limitations">Limitations</h3>
+<ul>
+<li>Flat ground only, 90°-grid square-return junctions only, straight streets only for the built-in
+  road surface — free-form/curved/elevated roads are Road Constructor territory (see §24).</li>
+</ul>
+<h3 id="tests">Tests</h3>
+<ul>
+<li>EditMode suite grew from 129 to 182 across the two road-network waves, the road undo-safety
+  hardening, and the drivable curb bevel.</li>
+</ul>
+<hr>
+<h2 id="version-131">Version 1.3.1</h2>
+<h3 id="new-features_4">New Features</h3>
+<ul>
+<li><strong>Playable demo scene</strong> — open <code>Demo/BuildingGen_Demo.unity</code> and press <strong>Play</strong> to explore the
+  demo city in first person:</li>
+<li><strong>Collision-aware fly camera</strong> — WASD + mouse-look, Space/E and Ctrl/Q to fly up / down,
+    Shift for speed. The camera slides along buildings and the ground instead of clipping
+    through them, and stays inside the city bounds.</li>
+<li><strong>Click to inspect</strong> — clicking a building highlights it and opens an info card with its
+    generated facts: archetype, variant, seed, footprint, height, and mesh vertex / triangle
+    counts.</li>
+<li><strong>Day / night toggle (N)</strong> — swaps every facade to its <code>_Night</code> emission variant, dims the
+    sun, and darkens the sky in one keypress.</li>
+<li><strong>Controls overlay (H / F1)</strong> — an on-screen legend so first-time users never guess.</li>
+<li>Works out of the box under <strong>both</strong> the legacy Input Manager and the new Input System, in
+    any render pipeline. The demo scripts ship in their own runtime-only assembly under
+    <code>Demo/Scripts/</code> and never touch generation code. The same scene is the source of the
+    playable WebGL demo on the store page / website.</li>
+</ul>
+<h3 id="fixed_1">Fixed</h3>
+<ul>
+<li><strong>Night emission now bakes into lightmaps</strong> — facade materials silently opted out of baked
+  global illumination, so glowing night windows lit nothing around them in a baked scene even
+  though they rendered fine on screen. Facade materials are now flagged baked-emissive (run
+  <strong>Fix Materials</strong> once in existing projects to upgrade them in place), and the Fake Interiors
+  shader gained the Meta pass the lightmapper reads. Verified on Built-in and URP — baking with
+  the <code>_Night</code> variants (or the Night Lights dial turned up) now pools warm window glow onto
+  streets and neighbouring facades.</li>
+<li><strong>Detailed elaborations and Facade Extras stay on their walls</strong> — on L-shaped and Setback
+  massings, the Detailed tier's sills / mullions / balconies and the AC-unit / vent extras were
+  laid out using the whole building's cell counts, so geometry could walk past the end of a
+  narrower block's side wall and float in mid-air. Placement is now per massing block.</li>
+<li><strong>Disabled buildings no longer block new placement</strong> — the anti-clip placement guard treated
+  buildings on disabled GameObjects as obstacles, so new buildings would relocate around
+  invisible scenery. Inactive buildings are now ignored when collecting footprints.</li>
+<li><strong>URP: facades now receive SSAO and appear in the Depth Normals prepass</strong> — the fake-interiors
+  facade shader gained a <code>DepthNormalsOnly</code> pass and the <code>_SCREEN_SPACE_OCCLUSION</code> variant. With
+  a Screen Space Ambient Occlusion renderer feature, buildings previously never darkened and were
+  missing from the camera normals texture.</li>
+<li><strong>URP: baked shadowmask / subtractive mixed lighting now respected</strong> — lightmapped facades
+  sampled no shadow mask, so in Shadowmask mode all baked shadows vanished beyond the realtime
+  shadow distance. The forward pass now compiles the <code>SHADOWS_SHADOWMASK</code> /
+  <code>LIGHTMAP_SHADOW_MIXING</code> variants and samples the mask like stock URP Lit.</li>
+<li><strong>Projects without URP no longer log shader errors</strong> — Unity compiles every SubShader in a
+  shader file regardless of the active pipeline, so importing into a project that doesn't have
+  the URP package installed produced five "Couldn't open include file ... Core.hlsl" errors
+  (one per pass of the fake-interiors shader's URP SubShader). That SubShader now declares a
+  <code>PackageRequirements</code> dependency on URP, so Unity skips it entirely where URP is absent.
+  Rendering was always correct (the Built-in SubShader was used either way) — the console
+  errors are simply gone.</li>
+</ul>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li>The unused per-vertex additional-lights variant (<code>_ADDITIONAL_LIGHTS_VERTEX</code>) is no longer
+  compiled — the pass never consumed vertex lighting, so the variant only added build time.
+  Per-pixel and Forward+ additional lights are unaffected.</li>
+<li>The facade shader's Forward+ keyword is now <code>_CLUSTER_LIGHT_LOOP</code> (the Unity 6000.1+ name)
+  instead of the deprecated <code>_FORWARD_PLUS</code> alias — removes a shader-compile deprecation warning
+  and lets URP's variant prefiltering strip unused Forward+ variants. Requires Unity 6000.1 or
+  newer, which the package already exceeds.</li>
+</ul>
+<hr>
+<h2 id="version-130">Version 1.3.0</h2>
+<h3 id="improved_2">Improved</h3>
+<ul>
+<li><strong>Full editor UI/UX polish pass</strong> — a 24-point audit of the generator window was implemented
+  end to end:</li>
+<li><strong>Navigation reads at a glance</strong> — the three switcher rows are now visually tiered
+    (Build / Manage as a filled block, Single / Street / Zones as an underline, Straight /
+    Along Path as a quiet pill), and foldouts join the theme (bold header, orange arrow — no
+    more stock blue focus tint).</li>
+<li><strong>The pinned Generate button explains itself</strong> — when it is disabled, a note beside the
+    status badge says why (<code>no zones selected</code>, <code>needs a Street Path with 2+ points</code>, or a
+    running populate job). "Generate City" is now a distinct secondary button so each tab has
+    exactly one primary action.</li>
+<li><strong>Manage dashboard grew up</strong> — the building list now fills the window height instead of a
+    fixed box, group headers show clean names (<code>Zone Marker (1) · S83302</code> instead of raw
+    container names), the filters are labeled (<code>Type:</code> / <code>Palette:</code>), a legend decodes the row
+    columns, and only actionable fixer buttons are shown.</li>
+<li><strong>Narrow-window fixes</strong> — the Street tab no longer scrolls sideways (the Variant Mix row
+    fits and wraps), hints wrap instead of clipping mid-sentence, and the Manage toolbar wraps
+    at the 418 px minimum width.</li>
+<li><strong>Clearer information</strong> — the output folder is always visible under the window title, the
+    Street tab shows the normalized archetype mix (<code>≈ Tower 28% · Shop 24% · …</code>), destructive
+    buttons carry visible red weight, the Day / Dusk / Night presets read as presets rather
+    than tabs, and the preset dropdown shows friendly names (<strong>Downtown</strong>, not
+    <code>BCG_Preset_Downtown</code>).</li>
+<li><strong>Welcome window matches the product theme</strong> — the legacy blue header and nav highlight
+    were retinted to the shared dark-and-orange look.</li>
+<li>Per-tab "Reset to Defaults" rows were consolidated into one Reset on the tab strip; various
+    alignment and readout polish (field-column grid, <code>·</code> separators).</li>
+</ul>
+<h3 id="fixed_2">Fixed</h3>
+<ul>
+<li><strong>Auto-Seed previews now update the Seed field</strong> — previously the field could show a stale
+  seed while the preview displayed the freshly rolled one, so the value about to be baked by
+  Generate was ambiguous.</li>
+</ul>
+<hr>
+<h2 id="version-121">Version 1.2.1</h2>
+<h3 id="fixed_3">Fixed</h3>
+<ul>
+<li><strong>Generator window now fits 1920×1080 displays</strong> — the window's minimum height was lowered so it
+  fits on smaller and scaled (125–150% DPI) screens. The body scrolls and the pinned <strong>Generate</strong>
+  bar stays reachable regardless of window height. No functional or generation changes.</li>
+</ul>
+<hr>
+<h2 id="version-120">Version 1.2.0</h2>
+<h3 id="new-features_5">New Features</h3>
+<ul>
+<li><strong>Fake Interiors</strong> — windows now show parallax room interiors behind the glass, rendered
+  entirely in-shader with no extra draw calls. Rooms sit <em>behind</em> the tinted glass with
+  grazing-angle Fresnel reflections and per-window variety (some blinds-drawn, some clear),
+  and light up at night. One global toggle in the Materials panel; works on Built-in and URP
+  (HDRP gracefully falls back to stock glass).</li>
+<li><strong>Detailed detail tier</strong> — a new "Detailed" quality level (alongside Simple / Standard) adds
+  window sills, mullion bars, real balconies, cornices, corner pilasters, parapet coping,
+  recessed storefronts, and House shutters / canopy / porch / chimney details. The same seed
+  always produces the same building at every tier. Pairs with automatic LODs; keep Standard /
+  Simple for mobile.</li>
+<li><strong>Facade Extras</strong> — optional AC units and wall vents scattered across tower, shop, and
+  apartment walls for extra rooftop-to-street realism. Toggleable; off by default on existing
+  buildings.</li>
+<li><strong>Facade normal maps</strong> — all facades now ship with normal maps bound automatically across
+  Built-in, URP, and HDRP for richer surface lighting (no setup, no toggle).</li>
+<li><strong>Facade specular maps</strong> — facades gained per-texel specular / smoothness maps, so glass and
+  trim catch highlights realistically instead of reading flat. Applied automatically by
+  <em>Fix Materials</em>.</li>
+</ul>
+<h3 id="improved_3">Improved</h3>
+<ul>
+<li><strong>Rebuilt editor UI</strong> — all three windows (generator, welcome, cleanup) were rebuilt on
+  Unity's modern UI Toolkit with a shared dark theme. The generator now opens into two clear
+  zones: <strong>Build</strong> (Single / Street / Zones) and <strong>Manage</strong> (scene dashboard + materials). A
+  pinned action bar keeps the <strong>Generate</strong> button, a live material-health badge, and a
+  <strong>Tools ▾</strong> menu (Regenerate All, Bake UVs, Clean Unused, and more) always in reach.</li>
+<li><strong>3-level LOD chain for Detailed buildings</strong> — Detailed → Standard → Simple swaps by screen
+  size so the heavy geometry only renders up close.</li>
+<li><strong>Detail-level labels clarified</strong> — the middle tier is now labeled "Standard" (was "Full")
+  for clearer guidance.</li>
+</ul>
+<h3 id="compatibility">Compatibility</h3>
+<ul>
+<li>Fake Interiors, normal maps, and specular maps are all verified non-magenta on Built-in and
+  URP Forward+; HDRP falls back cleanly to stock Lit materials.</li>
+</ul>
+<h3 id="note">Note</h3>
+<ul>
+<li>Enabling <strong>Facade Extras</strong> changes the generated clutter for a given seed compared with
+  v1.1.0. Existing buildings deserialize with extras <strong>off</strong>, so nothing changes in your scenes
+  unless you opt in.</li>
+</ul>
+<hr>
+<h2 id="version-110">Version 1.1.0</h2>
+<ul>
+<li>HDRP support (materials rebuild to <code>HDRP/Lit</code> via <em>Fix Materials</em>).</li>
+<li>Obstacle-aware placement, skyline height falloff, terrain snapping, and foundation skirts.</li>
+<li>District presets, city-block generator, street paths, and a click-to-stamp building brush.</li>
+<li>Scene inventory dashboard with per-building health flags and one-click fixers.</li>
+<li>Rooftop / storefront props, automatic LODs, mesh-library reuse, and async zone population.</li>
+<li>Runtime generation API (<code>BCG_BuildingMeshCore</code> + <code>BCG_RuntimeBuildingFactory</code>).</li>
+<li>Night-lights emission dial with Day / Night material variants.</li>
+<li>Orphaned-asset cleanup, post-hoc lightmap UV bake, and save-as-prefab / preview-in-scene.</li>
+</ul>
+<hr>
+<h2 id="version-100">Version 1.0.0</h2>
+<ul>
+<li>Initial release. Procedural city-filler building generator: four archetypes
+  (Tower / Shop / Apartment / House), four massing models, seeded per-floor facade styles,
+  one draw call per building via a shared strip-atlas.</li>
+<li>Pipeline-aware facade materials (Built-in and URP), EditMode test suite, demo city scene,
+  user guide, and onboarding welcome window.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_Changelog.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

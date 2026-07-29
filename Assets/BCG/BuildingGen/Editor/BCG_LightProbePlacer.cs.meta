@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 4e63eb320b836624ea79d87b7370480b
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Editor/BCG_LightProbePlacer.cs
+  uploadId: 962654

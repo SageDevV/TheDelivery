@@ -1,0 +1,11 @@
+{
+    "name": "BCG_BuildingGen.Tests",
+    "rootNamespace": "BoneCrackerGames.BuildingGen.Tests",
+    "references": ["BCG_BuildingGen.Editor", "BCG_BuildingGen.Runtime", "BCG_BuildingGen.Demo", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "UnityEngine.UI", "PG.RoadConstructor", "PG.Shared.Construction"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "autoReferenced": false
+}

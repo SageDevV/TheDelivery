@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5c5592f45f5a9a5448d88d90366ac3e6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Presets/BCG_Preset_CommercialStrip.asset
+  uploadId: 962654

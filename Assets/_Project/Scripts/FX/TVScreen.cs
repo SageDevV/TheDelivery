@@ -142,8 +142,22 @@ namespace TheDelivery.FX
             else
                 Debug.LogWarning("[TVScreen] screenRenderer não atribuído; a tela não vai brilhar.", this);
 
+            // Surfacea no Console a causa real quando o vídeo trava (codec/VFR/áudio) em vez
+            // de silenciosamente congelar no 1º frame.
+            if (videoPlayer != null)
+                videoPlayer.errorReceived += OnVideoError;
+
             flickerSeed = Random.value * 100f;
         }
+
+        private void OnDestroy()
+        {
+            if (videoPlayer != null)
+                videoPlayer.errorReceived -= OnVideoError;
+        }
+
+        private void OnVideoError(VideoPlayer vp, string message)
+            => Debug.LogError($"[TVScreen] VideoPlayer travou/erro: {message}", this);
 
         private void Start()
         {

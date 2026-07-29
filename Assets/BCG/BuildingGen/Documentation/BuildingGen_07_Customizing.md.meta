@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: daea4d207f7e91b41bd5aea985162a0f
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 389306
+  packageName: Urban Building & City Generator
+  packageVersion: 2.5.0
+  assetPath: Assets/BCG/BuildingGen/Documentation/BuildingGen_07_Customizing.md
+  uploadId: 962654

@@ -1,0 +1,14 @@
+{
+    "name": "BCG_BuildingGen.Editor.RC",
+    "rootNamespace": "BoneCrackerGames.BuildingGen",
+    "references": ["BCG_BuildingGen.Runtime", "BCG_BuildingGen.Editor", "PG.RoadConstructor", "Unity.Splines", "PG.Shared.Construction", "Unity.Mathematics"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "defineConstraints": ["BCG_URBUGE_RC"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

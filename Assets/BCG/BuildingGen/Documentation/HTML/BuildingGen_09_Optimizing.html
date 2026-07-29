@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optimising</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="optimising">Optimising</h1>
+<p>A generated city is already cheap by construction — one mesh and one material per building, sharing
+four materials across the whole city. This page is about the further levers, when each one is worth
+pulling, and which ones are traps.</p>
+<h2 id="what-is-already-free">What is already free</h2>
+<p>Before you optimise anything, know what you are starting from:</p>
+<ul>
+<li><strong>One draw call per building</strong> before any batching. Because every building shares one of four
+  materials, Unity's static batching and the SRP Batcher then collapse them much further.</li>
+<li><strong>No runtime cost from the tool.</strong> Generation happens in the Editor. Your shipped city is ordinary
+  meshes and prefabs.</li>
+<li><strong>No lights for night windows.</strong> The night glow is material emission, not light sources.</li>
+<li><strong>No lightmap unwrap by default</strong>, which is the single most expensive part of generating a
+  building.</li>
+</ul>
+<p>That means the honest answer for most projects is: generate at Standard detail, turn on LODs, and
+stop. The rest of this page is for when you need more.</p>
+<h2 id="lods">LODs</h2>
+<p><strong>Generate LODs</strong> (in Generation Settings ▸ Geometry, <strong>off</strong> by default) builds simplified meshes
+alongside each building and wires them into a <code>LODGroup</code>.</p>
+<p><strong>LOD1 drops</strong> the recessed window relief (facades go flush), the roof clutter, and the House eave
+detail and chimney. <strong>Rooftop props are kept</strong>, so nothing visibly pops at the swap — a disappearing
+antenna is far more noticeable than flattened window reveals.</p>
+<p>The transition points differ by detail tier:</p>
+<table>
+<thead>
+<tr>
+<th>Detail tier</th>
+<th>Chain</th>
+<th>Transitions (screen height)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple / Standard</td>
+<td>LOD0 → LOD1</td>
+<td>LOD0 down to <strong>0.10</strong>, LOD1 culls below <strong>0.01</strong></td>
+</tr>
+<tr>
+<td>Detailed</td>
+<td>LOD0 → LOD1 → LOD2</td>
+<td><strong>0.55</strong> → <strong>0.20</strong> → culls below <strong>0.01</strong></td>
+</tr>
+</tbody>
+</table>
+<p>For Standard buildings, LOD0 is held all the way down to 10% of screen height on purpose. An earlier
+build swapped at 60% and the flush LOD1 was visibly popping in while the building still filled most
+of the screen. Culling at 1% keeps a 30 m tower visible to roughly 2.6 km, so distant skylines never
+blink out in a driving game.</p>
+<p><strong>Pair LODs with Detailed.</strong> A Detailed building carries three to fourteen times the vertices of a
+Standard one (see <a href="BuildingGen_07_Customizing.html#what-it-costs">what Detailed costs</a>). Without LODs
+it carries all of them at every distance. With them, the cost is confined to buildings that are
+actually close.</p>
+<p>Notes:</p>
+<ul>
+<li>Works for both prefab output (<code>…_LOD1</code> / <code>…_LOD2</code> mesh assets, GUID-stable) and scene-only output.</li>
+<li><strong>Preview In Scene</strong> stays full detail — it is an audition view.</li>
+<li><strong>Regenerate All</strong> preserves each prefab's LOD-ness as authored, whatever the toggle currently
+  says.</li>
+<li>Static batching bakes both LOD meshes into its combined buffers, so distant draw cost falls at a
+  small memory cost.</li>
+<li>With <strong>Bake Lightmap UVs</strong> on, every LOD gets its own UV set and contributes GI. With it off, the
+  LOD children keep the cheaper UV-less layout.</li>
+</ul>
+<h2 id="choosing-a-detail-tier">Choosing a detail tier</h2>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mobile</td>
+<td><strong>Simple</strong> for filler, <strong>Standard</strong> for anything the camera lingers on</td>
+</tr>
+<tr>
+<td>Desktop background city</td>
+<td><strong>Standard</strong> + LODs</td>
+</tr>
+<tr>
+<td>Desktop hero street</td>
+<td><strong>Detailed</strong> + LODs, everything else Standard</td>
+</tr>
+<tr>
+<td>VR</td>
+<td><strong>Standard</strong> or Simple; Detailed only for hand-picked landmarks</td>
+</tr>
+</tbody>
+</table>
+<p>Detail is a per-district field, so mixing tiers across one city is normal — run Detailed only in the
+block the player actually walks through.</p>
+<h2 id="fewer-unique-meshes">Fewer unique meshes</h2>
+<p>Two settings covered in <a href="BuildingGen_04_ManyBuildings.html#keeping-variety-under-control">Creating Many Buildings</a>
+matter as much for runtime as for disk:</p>
+<ul>
+<li><strong>Reuse Existing Assets</strong> (on by default) skips rebuilding assets that already match.</li>
+<li><strong>Mesh Variety</strong> caps how many distinct designs a fill may use per archetype. Buildings sharing a
+  footprint then share a mesh, which means fewer assets, faster fills, and identical scene-only
+  meshes that static-batch together.</li>
+</ul>
+<p>For background filler, a pool of 8–20 per archetype is usually indistinguishable from unlimited once
+palettes and row facing are mixed in.</p>
+<h2 id="optimize-city-combining">Optimize City (combining)</h2>
+<p><strong>Optimize City (Combine Meshes)</strong> — row 4 of the checklist on <strong>4 Ship ▸ Finalize</strong> — merges every
+generated building into a handful of district-scale meshes, bucketed by shared material and split
+below <strong>65,000 vertices</strong> per chunk.</p>
+<p><strong>Be honest about what this buys you.</strong> It collapses <em>GameObject and renderer counts</em> — the
+per-object CPU overhead that hurts mobile most. Draw calls were already being handled by static
+batching and the SRP Batcher, so this is a finalise step, not a frame-rate multiplier. On a
+demo-scale city it typically takes renderer counts from four figures to double digits.</p>
+<p>What you need to know before running it:</p>
+<ul>
+<li><strong>It is fully reversible.</strong> Source buildings are <em>disabled</em>, never destroyed. <strong>De-Combine City</strong>
+  restores them exactly, and the button only appears while a combined city exists.</li>
+<li><strong>Run it last.</strong> While a city is combined, the placement guard cannot see the disabled buildings,
+  so anything you generate afterwards will happily overlap them. Generate everything, then combine.</li>
+<li><strong>Foundation skirts ride along</strong>, and LOD chains contribute their LOD0.</li>
+<li><strong>Baked lightmap textures do not carry over.</strong> GI-enabled chunks receive a <strong>fresh unwrap over the
+  final combined geometry</strong> and are ready for a new bake; you must re-bake lighting afterwards.
+  Sources with GI off stay in separate, unwrapped-free chunks.</li>
+<li>Combined renderers use Simple reflection-probe blending, since one probe now covers a
+  district-sized mesh.</li>
+</ul>
+<h2 id="download-size">Download size</h2>
+<p>Four import-and-geometry decisions keep the shipped size down. They are automatic, but two of them
+only apply to <strong>newly generated</strong> assets, so a library made with an older version needs a
+<strong>Regenerate All</strong> to benefit:</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Effect</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>16-bit mesh indices</strong> where possible</td>
+<td>Generated meshes use the narrowest index format their vertex count allows instead of always reserving 32-bit. Meshes past 65,535 vertices switch to 32-bit automatically</td>
+<td>New assets — regenerate to apply</td>
+</tr>
+<tr>
+<td><strong>Packed vertex format</strong></td>
+<td>Normals and tangents stored as signed bytes, UVs as half-floats. Vertex stride drops from 48 to 24 bytes. Positions stay full 32-bit float, so nothing shifts</td>
+<td>New assets — regenerate to apply</td>
+</tr>
+<tr>
+<td><strong>Compressed window mask</strong></td>
+<td>The shared window mask texture is pure black and white, so block compression is exact</td>
+<td>Immediate</td>
+</tr>
+<tr>
+<td><strong>Halved specular atlases on mobile and WebGL</strong></td>
+<td>The specular/smoothness atlases import at half resolution on Android, iOS and WebGL. <strong>Desktop keeps full resolution</strong>, because halving visibly softens railings, window frames and mullions</td>
+<td>Immediate</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>One important exception.</strong> A mesh that carries <strong>lightmap UVs is never packed</strong>. Unity's
+lightmapper rejects any mesh outside the standard float layout and silently drops it from the bake.
+So if you bake GI on your buildings, those meshes keep the wider stride — correct lighting beats a
+smaller download. Meshes without lightmap UVs (the default) get the full saving.</p>
+</blockquote>
+<h2 id="a-mobile-checklist">A mobile checklist</h2>
+<ol>
+<li><strong>Detail = Simple or Standard.</strong> Never Detailed for filler.</li>
+<li><strong>Generate LODs on.</strong></li>
+<li><strong>Mesh Variety</strong> set to something finite — 8 to 16 per archetype.</li>
+<li><strong>Fake Interiors off</strong> (the default). It is a per-fragment cost across every facade.</li>
+<li><strong>Lit Signage</strong> is free (it rides the existing atlas), so leave it on if you like the look.</li>
+<li><strong>Street furniture in combined mode</strong> (the default), not separate props.</li>
+<li><strong>Regenerate All</strong> once, so the packed vertex format and 16-bit indices apply.</li>
+<li><strong>Optimize City</strong> as the final step, after everything is placed.</li>
+<li><strong>Light probes</strong> on a modest budget — 4096 is usually plenty; use <em>Near roads + buildings</em>
+   coverage rather than raising the budget.</li>
+</ol>
+<h2 id="common-questions">Common questions</h2>
+<p><strong>Combining did not improve my frame rate.</strong> It reduces renderer and GameObject overhead, not draw
+calls — those were already batched. If you are GPU-bound on overdraw or shader cost, look at Fake
+Interiors and your detail tier instead.</p>
+<p><strong>Should I combine before or after baking lighting?</strong> Combine first, then bake. Combining discards
+existing lightmaps and re-unwraps the combined geometry, so baking beforehand wastes the bake.</p>
+<p><strong>My meshes are still the old size after updating.</strong> Run <strong>Regenerate All</strong> — the size wins for
+indices and vertex format apply when a mesh is written, and existing assets keep their old format
+until they are rebuilt.</p>
+<p><strong>Can I use LODs and combining together?</strong> Yes. Combining takes each building's LOD0. You lose the
+LOD chain on combined output, which is the trade — combine district-scale background, keep LODs on
+anything the camera approaches.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_10_Finishing.html">Finishing and Shipping</a></strong> — the checklist that puts these steps in
+  the right order.</li>
+<li><strong><a href="BuildingGen_07_Customizing.html">Customising Buildings</a></strong> — the detail tiers and what each costs.</li>
+<li><strong><a href="BuildingGen_08_MaterialsAndLighting.html">Materials and Lighting</a></strong> — baked lighting and probes.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_09_Optimizing.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

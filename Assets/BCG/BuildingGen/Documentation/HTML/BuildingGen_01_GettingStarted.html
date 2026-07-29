@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+}
+.content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+h1 { color: #2c3e50; margin-top: 0; padding-bottom: 0.3em; border-bottom: 2px solid #eee; }
+h2 { color: #34495e; margin-top: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid #eee; }
+h3, h4 { color: #34495e; margin-top: 1.2em; }
+h5, h6 { color: #34495e; margin-top: 1.0em; }
+code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    color: #f8f8f2;
+    white-space: pre;
+}
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding: 0.5em 0 0.5em 20px;
+    color: #555;
+    background: #f9f9f9;
+}
+blockquote p { margin: 0.4em 0; }
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+a { color: #3498db; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #2980b9; text-decoration: underline; }
+ul, ol { margin: 1em 0; padding-left: 30px; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.3em 0; }
+hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
+p { margin: 1em 0; }
+img {
+    display: block;
+    margin: 1.4em auto;
+    max-width: min(100%, 760px);
+    max-height: 640px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+figure { margin: 1.6em 0; text-align: center; }
+figure img { margin: 0 auto 0.5em; }
+figcaption { color: #777; font-size: 0.9em; font-style: italic; }
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+</style>
+</head>
+<body>
+<div class="content">
+<h1 id="getting-started">Getting Started</h1>
+<p>This page takes you from a freshly imported package to your first generated building. It should
+take about ten minutes, and you do not need to read anything else first.</p>
+<h2 id="what-you-need">What you need</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unity version</td>
+<td>Unity 6 (the package is built and tested on <strong>6000.3.6f1</strong>)</td>
+</tr>
+<tr>
+<td>Render pipeline</td>
+<td>Built-in, URP or HDRP — all three are supported</td>
+</tr>
+<tr>
+<td>Play Mode</td>
+<td>Not needed. Everything the tool does happens in the Editor</td>
+</tr>
+<tr>
+<td>Other packages</td>
+<td>None. The tool has no third-party dependencies</td>
+</tr>
+</tbody>
+</table>
+<h2 id="installing">Installing</h2>
+<p>Import the package as normal. Everything lands under <code>Assets/BCG/BuildingGen/</code>:</p>
+<pre><code>Assets/BCG/BuildingGen/
+  Editor/          The generator window and all the tools
+  Runtime/         Small data components that ship in your build
+  Textures/        The facade and road atlases
+  Shaders/         The fake-interior shader
+  Presets/         Four ready-made district styles
+  Demo/            The demo scene
+  Documentation/   This guide
+  Generated/       Created the first time you generate something
+</code></pre>
+<p>The first time Unity finishes importing, a <strong>Welcome Window</strong> opens by itself with a quick tour and
+links back to this documentation. You can reopen it at any time from
+<code>Tools ▸ BoneCracker Games ▸ Building Generator ▸ Welcome Window</code>, and turn the automatic opening
+off with its <strong>Show on startup</strong> toggle.</p>
+<h3 id="if-your-buildings-look-pink">If your buildings look pink</h3>
+<p>This happens when you import into a URP or HDRP project, or switch pipeline afterwards, and it is
+the single most common first-run surprise. It is a one-click fix, not a broken package — see
+<a href="BuildingGen_08_MaterialsAndLighting.html#fix-materials-the-one-button-that-solves-pink">Fix Materials</a>.
+The generator window tells you when this is the case and offers the fix right there.</p>
+<h2 id="look-at-the-demo-first">Look at the demo first</h2>
+<p><code>Demo/BuildingGen_Demo_Showcase.unity</code> ships ready to open. It contains five generated districts —
+100 buildings in total — plus a light-probe group, and it is playable: press <strong>Play</strong> and you can
+fly around with a collision-aware camera that slides along walls instead of clipping through them.</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Click</td>
+<td>Lock the cursor for mouse-look, and select the building under the crosshair</td>
+</tr>
+<tr>
+<td>WASD + mouse</td>
+<td>Move and look</td>
+</tr>
+<tr>
+<td>Space or E</td>
+<td>Fly up</td>
+</tr>
+<tr>
+<td>Ctrl or Q</td>
+<td>Fly down</td>
+</tr>
+<tr>
+<td>Shift</td>
+<td>Move faster</td>
+</tr>
+<tr>
+<td>N</td>
+<td>Toggle day / night</td>
+</tr>
+<tr>
+<td>Esc</td>
+<td>Release the cursor / deselect</td>
+</tr>
+<tr>
+<td>H or F1</td>
+<td>Show or hide the controls overlay</td>
+</tr>
+</tbody>
+</table>
+<p>Click any building and an info card shows what it is made of — archetype, palette, seed, footprint,
+and its vertex and triangle counts. Those facts are read from a small marker component the generator
+stamps on everything it makes; the same marker is what lets the tool find, audit and clean up its
+own output later.</p>
+<h3 id="the-bigger-city-demo-optional-download">The bigger City demo (optional download)</h3>
+<p>A much larger playable demo — hundreds of buildings, drivable roads, baked lighting and a cinematic
+intro — ships as an <strong>add-on package</strong> rather than being imported by default, because it is large
+and most projects do not need it. It stays compressed until you ask for it, so the base asset
+imports quickly.</p>
+<p>To install it, open the generator window, go to <strong>4 Ship ▸ Health</strong>, find the <strong>Add-ons</strong> panel at
+the bottom, and press <strong>Import</strong> next to <em>City Demo</em>. That unpacks
+<code>Demo/BuildingGen_Demo_City.unity</code> along with its baked lighting. In that scene, <strong>C</strong> replays the
+cinematic intro and any key skips it.</p>
+<h2 id="opening-the-tool">Opening the tool</h2>
+<pre><code>Tools ▸ BoneCracker Games ▸ Building Generator ▸ Building Generator
+</code></pre>
+<p>The window is a single dockable panel. Dock it wherever you like — it works from about 418 × 480
+pixels upward, though the Ship stage is more comfortable with 600 pixels or more of height.</p>
+<p>The same menu also holds the Welcome Window and a handful of maintenance commands that work with
+no window open at all (<strong>Fix Materials</strong>, <strong>Regenerate All…</strong>, <strong>Clean Unused…</strong>,
+<strong>Select All Generated</strong>), plus the city-dressing tools.</p>
+<h2 id="your-first-building">Your first building</h2>
+<figure><img alt="The Build ▸ Single pane, showing archetype and palette pickers, the massing sliders, an Advanced foldout, a live preview of the building, and the Generate Building button pinned to the bottom." src="images/window_build_single.png"><figcaption>The Build ▸ Single pane, showing archetype and palette pickers, the massing sliders, an Advanced foldout, a live preview of the building, and the Generate Building button pinned to the bottom.</figcaption></figure>
+<ol>
+<li>Go to <strong>2 Build ▸ Single</strong>.</li>
+<li>Leave <strong>Archetype</strong> on <em>Tower</em> and <strong>Texture Variant</strong> on <em>A — Light Gray</em>.</li>
+<li>Press <strong>Randomize</strong> next to <strong>Seed</strong> a few times. The little preview above the footprint readout
+   redraws each time — that preview is the actual building you are about to get.</li>
+<li>Press <strong>Generate Building</strong> at the bottom of the window.</li>
+</ol>
+<p>A tower appears in the Scene view at your scene-view pivot, dropped to ground level. Under the
+preview you will see something like <code>Footprint 21 × 15 m · Height 30.5 m · Draw calls 1</code> — one draw
+call is the whole point of the tool, and it stays true no matter how tall or detailed the building
+gets.</p>
+<p>The building is now an ordinary GameObject with an ordinary mesh. Press <strong>Ctrl+Z</strong> and it goes
+away; nothing special is holding it in place.</p>
+<h3 id="what-just-got-written-to-your-project">What just got written to your project</h3>
+<p>With the default settings, generating a building writes two asset files under
+<code>Assets/BCG/BuildingGen/Generated/</code> — a mesh in <code>Meshes/</code> and a prefab in <code>Prefabs/</code> — and puts an
+instance of that prefab in your scene. Generating the same recipe again overwrites the same files,
+so you never accumulate duplicates of the same building.</p>
+<p>If you would rather not write assets at all — useful when you are filling a large open world with
+background geometry you will never reuse — turn off <strong>Save As Prefab Assets</strong> in the pane's
+<strong>Generation Settings</strong> foldout. See
+<a href="BuildingGen_02_HowItWorks.html#what-gets-written-to-disk">What gets written to disk</a> for the
+trade-offs, including one important caveat about saving your scene.</p>
+<h2 id="your-first-city">Your first city</h2>
+<p>One building is not why you bought this. Try the other end of the scale:</p>
+<ol>
+<li>Go to <strong>1 Plan ▸ City Grid</strong>.</li>
+<li>Leave everything at its defaults.</li>
+<li>Press <strong>Generate City</strong>.</li>
+</ol>
+<p>You get a 4 × 4 grid of districts separated by streets, with every third street widened into an
+avenue, roads and pavements filling the gaps, and a skyline that peaks in the middle and drops
+towards the edges. The readout above the button tells you the size and rough building count before
+you commit — with the defaults that is about 288 × 248 metres.</p>
+<p>Buildings appear one per frame rather than all at once, so the Editor never freezes. Progress shows
+in the status band near the top of the window, which also carries the only <strong>Cancel</strong> button.</p>
+<p><strong>Ctrl+Z</strong> once removes the buildings; twice removes the grid itself.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="BuildingGen_02_HowItWorks.html">How It Works</a></strong> — the few concepts that make everything else
+  obvious. Worth ten minutes before you go further.</li>
+<li><strong><a href="BuildingGen_05_CitiesAndDistricts.html">Cities and Districts</a></strong> — shaping that generated city
+  into the one you actually want.</li>
+<li><strong><a href="BuildingGen_07_Customizing.html">Customising Buildings</a></strong> — archetypes, palettes and detail
+  levels.</li>
+<li><strong><a href="BuildingGen_11_Troubleshooting.html">Troubleshooting</a></strong> — if anything above did not behave the
+  way this page describes.</li>
+</ul>
+</div>
+<div class="footer">
+Generated from: BuildingGen_01_GettingStarted.md<br>
+Date: 2026-07-29 00:02<br>
+© 2014 - 2026 BoneCracker Games
+</div>
+</body>
+</html>

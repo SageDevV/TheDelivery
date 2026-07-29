@@ -1,0 +1,14 @@
+{
+    "name": "BCG_BuildingGen.Editor",
+    "rootNamespace": "BoneCrackerGames.BuildingGen",
+    "references": ["BCG_BuildingGen.Runtime"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
