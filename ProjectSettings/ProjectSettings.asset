@@ -827,7 +827,24 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Standalone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY
+    Android: BCG_URBUGE
+    EmbeddedLinux: BCG_URBUGE
+    GameCoreScarlett: BCG_URBUGE
+    GameCoreXboxOne: BCG_URBUGE
+    Kepler: BCG_URBUGE
+    LinuxHeadlessSimulation: BCG_URBUGE
+    Nintendo Switch: BCG_URBUGE
+    Nintendo Switch 2: BCG_URBUGE
+    PS4: BCG_URBUGE
+    PS5: BCG_URBUGE
+    QNX: BCG_URBUGE
+    Standalone: SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY;BCG_URBUGE
+    VisionOS: BCG_URBUGE
+    WebGL: BCG_URBUGE
+    Windows Store Apps: BCG_URBUGE
+    XboxOne: BCG_URBUGE
+    iPhone: BCG_URBUGE
+    tvOS: BCG_URBUGE
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

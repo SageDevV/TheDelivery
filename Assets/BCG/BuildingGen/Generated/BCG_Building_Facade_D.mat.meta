@@ -1,15 +1,8 @@
 fileFormatVersion: 2
-guid: ff5e0100530751e4a8cbfff6048b79b6
+guid: fc77c866332bbd1479ea13d5fed239ac
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 2100000
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 389306
-  packageName: Urban Building & City Generator
-  packageVersion: 2.5.0
-  assetPath: Assets/BCG/BuildingGen/Generated/BCG_Building_Facade_D.mat
-  uploadId: 962654

@@ -1,6 +1,6 @@
 ﻿<Solution>
-  <Project Path="BCG_BuildingGen.Runtime.csproj" />
   <Project Path="BCG_BuildingGen.Editor.csproj" />
+  <Project Path="BCG_BuildingGen.Runtime.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="MeshyAssembly.csproj" />
