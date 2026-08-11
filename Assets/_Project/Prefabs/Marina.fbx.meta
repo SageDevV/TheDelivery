@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 14e3690099999884fbcf3863c85b87c8
+guid: 78ffa619c1476f143add32265391f581
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -8,32 +8,32 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Material.001
-    second: {fileID: 2100000, guid: 510bc61708a85974db8f1b2f78f4e702, type: 2}
+    second: {fileID: 2100000, guid: 2aa508d567ee67543ad1d98a1d0efbf1, type: 2}
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
       name: Image_0
-    second: {fileID: 2800000, guid: cfd207fd96b7f3841bd47da9cbcd424b, type: 3}
+    second: {fileID: 2800000, guid: 20406e4b7c1056444b5f120a02b85665, type: 3}
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
       name: Image_2
-    second: {fileID: 2800000, guid: 0ece55acc76a6644a91e21e8d05bed99, type: 3}
+    second: {fileID: 2800000, guid: a7b2d14fef267374c8a1b104cc2157c3, type: 3}
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
       name: Image_3
-    second: {fileID: 2800000, guid: ee10d0e1c3e82324b8ccb9f6ffe5ceca, type: 3}
+    second: {fileID: 2800000, guid: 1d5f6152cf7baf24ab7415fb0481265c, type: 3}
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
       name: texture_0_metallic
-    second: {fileID: 2800000, guid: 752f7984420664240a2a7e55054d14f1, type: 3}
+    second: {fileID: 2800000, guid: 586a85e8486d55143a5847a1bcf703a1, type: 3}
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
       name: texture_0_roughness
-    second: {fileID: 2800000, guid: 3bd72d8b575b31949a54be4fb563c4a3, type: 3}
+    second: {fileID: 2800000, guid: 13487314594b8a64aa09070fdd81ea50, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0

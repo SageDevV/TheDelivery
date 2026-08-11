@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace TheDelivery.EditorTools
@@ -20,19 +21,31 @@ namespace TheDelivery.EditorTools
     /// Idle/Walking/Running dirigida por parâmetros (para quem tem AI); este aqui não tem
     /// parâmetro nenhum — o personagem entra tocando e nunca sai do estado.
     ///
-    /// Genérico: nada de nomes de asset hardcoded, tudo vem da janela. Idempotente: pode rodar
-    /// de novo à vontade (o controller é recriado do zero).
+    /// Genérico: nada de nomes de asset hardcoded, tudo vem da janela — o caminho de saída é
+    /// SUGERIDO a partir do nome do FBX justamente para cada NPC ganhar o arquivo dele.
+    /// Idempotente: pode rodar de novo à vontade (o controller existente é reescrito NO LUGAR,
+    /// preservando o GUID e portanto as referências que já existem em cenas e prefabs).
     /// </summary>
     public sealed class LoopingClipControllerWindow : EditorWindow
     {
+        /// <summary>Pasta padrão da sugestão de caminho. O nome do arquivo vem do FBX.</summary>
+        private const string DefaultFolder = "Assets/_Project/Animation/Controllers";
+
         private GameObject modelFbx;
         private string clipName = "";
         private string stateName = "Loop";
-        private string outputPath = "Assets/_Project/Animation/Controllers/ShadowWalk.controller";
+        private string outputPath = "";
         private GameObject assignTarget;
 
         private bool forceLoopTime = true;
         private bool ensureAvatar = true;
+
+        /// <summary>Último FBX visto no campo, para detectar a troca e re-sugerir o caminho.</summary>
+        private GameObject lastModelFbx;
+        /// <summary>Última sugestão que a janela escreveu sozinha em <see cref="outputPath"/>.
+        /// Serve para saber se o campo ainda está "virgem": se o usuário digitou um caminho à
+        /// mão, ele não é sobrescrito quando o FBX muda.</summary>
+        private string suggestedPath = "";
 
         [MenuItem("Tools/The Delivery/Build Looping Clip Controller")]
         private static void Open()
@@ -51,6 +64,12 @@ namespace TheDelivery.EditorTools
             EditorGUILayout.Space();
 
             modelFbx = (GameObject)EditorGUILayout.ObjectField("FBX do modelo", modelFbx, typeof(GameObject), false);
+            if (modelFbx != lastModelFbx)
+            {
+                lastModelFbx = modelFbx;
+                SuggestOutputPath();
+            }
+
             clipName = EditorGUILayout.TextField(
                 new GUIContent("Nome do clipe", "Deixe VAZIO para usar o primeiro clipe do FBX."), clipName);
             stateName = EditorGUILayout.TextField("Nome do estado", stateName);
@@ -66,6 +85,17 @@ namespace TheDelivery.EditorTools
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Saída", EditorStyles.boldLabel);
             outputPath = EditorGUILayout.TextField("Caminho do .controller", outputPath);
+
+            // UM ARQUIVO POR NPC. Dois personagens apontando para o MESMO .controller é o erro
+            // clássico aqui: o segundo Build reescreve o clipe do primeiro e ele para de andar.
+            if (!string.IsNullOrWhiteSpace(outputPath) &&
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(outputPath) != null)
+                EditorGUILayout.HelpBox(
+                    "Já existe um controller neste caminho — ele será REESCRITO com o clipe deste FBX. " +
+                    "Se OUTRO NPC usa este mesmo arquivo, ele vai passar a tocar a animação errada. " +
+                    "Dê um .controller próprio para cada personagem.",
+                    MessageType.Warning);
+
             assignTarget = (GameObject)EditorGUILayout.ObjectField(
                 new GUIContent("GameObject alvo", "Opcional: recebe/ganha um Animator já configurado."),
                 assignTarget, typeof(GameObject), true);
@@ -113,9 +143,15 @@ namespace TheDelivery.EditorTools
                 return;
             }
 
-            // Recria do zero para o botão ser idempotente.
-            AssetDatabase.DeleteAsset(outputPath);
-            var controller = AnimatorController.CreateAnimatorControllerAtPath(outputPath);
+            // Reaproveita o asset que já está lá em vez de apagar e criar outro. Apagar geraria
+            // um GUID NOVO e TODA referência existente (o Animator na cena, num prefab, numa
+            // cena de backup) viraria "Missing" — sem controller o personagem fica em T-pose ou
+            // deslizando parado. É esse o sintoma de "gerei para um NPC e o outro parou de andar".
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(outputPath);
+            if (controller == null)
+                controller = AnimatorController.CreateAnimatorControllerAtPath(outputPath);
+            else
+                ClearBaseLayer(controller);
 
             AnimatorStateMachine sm = controller.layers[0].stateMachine;
             AnimatorState state = sm.AddState(string.IsNullOrWhiteSpace(stateName) ? "Loop" : stateName);
@@ -131,6 +167,46 @@ namespace TheDelivery.EditorTools
             EditorGUIUtility.PingObject(controller);
             Debug.Log($"[LoopingClipController] Controller gerado em \"{outputPath}\" " +
                       $"tocando \"{clip.name}\" em loop.", controller);
+        }
+
+        /// <summary>
+        /// Sugere o caminho de saída a partir do nome do FBX, para cada personagem ganhar o
+        /// .controller DELE. Só escreve no campo enquanto ele estiver como a janela deixou —
+        /// caminho digitado à mão é respeitado.
+        /// </summary>
+        private void SuggestOutputPath()
+        {
+            if (modelFbx == null)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(outputPath) && outputPath != suggestedPath)
+                return;
+
+            suggestedPath = $"{DefaultFolder}/{modelFbx.name}Walk.controller";
+            outputPath = suggestedPath;
+        }
+
+        /// <summary>
+        /// Esvazia a Base Layer do controller existente para ele ser remontado, mantendo o ASSET
+        /// (e o GUID) de pé — é o que torna o botão idempotente sem quebrar quem já aponta para cá.
+        /// </summary>
+        private static void ClearBaseLayer(AnimatorController controller)
+        {
+            if (controller.layers.Length == 0)
+            {
+                controller.AddLayer("Base Layer");
+                return;
+            }
+
+            AnimatorStateMachine sm = controller.layers[0].stateMachine;
+
+            // 'states'/'stateMachines' devolvem CÓPIAS do array, então remover durante o foreach
+            // não invalida a iteração.
+            foreach (ChildAnimatorState child in sm.states)
+                sm.RemoveState(child.state);
+
+            foreach (ChildAnimatorStateMachine child in sm.stateMachines)
+                sm.RemoveStateMachine(child.stateMachine);
         }
 
         /// <summary>
@@ -198,6 +274,18 @@ namespace TheDelivery.EditorTools
             animator.applyRootMotion = false;
 
             EditorUtility.SetDirty(animator);
+
+            // O Animator de um modelo arrastado para a cena PERTENCE ao prefab do FBX: mexer
+            // nos campos dele cria um OVERRIDE de instância, e override só é gravado no .unity
+            // com esta chamada. Sem ela a atribuição aparece no Inspector mas some ao salvar/
+            // recarregar a cena — e o personagem volta a deslizar sem animação.
+            if (PrefabUtility.IsPartOfPrefabInstance(animator))
+                PrefabUtility.RecordPrefabInstancePropertyModifications(animator);
+
+            // Marca a cena como suja para o Ctrl+S realmente gravar (alvo que é asset de prefab
+            // não tem cena válida — nesse caso o SetDirty acima já basta).
+            if (assignTarget.scene.IsValid())
+                EditorSceneManager.MarkSceneDirty(assignTarget.scene);
             Debug.Log($"[LoopingClipController] Controller atribuído ao Animator de \"{assignTarget.name}\"" +
                       (avatar != null ? $" com Avatar \"{avatar.name}\"." : " (sem Avatar encontrado no FBX)."),
                       assignTarget);

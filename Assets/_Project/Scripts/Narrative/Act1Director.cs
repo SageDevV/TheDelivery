@@ -506,7 +506,8 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Posiciona a Marina na porta, ativa, e a manda caminhar até a mesa pela
-        /// NavMesh. Ao chegar, ela senta e vira para a Clear.
+        /// NavMesh. Ao chegar, ela senta na pose do <see cref="marinaSitPoint"/> — posição E
+        /// rotação vêm do ponto, que é onde o level design definiu como ela encara a mesa.
         /// </summary>
         private IEnumerator BeatMarinaArrives()
         {
@@ -527,8 +528,6 @@ namespace TheDelivery.Narrative
             {
                 Debug.LogWarning("[Act1Director] marinaSitPoint não atribuído; Marina não caminha.", this);
             }
-
-            marina.FaceDirection(playerController.transform.position);
 
             AdvanceToBeat(Act1Beat.Conversation);
         }
@@ -557,9 +556,8 @@ namespace TheDelivery.Narrative
                 yield return null;
             }
 
-            // Ambas sentadas: a Marina reencara a Clear e a conversa começa.
-            marina.FaceDirection(playerController.transform.position);
-
+            // Ambas sentadas: a conversa começa. A Marina NÃO é regirada para encarar a Clear —
+            // ela mantém a pose do marinaSitPoint (ver Marina.FaceDirection).
             ShowDialogue(cafeDialogue);
             yield return null;
             yield return new WaitUntil(() => DialogueSystem.Instance == null || !DialogueSystem.Instance.IsShowing);
