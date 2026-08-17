@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 48d8d279fcc6f624aa382a82f65629a7
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 319273
+  packageName: 'HellaFlush: Drift Style Car'
+  packageVersion: 1.1
+  assetPath: Assets/HellaFlush_DriftCar_Free/Prefabs_(With Colliders)/Wheels_Base.prefab
+  uploadId: 761456
