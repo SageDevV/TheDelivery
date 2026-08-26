@@ -21,7 +21,7 @@ namespace TheDelivery.Narrative
         MarinaArrives,  // Beat 3: Marina caminha até a mesa e senta
         Conversation,   // Beat 4: conversa (ambas sentadas)
         MarinaLeaves,   // Beat 5: Marina vai embora e some
-        ClearLeaves     // Beat 6: Clear levanta e sai -> transição p/ Recepção
+        ClearLeaves     // Beat 6: Clear levanta e sai -> transição p/ o Percurso (a rua)
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ namespace TheDelivery.Narrative
         [Tooltip("Pensamento da Clear ao se levantar para ir embora (ex.: \"Vamos embora...\"). " +
                  "Não bloqueia: aparece enquanto ela caminha até a porta. Opcional.")]
         [SerializeField] private ThoughtData leaveThought;
-        [Tooltip("Ponto da porta que dispara a transição para a Recepção.")]
+        [Tooltip("Ponto da porta que dispara a transição para o Percurso (a rua até o prédio).")]
         [SerializeField] private Transform saidaZone;
         [Tooltip("Raio (m) em torno do ponto de saída que conta como \"chegou\".")]
         [SerializeField] private float saidaRadius = 1.5f;
@@ -595,8 +595,9 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// A Clear levanta (se sentada) e vai até a porta. Ao entrar na zona de
-        /// saída, marca o avanço para o Ato 2 e delega a transição de cena ao
-        /// GameManager (persistente) — a coroutine roda NELE para sobreviver ao
+        /// saída, marca o avanço para o <see cref="GameAct.ActPercurso"/> (a rua até
+        /// o prédio, ver <see cref="PercursoDirector"/>) e delega a transição de cena
+        /// ao GameManager (persistente) — a coroutine roda NELE para sobreviver ao
         /// unload desta cena.
         /// </summary>
         private IEnumerator BeatClearLeaves()
@@ -620,16 +621,20 @@ namespace TheDelivery.Narrative
             else
                 Debug.LogWarning("[Act1Director] saidaZone não atribuída; transição não será disparada.", this);
 
-            // Avança o ato e troca de cena via GameManager persistente.
+            // Avança o ato e troca de cena via GameManager persistente. O Ato 1 NÃO
+            // vai direto para a Recepção: entre eles há o PERCURSO (a caminhada pela
+            // rua até o prédio), conduzido pelo PercursoDirector — é ELE quem marca
+            // o Act2 e carrega a Recepção ao chegar no destino.
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetAct(GameAct.Act2);
+                GameManager.Instance.SetAct(GameAct.ActPercurso);
+                Debug.Log($"[Act1->Percurso] SetAct(ActPercurso). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
                 GameManager.Instance.StartCoroutine(
-                    GameManager.Instance.TransitionToScene(GameScene.Recepcao));
+                    GameManager.Instance.TransitionToScene(GameScene.Estrada));
             }
             else
             {
-                Debug.LogError("[Act1Director] GameManager.Instance nulo; impossível transicionar para a Recepção.", this);
+                Debug.LogError("[Act1Director] GameManager.Instance nulo; impossível transicionar para o Percurso.", this);
             }
 
             beatRoutine = null;

@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace TheDelivery.Core
@@ -31,6 +33,22 @@ namespace TheDelivery.Core
         [SerializeField] private CanvasGroup fadeCanvas;
         [Tooltip("Duração (s) de cada fade (entrada e saída) na transição de cena.")]
         [SerializeField] private float fadeDuration = 1f;
+
+        [Header("Post-processing global")]
+        [Tooltip("O Volume PERSISTENTE do tratamento visual do jogo (o \"VHS\": grão etc.). É filho deste GameObject, " +
+                 "então viaja no DontDestroyOnLoad e vale para TODAS as cenas. Deixe VAZIO para resolver sozinho o " +
+                 "Volume filho — é o caso normal, já que ele faz parte deste mesmo rig persistente.")]
+        [SerializeField] private Volume globalVolume;
+        [Tooltip("Cenas que NÃO recebem o tratamento global — porque trazem o próprio. O Pesadelo é o caso: a visão " +
+                 "turva do sonho (NightmareVision) já tem grão, vinheta e desfoque autorados para ela, e dois Volumes " +
+                 "globais disputando os mesmos overrides fazem o resultado depender de quem tem mais prioridade em vez " +
+                 "de depender do que foi autorado. Ao sair da cena o tratamento global volta sozinho.")]
+        [SerializeField] private GameScene[] scenesWithoutGlobalVolume = { GameScene.Pesadelo };
+
+        [Header("Debug")]
+        [Tooltip("PULA O PESADELO: começa direto na Cafeteria (Ato 1), como era antes do cold open. " +
+                 "Para iterar nos atos seguintes sem assistir ao pesadelo inteiro a cada Play. Deixe FALSE no fluxo real.")]
+        [SerializeField] private bool skipNightmare = false;
 
         private void Awake()
         {
@@ -64,6 +82,70 @@ namespace TheDelivery.Core
                 fadeCanvas.alpha = 1f;
                 fadeCanvas.blocksRaycasts = true;
             }
+
+            // O tratamento global é reavaliado a CADA cena carregada, e não dentro do
+            // TransitionToScene: assim ele vale também para quem carregar cena por fora
+            // dele (LoadGameScene, um Play direto, um load futuro qualquer). A troca
+            // acontece sob o preto do fade, então nunca se vê o efeito piscar.
+            if (globalVolume == null)
+                globalVolume = GetComponentInChildren<Volume>(includeInactive: true);
+
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            ApplyGlobalVolumeFor(SceneManager.GetActiveScene().name);
+        }
+
+        private void OnDestroy()
+        {
+            // Só o singleton de verdade chegou a se inscrever; num duplicado o
+            // Awake sai antes disso e este -= é inofensivo (o delegate nem bate).
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (Instance != this)
+                return;
+
+            ApplyGlobalVolumeFor(scene.name);
+        }
+
+        /// <summary>
+        /// Liga ou desliga o <see cref="globalVolume"/> conforme a cena carregada estar
+        /// ou não em <see cref="scenesWithoutGlobalVolume"/>. Desliga o COMPONENTE, não o
+        /// GameObject: é o suficiente para o Volume sair do VolumeManager (deixa de ser
+        /// considerado na mistura) e não mexe em mais nada que o objeto venha a ter.
+        ///
+        /// A cena chega por NOME, e o enum <see cref="GameScene"/> espelha nome de
+        /// arquivo — então basta parseá-lo. Uma cena fora do enum (nenhuma hoje) apenas
+        /// não bate com a lista e recebe o tratamento global, que é o comportamento certo
+        /// por padrão: a exceção precisa ser declarada.
+        /// </summary>
+        private void ApplyGlobalVolumeFor(string sceneName)
+        {
+            if (globalVolume == null)
+                return;
+
+            bool suppressed = false;
+            if (scenesWithoutGlobalVolume != null &&
+                scenesWithoutGlobalVolume.Length > 0 &&
+                Enum.TryParse(sceneName, out GameScene loaded))
+            {
+                foreach (GameScene excluded in scenesWithoutGlobalVolume)
+                {
+                    if (excluded != loaded)
+                        continue;
+
+                    suppressed = true;
+                    break;
+                }
+            }
+
+            if (globalVolume.enabled == !suppressed)
+                return;
+
+            globalVolume.enabled = !suppressed;
+            Debug.Log($"[GameManager] Tratamento global (\"{globalVolume.name}\") " +
+                      $"{(suppressed ? "SUSPENSO" : "ativo")} em {sceneName}.", this);
         }
 
         private void Start()
@@ -73,14 +155,26 @@ namespace TheDelivery.Core
         }
 
         /// <summary>
-        /// Inicia uma nova partida do começo (Ato 1). Isolado num método próprio para
-        /// facilitar o ajuste futuro quando houver um menu principal (que chamaria
-        /// isto sob demanda em vez de no <see cref="Start"/>).
+        /// Inicia uma nova partida do começo: o PESADELO (cold open), que termina
+        /// entregando o controle à Cafeteria (Ato 1) no seu próprio corte. Isolado num
+        /// método próprio para facilitar o ajuste futuro quando houver um menu
+        /// principal (que chamaria isto sob demanda em vez de no <see cref="Start"/>).
+        ///
+        /// Cronologia completa: Pesadelo -> Cafeteria (Act1) -> Estrada (ActPercurso)
+        /// -> Recepcao (Act2) -> Apartamento (Act3 e Act4).
         /// </summary>
         public void StartNewGame()
         {
-            CurrentAct = GameAct.Act1;
-            StartCoroutine(TransitionToScene(GameScene.Cafeteria));
+            if (skipNightmare)
+            {
+                Debug.LogWarning("[GameManager] skipNightmare ligado: pulando o cold open e abrindo direto na Cafeteria.", this);
+                CurrentAct = GameAct.Act1;
+                StartCoroutine(TransitionToScene(GameScene.Cafeteria));
+                return;
+            }
+
+            CurrentAct = GameAct.ActPesadelo;
+            StartCoroutine(TransitionToScene(GameScene.Pesadelo));
         }
 
         /// <summary>Define o ato atual (progresso de alto nível).</summary>

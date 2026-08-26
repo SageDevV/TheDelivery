@@ -1119,6 +1119,21 @@ MonoBehaviour:
   runBobSpeed: 12
   runBobAmount: 0.055
   bobSmoothing: 8
+  enableFootsteps: 1
+  footstepMode: 0
+  footstepSource: {fileID: 0}
+  walkLoopClip: {fileID: 8300000, guid: 7538d1594806d5b41a08a76d3ae577b7, type: 3}
+  loopFadeDuration: 0.12
+  autoTrimSilence: 1
+  silenceThreshold: 0.01
+  loopEndTrim: 0
+  loopStartTrim: 0
+  matchPitchToPace: 1
+  footstepClips: []
+  walkStepVolume: 0.45
+  runStepVolume: 0.7
+  crouchStepVolume: 0.18
+  stepPitchRange: {x: 0.92, y: 1.08}
   canMove: 1
 --- !u!114 &7815970170006407642
 MonoBehaviour:
