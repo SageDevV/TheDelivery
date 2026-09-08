@@ -51,7 +51,17 @@ namespace TheDelivery.Narrative
         [SerializeField] private Transform spawnPoint;
 
         [Header("Beat 1 - Awakening")]
-        [Tooltip("Pensamento ao acordar (sobre o fim de tarde).")]
+        [Tooltip("O PRIMEIRO pensamento do ato: o que sobra do PESADELO, e não o fim de tarde. " +
+                 "O ato anterior termina no baque da queda e entrega a cafeteria no corte, então a Clear " +
+                 "acorda AINDA dentro daquilo — sem esta linha o primeiro som da voz dela é sobre ter " +
+                 "dormido estudando, e o pesadelo inteiro fica sem reação nenhuma.\n\n" +
+                 "Aparece com a cabeça ainda na mesa e NÃO segura o endireitar: ela levanta a cabeça " +
+                 "enquanto ainda pensa no sonho, e o pensamento de fim de tarde entra atrás dele (o " +
+                 "ThoughtSystem é uma fila). O respiro antes da primeira linha é o DELAY DA LINHA, no " +
+                 "próprio asset — é lá que se ajusta, porque a tela ainda está clareando do fade quando " +
+                 "o beat começa. Opcional: vazio, o ato abre direto no fim de tarde, como antes.")]
+        [SerializeField] private ThoughtData nightmareThought;
+        [Tooltip("Pensamento ao acordar (sobre o fim de tarde). Entra DEPOIS do pensamento do pesadelo.")]
         [SerializeField] private ThoughtData awakeningThought;
         [Tooltip("Roll inicial da câmera (graus) — cabeça tombada de lado na mesa.")]
         [SerializeField] private float wakeCameraRoll = 70f;
@@ -285,6 +295,19 @@ namespace TheDelivery.Narrative
             // a gravidade não atua e o corpo fica perfeitamente imóvel na cadeira.
             PlaceAtSpawn();
 
+            // O QUE SOBRA DO PESADELO, e por isso AQUI — com a cabeça ainda na mesa, antes
+            // de o corpo reagir a qualquer coisa. O ato anterior acaba no baque da queda e
+            // entrega esta cena no corte: o primeiro pensamento da Clear é sobre AQUILO, e
+            // não sobre a hora do dia. Sem ele o pesadelo inteiro não tem eco nenhum do
+            // outro lado do corte.
+            //
+            // NÃO segura o endireitar de propósito: ele é enfileirado e a câmera sobe por
+            // baixo, então ela levanta a cabeça ainda pensando no sonho — é o que costura
+            // as duas cenas em vez de deixar uma pausa entre elas. O respiro antes da
+            // primeira linha é o delay DA LINHA, no asset, porque a tela ainda está
+            // clareando do fade do GameManager quando este beat começa.
+            ShowThought(nightmareThought);
+
             Transform cam = playerController.CameraHolder;
             if (cam != null)
             {
@@ -309,7 +332,9 @@ namespace TheDelivery.Narrative
             // (CanMove segue false). Só agora, depois do endireitar.
             playerController.CanLookOverride = true;
 
-            // Pensamento sobre o fim de tarde; espera sumir completamente.
+            // Pensamento sobre o fim de tarde. Entra ATRÁS do pensamento do pesadelo (o
+            // ThoughtSystem é uma fila), e a espera abaixo drena os dois: o Espaço só é
+            // oferecido quando a Clear terminou de pensar as duas coisas.
             ShowThought(awakeningThought);
             yield return null;
             yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);

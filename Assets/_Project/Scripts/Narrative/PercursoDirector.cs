@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using TheDelivery.Core;
 using TheDelivery.FX;
@@ -65,6 +66,28 @@ namespace TheDelivery.Narrative
         [Header("Narrativa (opcional)")]
         [Tooltip("Pensamento ao começar a caminhada (ex.: \"Melhor ir pra casa antes que escureça\"). Não bloqueia: a Clear já anda enquanto ele aparece.")]
         [SerializeField] private ThoughtData startThought;
+        [Tooltip("O PRIMEIRO PENSAMENTO DO TRAJETO, dito LOGO DEPOIS do Start Thought — a frase que aponta o caminho " +
+                 "(\"É só seguir a rua até o fim\").\n\n" +
+                 "NÃO É UM GATILHO NA RUA, e essa é a diferença: ele não acontece num LUGAR, acontece DEPOIS de outra " +
+                 "frase. Amarrado a um volume no chão, ele dependeria de quanto a Clear já andou enquanto o Start " +
+                 "Thought estava na tela — quem parasse para olhar a rua ouviria os dois juntos, quem saísse andando " +
+                 "ouviria com um buraco no meio.\n\n" +
+                 "Sai enfileirado atrás do Start Thought no mesmo quadro: a fila do ThoughtSystem garante a ordem, e o " +
+                 "respiro entre as duas frases é o DELAY DA LINHA, no asset.")]
+        [SerializeField] private ThoughtData afterStartThought;
+        [Tooltip("PENSAMENTO DA CHEGADA: a última frase do ato, dita ao pisar na entrada do prédio.\n\n" +
+                 "ELE MORA AQUI, E NÃO NUM ThoughtTrigger no ponto de destino — e essa é a diferença entre a frase " +
+                 "ser ouvida e ser cortada no meio. Quem troca a cena é este director, no mesmo instante em que a " +
+                 "chegada é detectada: uma frase disparada por um gatilho ali começaria a aparecer com a tela já " +
+                 "escurecendo, e o ThoughtSystem morre junto com a cena. Estando aqui, a transição ESPERA por ela.\n\n" +
+                 "Os pensamentos do MEIO do trajeto, esses sim, são ThoughtTriggers espalhados pela rua — lá não há " +
+                 "nada esperando por eles.")]
+        [SerializeField] private ThoughtData arrivalThought;
+        [Tooltip("Teto (s) da espera pelo pensamento da chegada antes de trocar de cena. É um TETO, não uma pausa: a " +
+                 "troca acontece assim que a frase termina, e este número só existe para o ato não ficar preso se " +
+                 "alguém encadear um pensamento longo demais (ou se outro pensamento estiver na fila na hora).\n\n" +
+                 "0 = não espera nada, e a frase da chegada será cortada pelo fade.")]
+        [SerializeField] private float arrivalThoughtMaxWait = 8f;
 
         [Header("Debug")]
         [Tooltip("TESTAR ESTA CENA SOZINHA: marque para dar Play direto na Estrada, sem passar pela Boot. " +
@@ -131,9 +154,14 @@ namespace TheDelivery.Narrative
             else
                 Debug.LogWarning("[PercursoDirector] nightfall não atribuído no Inspector; a rua fica na luz autorada (não anoitece).", this);
 
-            // Cue de partida. Não bloqueia — a Clear já pode andar.
-            if (startThought != null && ThoughtSystem.Instance != null)
-                ThoughtSystem.Instance.Show(startThought);
+            // Cue de partida, e logo atrás dele a primeira frase do trajeto. Não bloqueiam —
+            // a Clear já pode andar, e anda enquanto as duas acontecem.
+            //
+            // AS DUAS SÃO ENFILEIRADAS NO MESMO QUADRO, de propósito: a fila do ThoughtSystem
+            // é o que garante "uma depois da outra" sem ninguém contar segundos aqui nem
+            // depender de onde a Clear estava quando a primeira terminou.
+            ShowThought(startThought);
+            ShowThought(afterStartThought);
 
             Debug.Log("[PercursoDirector] Assumindo o Percurso: andar até a entrada do prédio.", this);
         }
@@ -171,8 +199,9 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// Chegou na entrada do prédio? Dispara a transição UMA vez — o
-        /// <see cref="Update"/> continua rodando durante o fade da troca de cena.
+        /// Chegou na entrada do prédio? Entrega o fim do ato UMA vez — o
+        /// <see cref="Update"/> continua rodando durante o fade da troca de cena, e a
+        /// <see cref="ArriveRoutine"/> tem uma espera dentro dela.
         /// </summary>
         private void WatchDestination()
         {
@@ -183,6 +212,53 @@ namespace TheDelivery.Narrative
                 return;
 
             arrived = true;
+            StartCoroutine(ArriveRoutine());
+        }
+
+        /// <summary>Enfileira um pensamento, se ele e o sistema existirem. Mesmo atalho dos outros diretores.</summary>
+        private void ShowThought(ThoughtData thought)
+        {
+            if (thought != null && ThoughtSystem.Instance != null)
+                ThoughtSystem.Instance.Show(thought);
+        }
+
+        /// <summary>
+        /// A CHEGADA: a última frase do ato e só então o corte para a Recepção.
+        ///
+        /// A ESPERA É O PONTO. Sem ela, o pensamento e o fade começam no mesmo quadro — e
+        /// como o ThoughtSystem vive no player, que é POR CENA, a frase é destruída no meio
+        /// junto com a cena que a estava mostrando. O sintoma é uma frase que "às vezes
+        /// aparece pela metade", que não sugere transição nenhuma.
+        ///
+        /// E ela espera a FILA, não só o pensamento daqui: um ThoughtTrigger do fim da rua
+        /// que ainda esteja falando quando a Clear pisa na porta termina de falar. Vale para
+        /// os dois casos, sem o director precisar saber qual deles aconteceu.
+        /// </summary>
+        private IEnumerator ArriveRoutine()
+        {
+            ShowThought(arrivalThought);
+
+            // Um quadro antes de olhar a fila: o Show acabou de acontecer, e um gatilho
+            // colocado na própria porta ainda pode disparar neste quadro (o contato é
+            // resolvido pela física, não por este Update). Perguntar "ainda está falando?"
+            // no mesmo quadro responderia não a uma frase que estava começando.
+            yield return null;
+
+            float waited = 0f;
+            float cap = Mathf.Max(0f, arrivalThoughtMaxWait);
+            while (waited < cap && ThoughtSystem.Instance != null && ThoughtSystem.Instance.IsShowing)
+            {
+                waited += Time.deltaTime;
+                yield return null;
+            }
+
+            if (waited >= cap && cap > 0f)
+            {
+                Debug.LogWarning($"[PercursoDirector] O pensamento da chegada passou do teto de {cap:0.#}s e a troca de " +
+                                 "cena não esperou mais. A frase vai ser cortada pelo fade — encurte o texto ou suba " +
+                                 "o Arrival Thought Max Wait.", this);
+            }
+
             GoToRecepcao();
         }
 

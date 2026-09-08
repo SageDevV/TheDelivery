@@ -9,14 +9,20 @@ EditorBuildSettings:
     path: Assets/Scenes/Boot.unity
     guid: 552eb5aac7a383146bb309b8045894eb
   - enabled: 1
-    path: Assets/Scenes/Apartamento.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/Scenes/Pesadelo.unity
+    guid: 40a2ec1c109148b4db42b53cbff04c3e
   - enabled: 1
     path: Assets/Scenes/Cafeteria.unity
     guid: 247b88c8eaeefc3479726fd521c53357
   - enabled: 1
+    path: Assets/Scenes/Estrada.unity
+    guid: e31deb8958d619a44aca7dcbbaa12da0
+  - enabled: 1
     path: Assets/Scenes/Recepcao.unity
     guid: 994c926f730baac49abce25038921b6b
+  - enabled: 1
+    path: Assets/Scenes/Apartamento.unity
+    guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

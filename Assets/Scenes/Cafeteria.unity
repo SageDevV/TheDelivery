@@ -6904,6 +6904,7 @@ MonoBehaviour:
   marina: {fileID: 1499201969}
   clearChair: {fileID: 964666727}
   spawnPoint: {fileID: 1729482940}
+  nightmareThought: {fileID: 11400000, guid: 86b0232b58ad0627efddc1acf5cf24ba, type: 2}
   awakeningThought: {fileID: 11400000, guid: 68a9729bcc5aa014c89a5d2b0fc87cef, type: 2}
   wakeCameraRoll: 70
   wakeCameraHeightStart: 0.85

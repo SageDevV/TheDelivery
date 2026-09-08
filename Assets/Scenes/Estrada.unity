@@ -263,7 +263,10 @@ MonoBehaviour:
   nightfall: {fileID: 446554576}
   ambientMusic: {fileID: 1699506924}
   silenceFadeDuration: 10
-  startThought: {fileID: 0}
+  startThought: {fileID: 11400000, guid: 0fb058c46f57d227f1540971222dc706, type: 2}
+  afterStartThought: {fileID: 11400000, guid: 3a6f263ef0f4d2183b3798b1c7947ecd, type: 2}
+  arrivalThought: {fileID: 11400000, guid: 9ec45b61ab1d64f358a431a06def1bcb, type: 2}
+  arrivalThoughtMaxWait: 8
   autoStartForDebug: 1
 --- !u!1 &313235958
 GameObject:
@@ -748,6 +751,110 @@ MonoBehaviour:
   fogDensityFallback: 0.012
   nightVolume: {fileID: 0}
   nightVolumeWeight: 1
+--- !u!1 &591314771
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 591314772}
+  m_Layer: 0
+  m_Name: ThoughtTriggers_Percurso
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &591314772
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 591314771}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 72.46, y: -58.62, z: -157.61}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1764899313}
+  - {fileID: 1920140542}
+  - {fileID: 618783510}
+  - {fileID: 949764776}
+  m_Father: {fileID: 894987903}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &618783509
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 618783510}
+  - component: {fileID: 618783512}
+  - component: {fileID: 618783511}
+  m_Layer: 0
+  m_Name: Trigger_Thought_ActPer-4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &618783510
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618783509}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -27.4, y: 3.15, z: 108}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 591314772}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &618783511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618783509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2fec1b00d5733243b61aced82e3acd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.ThoughtTrigger
+  thought: {fileID: 11400000, guid: 77fb27a538086ea63abda7842e942cbb, type: 2}
+  playerTag: Player
+  oneShot: 1
+--- !u!65 &618783512
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618783509}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 20, y: 6, z: 3}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!43 &633533849
 Mesh:
   m_ObjectHideFlags: 0
@@ -1220,6 +1327,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 591314772}
   - {fileID: 1355001310}
   - {fileID: 1650639502}
   - {fileID: 915179527}
@@ -1375,6 +1483,75 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 17.628769, y: 13.959032, z: 0.96624756}
   m_Center: {x: 2.4195786, y: 6.479515, z: -0.01687622}
+--- !u!1 &949764775
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 949764776}
+  - component: {fileID: 949764778}
+  - component: {fileID: 949764777}
+  m_Layer: 0
+  m_Name: Trigger_Thought_ActPer-5
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &949764776
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949764775}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -152.81, y: 2.98, z: 98.92}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 591314772}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &949764777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949764775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2fec1b00d5733243b61aced82e3acd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.ThoughtTrigger
+  thought: {fileID: 11400000, guid: 3f477e30042d1407f30d5f03fde8a6ce, type: 2}
+  playerTag: Player
+  oneShot: 1
+--- !u!65 &949764778
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949764775}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 20, y: 6, z: 3}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &970957365
 GameObject:
   m_ObjectHideFlags: 0
@@ -1588,6 +1765,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2170689590808255923, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
   m_PrefabInstance: {fileID: 983575763}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1070772600
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2237028240015697911, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_Name
+      value: BCG_Building_Shop_T5x4_F1_S0_B
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 217.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 317.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 8891164966833898609, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e553f0f7c4aa1464e914e247f27d702e, type: 3}
 --- !u!1 &1200656945
 GameObject:
   m_ObjectHideFlags: 0
@@ -2315,6 +2549,75 @@ Transform:
   m_Children: []
   m_Father: {fileID: 98111862}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1764899312
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1764899313}
+  - component: {fileID: 1764899315}
+  - component: {fileID: 1764899314}
+  m_Layer: 0
+  m_Name: Trigger_Thought_ActPer-2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1764899313
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764899312}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 243, y: 3.04, z: 361.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 591314772}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1764899314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764899312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2fec1b00d5733243b61aced82e3acd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.ThoughtTrigger
+  thought: {fileID: 11400000, guid: fd84e127515cf39d387b919ec1dbda7e, type: 2}
+  playerTag: Player
+  oneShot: 1
+--- !u!65 &1764899315
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764899312}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 28.60962, y: 6, z: 4.1741333}
+  m_Center: {x: 4.3048096, y: 0, z: -0.58706665}
 --- !u!1 &1834171530
 GameObject:
   m_ObjectHideFlags: 0
@@ -2362,6 +2665,75 @@ CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 7825594089493687337, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
   m_PrefabInstance: {fileID: 983575763}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1920140541
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1920140542}
+  - component: {fileID: 1920140544}
+  - component: {fileID: 1920140543}
+  m_Layer: 0
+  m_Name: Trigger_Thought_ActPer-3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1920140542
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920140541}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -17.82, y: 3.18, z: 372.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 591314772}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &1920140543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920140541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2fec1b00d5733243b61aced82e3acd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.ThoughtTrigger
+  thought: {fileID: 11400000, guid: 7a1dbf519d24c246db5f622287de4bc7, type: 2}
+  playerTag: Player
+  oneShot: 1
+--- !u!65 &1920140544
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920140541}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 20, y: 6, z: 3}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2095185597
 GameObject:
   m_ObjectHideFlags: 0
@@ -2549,7 +2921,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 7100396178360549558, guid: e5c089a063955ca4ebbf800e1af29204, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e5c089a063955ca4ebbf800e1af29204, type: 3}
@@ -2568,3 +2941,4 @@ SceneRoots:
   - {fileID: 1684423859}
   - {fileID: 899666449}
   - {fileID: 894987903}
+  - {fileID: 1070772600}

@@ -17,7 +17,7 @@ RenderSettings:
   m_Fog: 1
   m_FogColor: {r: 0.0014844656, g: 0, b: 0.19999999, a: 1}
   m_FogMode: 3
-  m_FogDensity: 0.041
+  m_FogDensity: 0.013
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0, g: 0.035465542, b: 0.6981132, a: 1}
@@ -144,7 +144,7 @@ Transform:
   m_GameObject: {fileID: 57663082}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 178.629, y: -361, z: 157.5}
+  m_LocalPosition: {x: 178.629, y: -915, z: 157.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -242,7 +242,7 @@ Transform:
   m_GameObject: {fileID: 179637292}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 178.92, y: 123.323975, z: 632.8}
+  m_LocalPosition: {x: 178.92, y: 123.323975, z: 654.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -729,7 +729,7 @@ MonoBehaviour:
   reachRadius: 2
   corridorThought: {fileID: 0}
   corridorAmbience: {fileID: 0}
-  corridorAmbienceVolume: 0.607
+  corridorAmbienceVolume: 0.35
   growlSound: {fileID: 8300000, guid: 87904800e724edb498d4b8eaaf2ecffe, type: 3}
   creatureObject: {fileID: 813981207}
   creatureSpawnPoint: {fileID: 2083115775}
@@ -761,8 +761,6 @@ MonoBehaviour:
   chaseLoopVolume: 0.9
   chaseAudioRange: 14
   corridorLights: []
-  runPrompt: {fileID: 983575764}
-  runPromptDuration: 6
   creatureAttackObject: {fileID: 1327840163}
   attackYaw: 180
   attackDuration: 1.6
@@ -782,9 +780,6 @@ MonoBehaviour:
   abyssPoint: {fileID: 160261732}
   abyssHoldDuration: 3
   abyssThought: {fileID: 11400000, guid: 7c98d355f8fbf7e4c99d64e710a6d6e0, type: 2}
-  grabThought: {fileID: 11400000, guid: 7a6d87347cf21d447b147d5c47022f0d, type: 2}
-  grabDazeThought: {fileID: 11400000, guid: 5d3c715dcc7c1c243a957566af16e1f9, type: 2}
-  grabDazeThoughtDelay: 0.6
   abyssSettleDuration: 0.4
   abyssSnapToMark: 1
   creatureGrabObject: {fileID: 533999948}
@@ -794,15 +789,9 @@ MonoBehaviour:
   grabGroundOffset: 0
   grabRootMotion: 0
   grabSound: {fileID: 8300000, guid: 289b95ca98b5b3c4b8f32097ea312870, type: 3}
-  grabSoundVolume: 1
   grabSoundClipTime: 0.15
-  grabLoopSound: {fileID: 8300000, guid: d69f1b17affb8a245b91c321824a46e0, type: 3}
-  grabLoopVolume: 0.577
-  grabLoopCrossfade: 0.5
-  grabLoopHeadTrim: 0.05
-  grabLoopTailTrim: 0.05
   grabKeyLightIntensity: 1.4
-  grabKeyLightColor: {r: 0.82, g: 0.86, b: 1, a: 0.2784314}
+  grabKeyLightColor: {r: 0.82, g: 0.86, b: 1, a: 1}
   grabHandBone: {fileID: 1678935143}
   grabHeadBone: {fileID: 1678935143}
   grabHandOffset: {x: 0, y: 0, z: 0}
@@ -816,8 +805,6 @@ MonoBehaviour:
   grabAttachBlend: 0.18
   grabLookAtCreature: 1
   grabTurnDuration: 0.5
-  screamSound: {fileID: 8300000, guid: 2aaabeb67515d4942b1ea357991e8963, type: 3}
-  screamVolume: 1
   grabDropSlide: 0.25
   grabReleaseNormalizedTime: 0.818
   grabReleaseFallbackDelay: 0
@@ -826,43 +813,44 @@ MonoBehaviour:
   grabFallLookPitch: -50
   grabFallDuration: 0
   grabDropGravityScale: 0.4
-  fallHideObjects:
-  - {fileID: 2028889497}
-  - {fileID: 1299502247}
-  - {fileID: 1763878715}
-  - {fileID: 533999948}
-  fallBlinkDelay: 0
-  fallBlinkCloseDuration: 0.148
-  fallBlinkHoldDuration: 1
-  fallBlinkOpenDuration: 0.5
   grabGroundEyeHeight: 0.25
   grabFallenPitch: -35
   grabFallenRoll: 22
   grabLingerDuration: 0
-  ventoSound: {fileID: 8300000, guid: 455dd3ae0ca405c4e9a316d5d86b4150, type: 3}
-  ventoCrossfade: 0.6
-  ventoHeadTrim: 0.05
-  ventoTailTrim: 0.05
-  fallStreakRate: 140
-  fallStreakMaterial: {fileID: 0}
-  fallStreakColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0.36078432}
-  fallStreakSpeedFactor: 3
-  fallFovPush: 40
-  fallShakeAmount: 3.48
-  fallImpactSound: {fileID: 8300000, guid: 0b42a5f397b767a488d1e588d91ede18, type: 3}
-  fallImpactAutoCut: 1
-  fallImpactOnsetThreshold: 0.1
-  fallImpactStartTime: 0.9
-  grabDazeDuration: 6.9
-  grabDazeAmplitude: 3.5
-  grabDazeSpeed: 0.35
-  grabDazeEyeCloseDuration: 3.85
+  ventoSound: {fileID: 0}
+  fallDuration: 3.5
+  fallDistance: 40
+  fallCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  cityLights: []
   impactSound: {fileID: 0}
   cutHoldDuration: 0.12
   dreamVolume: {fileID: 200869108}
   debugStartAtGrowl: 0
   debugStartAtAbyss: 0
-  startBeat: 1
+  startBeat: 5
   debugMode: 1
   autoStartForDebug: 1
 --- !u!1001 &488863618
@@ -1215,9 +1203,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 723431eefd59000408fbfc74a600627c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 813981210}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 723431eefd59000408fbfc74a600627c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 813981211}
   m_SourcePrefab: {fileID: 100100000, guid: 723431eefd59000408fbfc74a600627c, type: 3}
 --- !u!1 &533999948 stripped
 GameObject:
@@ -1791,45 +1776,6 @@ CapsuleCollider:
   m_Height: 0.022666652
   m_Direction: 1
   m_Center: {x: -0.00040923135, y: 0.009513257, z: 0.0006197909}
---- !u!114 &813981211
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 813981207}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d84839f2a196094d953c1b77fe53f27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.CreatureFootsteps
-  enableFootsteps: 1
-  footstepMode: 0
-  footstepSource: {fileID: 0}
-  walkLoopClip: {fileID: 8300000, guid: 8e7dee4a183880146834286210ab469c, type: 3}
-  loopFadeDuration: 0.12
-  autoTrimSilence: 1
-  silenceThreshold: 0.01
-  loopEndTrim: 0
-  loopStartTrim: 0
-  footstepClips: []
-  stepCadence: 0
-  animator: {fileID: 0}
-  animatorLayer: 0
-  stepPhases:
-  - 0.26666668
-  - 0.72083336
-  stepStride: 1.6
-  stepPitchRange: {x: 0.92, y: 1.08}
-  stepVolume: 0.8
-  basePitch: 0.7
-  matchPitchToPace: 1
-  referenceSpeed: 2.4
-  spatialBlend: 1
-  minDistance: 2
-  maxDistance: 40
-  moveThreshold: 0.05
-  teleportSpeed: 20
 --- !u!1 &824909943
 GameObject:
   m_ObjectHideFlags: 0
@@ -2598,11 +2544,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
---- !u!1 &983575764 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5111271509969080399, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
-  m_PrefabInstance: {fileID: 983575763}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &983575765 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2170689590808255923, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
@@ -9589,7 +9530,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: cda64e220c034c7488b99a77c5f53a03, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1234279849924444142, guid: cda64e220c034c7488b99a77c5f53a03, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -15097,7 +15038,7 @@ Transform:
   m_GameObject: {fileID: 2083115774}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 178.92, y: 121.89, z: 646.41}
+  m_LocalPosition: {x: 178.92, y: 121.89, z: 309.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15153,7 +15094,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7426282348559513469, guid: e5c089a063955ca4ebbf800e1af29204, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -302.555
+      value: -856.555
       objectReference: {fileID: 0}
     - target: {fileID: 7426282348559513469, guid: e5c089a063955ca4ebbf800e1af29204, type: 3}
       propertyPath: m_LocalPosition.z
