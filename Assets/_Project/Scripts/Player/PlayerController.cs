@@ -155,7 +155,43 @@ namespace TheDelivery.Player
         /// cutscenes, menus de pausa e momentos narrativos. Exposto no Inspector
         /// via campo de apoio <c>canMove</c>.
         /// </summary>
-        public bool CanMove { get => canMove; set => canMove = value; }
+        public bool CanMove
+        {
+            get => canMove;
+            set
+            {
+                canMove = value;
+
+                // Devolver o controle CANCELA qualquer caminhada dirigida em curso.
+                // Sem isto, um <see cref="ScriptedMove"/> que ficou pendurado (um
+                // director destruído no meio da coreografia, uma coroutine morta pela
+                // troca de cena) voltaria a andar sozinho no próximo trecho em que
+                // alguém travasse o movimento — e o sintoma seria a Clear caminhando
+                // durante uma cutscene completamente diferente, longe da causa.
+                if (value)
+                    ScriptedMove = Vector2.zero;
+            }
+        }
+
+        /// <summary>
+        /// CAMINHADA DIRIGIDA: o vetor de andar que um director injeta enquanto o
+        /// movimento do jogador está travado (<see cref="CanMove"/> == false). Mesma
+        /// convenção do input real — x = lado, y = frente, no espaço LOCAL do corpo,
+        /// magnitude &lt;= 1. Vector2.zero (padrão) = parada.
+        ///
+        /// ELE ENTRA PELO MESMO CANO DO INPUT, e é essa a razão de existir em vez de
+        /// cada director chamar <c>CharacterController.Move</c> por fora: por aqui a
+        /// caminhada dirigida ganha DE GRAÇA tudo o que faz uma caminhada parecer uma
+        /// — a aceleração suavizada até o <see cref="WalkSpeed"/>, a gravidade, o
+        /// deslize nas paredes e, principalmente, o <see cref="IsMoving"/> ligado, que
+        /// é quem acende os PASSOS. Um Move por fora anda igual e chega calado: a
+        /// Clear atravessa a rua sem nenhum som de pé no chão.
+        ///
+        /// Ignorado enquanto <see cref="CanMove"/> é true — quem dirige a cena travou
+        /// o jogador antes, e o input dele volta a mandar assim que o controle é
+        /// devolvido (o setter de CanMove zera este campo).
+        /// </summary>
+        public Vector2 ScriptedMove { get; set; } = Vector2.zero;
 
         /// <summary>
         /// Permite correr (Shift). Com false, <see cref="IsRunning"/> nunca liga e a
@@ -467,7 +503,10 @@ namespace TheDelivery.Player
                 return;
             }
 
-            Vector2 input = CanMove ? moveAction.ReadValue<Vector2>() : Vector2.zero;
+            // Travado, o input do jogador some — mas não necessariamente o movimento:
+            // é por aqui que a caminhada dirigida (ver <see cref="ScriptedMove"/>) entra,
+            // usando o mesmo cano do input real para herdar velocidade, colisão e passos.
+            Vector2 input = CanMove ? moveAction.ReadValue<Vector2>() : ScriptedMove;
 
             // Correr só em pé: agachado e correndo ao mesmo tempo não existe (vulnerabilidade).
             // CanRun permite a uma cena tirar a corrida de vez (ver PesadeloDirector).

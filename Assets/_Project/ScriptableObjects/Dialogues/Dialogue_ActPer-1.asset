@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5dff2e1582e6f4458683d70c6288f41, type: 3}
+  m_Name: Dialogue_ActPer-1
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.DialogueData
+  lines:
+  - speaker: Estranho
+    text: "Voc\xEA n\xE3o devia estar na rua hoje."
+    extraHold: 1
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: "...desculpa? Eu te conhe\xE7o?"
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Estranho
+    text: "N\xE3o. Mas eu j\xE1 vi isso acontecer antes."
+    extraHold: 2
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: "Viu o qu\xEA?"
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Estranho
+    text: "Sempre come\xE7a igual. Um dia comum. Algu\xE9m indo pra casa."
+    extraHold: 2
+    sfx: {fileID: 0}
+  - speaker: Estranho
+    text: "Se eu falasse com todas as letras, voc\xEA ia me achar louco. Assim, voc\xEA
+      s\xF3 me acha estranho."
+    extraHold: 1
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: "Voc\xEA t\xE1 me assustando."
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Estranho
+    text: "Bom. Vai ter uma hora hoje em que voc\xEA vai poder escolher. N\xE3o vai
+      parecer importante na hora."
+    extraHold: 3
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: "Escolher o qu\xEA?"
+    extraHold: 0
+    sfx: {fileID: 0}
+  - speaker: Estranho
+    text: "Pode ir. Ele n\xE3o gosta que eu demore."
+    extraHold: 4
+    sfx: {fileID: 0}
+  - speaker: "Voc\xEA"
+    text: ...ele quem?
+    extraHold: 2
+    sfx: {fileID: 0}

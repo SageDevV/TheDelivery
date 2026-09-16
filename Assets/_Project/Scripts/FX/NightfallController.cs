@@ -16,7 +16,10 @@ namespace TheDelivery.FX
     /// tempo é o conjunto se movendo junto, cada peça pouco:
     ///   1. SOL      — desce alguns graus, esfria de dourado para azul e perde força.
     ///   2. AMBIENTE — a luz indireta esfria junto (sem isso as sombras ficam "de dia").
-    ///   3. SKYBOX   — tint e exposure acompanham o céu.
+    ///   3. SKYBOX   — tint e exposure acompanham o céu e, na noite fechada, o
+    ///                 procedural dá lugar a um céu noturno de verdade (ver
+    ///                 <see cref="nightSkybox"/>): o Procedural sabe escurecer, mas
+    ///                 não sabe desenhar estrelas.
     ///   4. NÉVOA    — a peça mais barata e mais eficaz: o ar esfria e encorpa,
     ///                 borrando o fundo da rua. É ela que dá a sensação de "está
     ///                 escurecendo" antes de a imagem ficar escura de fato.
@@ -173,6 +176,55 @@ namespace TheDelivery.FX
         [Range(0f, 8f)]
         [SerializeField] private float nightExposure = 0.35f;
 
+        [Header("3c. Céu da noite fechada (troca de material)")]
+        [Tooltip("Material de céu que ENTRA quando a noite fecha. O Skybox/Procedural sabe escurecer, mas não sabe " +
+                 "desenhar uma noite: não tem estrelas, e por mais baixa que fique a exposure o que sobra é um azul " +
+                 "liso. Aqui entra um céu noturno autorado (cubemap/6 Sided) no lugar dele. Deixe VAZIO para terminar " +
+                 "no procedural tingido, que é o comportamento de antes.\n\n" +
+                 "A troca acontece só no FIM do anoitecer (t=1) ou num SkipToNight — nunca no meio, onde quem manda é a rampa.")]
+        [SerializeField] private Material nightSkybox;
+        [Tooltip("EM QUE PONTO DO ANOITECER a troca começa (0 = saindo da cafeteria, 1 = noite fechada). Abaixo de 1 " +
+                 "de propósito, e é o ajuste que mais importa para a troca ficar sutil.\n\n" +
+                 "MUDANÇA ESCONDIDA ATRÁS DE MUDANÇA: uma alteração no céu é quase indetectável enquanto o resto da " +
+                 "cena também está se mexendo — sol descendo, névoa encorpando, ambiente esfriando. Terminado o " +
+                 "anoitecer, nada mais se move, e aí QUALQUER coisa que mude no céu vira a única coisa acontecendo no " +
+                 "quadro: o olho vai direto nela. Começando a troca no fim da rampa, ela acontece por baixo do " +
+                 "anoitecer; a noite fechada ainda chega com o Cold Night no ar, que é o que interessa.\n\n" +
+                 "Ponha em 1 para a troca só começar depois que a noite fechar (mais exposta, mas previsível).")]
+        [Range(0f, 1f)]
+        [SerializeField] private float nightSkyboxStartAt = 0.8f;
+        [Tooltip("Segundos BAIXANDO o céu do fim de tarde até o nível de encontro (ver Night Skybox Handoff). Os dois " +
+                 "céus rodam shaders diferentes (procedural x 6 faces), então não existe um peso para misturar um no " +
+                 "outro: a passagem é feita PELO BRILHO, e o que se pode controlar é quanto tempo cada ponta leva.")]
+        [SerializeField] private float nightSkyboxFadeOut = 5f;
+        [Tooltip("Segundos PARADO no nível de encontro entre um céu e outro. É AQUI que o material é trocado — por " +
+                 "isso a troca em si é invisível. Um respiro curto ajuda: sem nenhum, o céu bate no fundo do fade e já " +
+                 "volta subindo, e esse 'quica' é justamente o que lê como corte.")]
+        [SerializeField] private float nightSkyboxHold = 0.75f;
+        [Tooltip("Segundos ACENDENDO o céu da noite. Deixe MAIOR que o de apagar — é este o lado que o olho está " +
+                 "olhando: apagar um céu que já estava escuro passa batido, mas as estrelas APARECENDO são o evento. " +
+                 "Devagar elas emergem; rápido elas pipocam.")]
+        [SerializeField] private float nightSkyboxFadeIn = 9f;
+        [Tooltip("O NÍVEL EM QUE OS DOIS CÉUS SE ENCONTRAM, em brilho percebido (0-1). É o ajuste que tira o BURACO " +
+                 "PRETO do meio da troca.\n\n" +
+                 "COM 0 a passagem vai até o preto, como era antes: o céu do poente apaga por completo, sobra um vazio " +
+                 "liso por cima da rua e só então o Cold Night começa a nascer. Mesmo com os dois fades longos, isso " +
+                 "SALTA — um céu totalmente escuro não é um céu escuro, é a ausência dele, e o céu autorado entrando " +
+                 "depois lê como OUTRA IMAGEM em vez da mesma noite ficando mais tarde. É o contraste entre o nada e " +
+                 "uma skybox inteira.\n\n" +
+                 "ACIMA DE 0 o poente PARA DE DESCER nesse fiapo de brilho, o céu da noite entra JÁ ACESO no mesmo " +
+                 "fiapo e sobe dali até o brilho cheio. Nunca existe um quadro sem céu, e o que muda no instante da " +
+                 "troca é só o desenho — num nível baixo demais para o olho ir atrás.\n\n" +
+                 "É UM NÍVEL RELATIVO A CADA CÉU, não um brilho absoluto: os dois shaders não têm a mesma escala. Se a " +
+                 "troca ainda pula para MAIS CLARO, baixe; se o céu some de vez no meio, suba. 0.2-0.35 é a faixa útil.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float nightSkyboxHandoff = 0.25f;
+        [Tooltip("MULTIPLICADOR da _Exposure autorada no material da noite. 1 entrega o céu exatamente como o asset " +
+                 "está; abaixo de 1 escurece — que é o ajuste comum, porque céu de pacote costuma vir claro demais para " +
+                 "uma rua onde o medo depende de não enxergar.")]
+        [Range(0f, 4f)]
+        [SerializeField] private float nightSkyboxExposure = 1f;
+
         [Header("4. Névoa")]
         [Tooltip("Fazer o ar encorpar e esfriar. É a peça mais barata e a que mais vende o anoitecer — ligue mesmo que a cena não use névoa hoje (ela é ativada e restaurada ao sair).")]
         [SerializeField] private bool driveFog = true;
@@ -250,6 +302,23 @@ namespace TheDelivery.FX
         private bool hasGroundColor;
         private Color authoredGroundColor = Color.gray;
 
+        // TROCA DO CÉU NO FIM (ver nightSkybox): a cópia em runtime do material da
+        // noite e o relógio do cross-fade pelo escuro. nightSwapRunning marca o fade
+        // em andamento; nightSkyInstalled, que o material já está no ar.
+        private Material nightRuntimeSkybox;
+        private float nightSwapElapsed;
+        private bool nightSwapRunning;
+        private bool nightSkyInstalled;
+        // Fator 1→0 que apaga o céu do POENTE durante a troca. É um MULTIPLICADOR
+        // aplicado dentro do ApplySkybox em vez de uma escrita direta na _Exposure
+        // porque a rampa do anoitecer continua correndo por baixo (a troca começa
+        // antes de a noite fechar): as duas escreveriam na mesma propriedade e quem
+        // rodasse por último ganharia, fazendo o céu tremer entre os dois valores.
+        private float outgoingSkyFade = 1f;
+        // _Exposure autorada no material da noite, já com o multiplicador aplicado.
+        private float nightSkyTargetExposure = 1f;
+        private bool nightSkyHasExposure;
+
         // Throttle do rebake da luz ambiente no modo Skybox (ver skyboxAmbientRefreshInterval).
         private float lastAmbientRefresh;
 
@@ -266,21 +335,33 @@ namespace TheDelivery.FX
 
         private void Update()
         {
-            if (!IsRunning)
-                return;
-
-            elapsed += Time.deltaTime;
-
-            float dur = Mathf.Max(0.0001f, duration);
-            float raw = Mathf.Clamp01(elapsed / dur);
-            Apply(progressCurve.Evaluate(raw));
-
-            if (raw >= 1f)
+            if (IsRunning)
             {
-                IsRunning = false;
-                IsComplete = true;
-                Debug.Log("[NightfallController] Noite fechada.", this);
+                elapsed += Time.deltaTime;
+
+                float dur = Mathf.Max(0.0001f, duration);
+                float raw = Mathf.Clamp01(elapsed / dur);
+                Apply(progressCurve.Evaluate(raw));
+
+                // A troca do céu começa AINDA DENTRO da rampa (ver nightSkyboxStartAt):
+                // é o movimento do resto da cena que a esconde.
+                if (Progress >= nightSkyboxStartAt)
+                    BeginNightSkyboxSwap();
+
+                if (raw >= 1f)
+                {
+                    IsRunning = false;
+                    IsComplete = true;
+                    Debug.Log("[NightfallController] Noite fechada.", this);
+                    BeginNightSkyboxSwap();
+                }
             }
+
+            // FORA do bloco acima de propósito: a troca do céu é o EPÍLOGO do
+            // anoitecer, não uma etapa da rampa. Ela começa quando a noite fecha
+            // (IsRunning já é false) e roda sozinha por mais alguns segundos.
+            if (nightSwapRunning)
+                TickNightSkyboxSwap();
         }
 
         private void OnDisable()
@@ -308,6 +389,9 @@ namespace TheDelivery.FX
             IsRunning = true;
             IsComplete = false;
 
+            // Replay depois de uma noite já fechada: o céu noturno sai e o do poente
+            // volta, senão o anoitecer recomeçaria com o céu do FIM no ar.
+            DiscardNightSkybox();
             EnsureRuntimeSkybox();
             Apply(progressCurve.Evaluate(0f));
 
@@ -336,6 +420,242 @@ namespace TheDelivery.FX
 
             EnsureRuntimeSkybox();
             Apply(progressCurve.Evaluate(1f));
+
+            // "Sem transição" vale para o céu também: o material da noite entra já aceso.
+            if (nightSkybox != null && !nightSkyInstalled)
+            {
+                nightSwapRunning = false;
+                InstallNightSkybox(exposureScale: 1f, rebakeAmbient: true);
+            }
+        }
+
+        // --- Céu da noite (troca de material) --------------------------------
+
+        /// <summary>
+        /// Abre a troca do céu, no instante em que a noite fecha. Sem
+        /// <see cref="nightSkybox"/> atribuído não faz nada e a cena termina no
+        /// procedural tingido de azul — o comportamento de antes deste campo existir.
+        /// </summary>
+        private void BeginNightSkyboxSwap()
+        {
+            if (nightSkybox == null || nightSkyInstalled || nightSwapRunning)
+                return;
+
+            if (nightSkyboxFadeOut + nightSkyboxHold + nightSkyboxFadeIn <= 0.01f)
+            {
+                InstallNightSkybox(exposureScale: 1f, rebakeAmbient: true);
+                return;
+            }
+
+            // CAMPO NOVO EM CENA VELHA: um float que não existia quando a cena foi salva
+            // é desserializado como ZERO, e o padrão escrito aqui no C# é ignorado. Zero,
+            // neste campo, é exatamente a passagem pelo preto que ele veio consertar — daí
+            // o aviso em vez de um silêncio que pareceria "o ajuste não funcionou".
+            if (nightSkyboxHandoff <= 0f)
+                Debug.LogWarning("[NightfallController] Night Skybox Handoff está em 0: a troca do céu vai passar pelo " +
+                                 "PRETO, e é esse vazio que faz o Cold Night entrar com cara de corte. Rode " +
+                                 "Tools > The Delivery > Estrada - Céu da noite (Cold Night) para gravar o valor " +
+                                 "padrão na cena, ou ajuste à mão em \"3c. Céu da noite fechada\".", this);
+
+            outgoingSkyFade = 1f;
+            nightSwapElapsed = 0f;
+            nightSwapRunning = true;
+        }
+
+        /// <summary>
+        /// Conduz a passagem PELO ESCURO, em três tempos: APAGAR o céu do poente
+        /// (<see cref="nightSkyboxFadeOut"/>), SEGURAR no preto
+        /// (<see cref="nightSkyboxHold"/>) — é durante essa pausa que o material é
+        /// trocado, invisível — e ACENDER o céu da noite (<see cref="nightSkyboxFadeIn"/>).
+        ///
+        /// Por que não um cross-fade de verdade: os dois céus rodam shaders diferentes
+        /// (Procedural x 6 Sided) e só UM material pode estar em
+        /// <c>RenderSettings.skybox</c> por vez. A única propriedade que os dois têm em
+        /// comum é a <c>_Exposure</c>, e é por ela que a passagem é feita.
+        ///
+        /// QUATRO COISAS FAZEM ISSO NÃO LER COMO CORTE. Duração sozinha não resolve —
+        /// um fade longo e ingênuo continua parecendo um corte, e as três primeiras
+        /// abaixo explicam por quê:
+        ///   • A CURVA DE BRILHO é perceptual (<see cref="ExposureForPerceived"/>). Este
+        ///     é o principal: rampa linear de exposure entrega quase todo o brilho VISTO
+        ///     no primeiro quinto do tempo e depois se arrasta — as estrelas pipocam e
+        ///     param. Desfazendo a curva do olho, o fade inteiro é usado para aparecer.
+        ///   • A PASSAGEM NÃO VAI ATÉ O PRETO (ver <see cref="nightSkyboxHandoff"/>). Os
+        ///     dois céus se encontram num fiapo de brilho comum: o poente para de descer
+        ///     ali e o céu da noite acende dali. Um céu totalmente apagado não é um céu
+        ///     escuro, é a ausência dele — e o céu autorado que entra depois lê como
+        ///     outra imagem, não como a mesma noite avançando.
+        ///   • A TROCA COMEÇA DENTRO DA RAMPA (ver <see cref="nightSkyboxStartAt"/>),
+        ///     escondida atrás do sol descendo e da névoa encorpando. Mudança em cena
+        ///     parada é a única coisa acontecendo no quadro, e o olho vai direto nela.
+        ///   • A LUZ AMBIENTE não segue o céu até o preto. No modo Skybox o ambiente é
+        ///     derivado do céu, então rebakar durante o apagamento apagaria a RUA junto —
+        ///     uma piscada global que denuncia a troca muito mais que o próprio céu. Aqui
+        ///     o ambiente fica CONGELADO onde a rampa o deixou e só volta a seguir o céu
+        ///     na subida, quando há algo para o que seguir.
+        ///   • O RITMO é suavizado (<see cref="Ease"/>) e ASSIMÉTRICO. Apagar um céu que
+        ///     já está escuro passa despercebido; as estrelas APARECENDO são o evento, e
+        ///     evento quer tempo. Por isso o fade-in nasce bem mais longo que o fade-out.
+        /// </summary>
+        private void TickNightSkyboxSwap()
+        {
+            nightSwapElapsed += Time.deltaTime;
+
+            float fadeOut = Mathf.Max(0f, nightSkyboxFadeOut);
+            float dark = fadeOut + Mathf.Max(0f, nightSkyboxHold);
+
+            // O CHÃO DA PASSAGEM: os dois céus se encontram AQUI, e não no preto. É o
+            // mesmo número dos dois lados — o poente desce até ele, o céu da noite acende
+            // a partir dele — e é isso que faz o instante da troca ser só uma imagem
+            // trocando de desenho num brilho que quase não existe, em vez de um vazio
+            // preto dando lugar a uma skybox inteira.
+            float handoff = Mathf.Clamp01(nightSkyboxHandoff);
+
+            if (!nightSkyInstalled)
+            {
+                float fade = fadeOut <= 0.01f ? 1f : Mathf.Clamp01(nightSwapElapsed / fadeOut);
+
+                // Reaplica o céu do poente com o fator de apagamento novo. Passa pelo
+                // ApplySkybox (e não por um SetFloat aqui) para não brigar com a rampa,
+                // que pode estar rodando ao mesmo tempo — ver outgoingSkyFade.
+                outgoingSkyFade = ExposureForPerceived(Mathf.Lerp(handoff, 1f, Ease(1f - fade)));
+                ApplySkybox(Progress);
+
+                // A troca acontece no fim da pausa, não no instante em que o céu chega ao
+                // nível de encontro: é a pausa que separa um movimento do outro.
+                //
+                // E O CÉU NOVO ENTRA NO MESMO NÍVEL em que o antigo parou — é este
+                // argumento, e não um zero, que fecha o buraco preto da transição.
+                if (nightSwapElapsed >= dark)
+                    InstallNightSkybox(exposureScale: ExposureForPerceived(handoff), rebakeAmbient: false);
+
+                return;
+            }
+
+            float fadeIn = Mathf.Max(0.01f, nightSkyboxFadeIn);
+            float rise = Mathf.Clamp01((nightSwapElapsed - dark) / fadeIn);
+
+            // A SUBIDA COMEÇA NO NÍVEL DE ENCONTRO, não no zero: o céu da noite já está
+            // no ar naquele fiapo de brilho desde a troca, e recomeçar do preto seria
+            // reabrir, no primeiro quadro do fade in, exatamente o buraco que o handoff
+            // existe para fechar.
+            SetNightSkyExposure(ExposureForPerceived(Mathf.Lerp(handoff, 1f, Ease(rise))));
+            RefreshSkyboxAmbient();
+
+            if (rise < 1f)
+                return;
+
+            nightSwapRunning = false;
+            DynamicGI.UpdateEnvironment();
+            Debug.Log($"[NightfallController] Céu da noite no ar: '{nightSkybox.name}'.", this);
+        }
+
+        /// <summary>
+        /// Suaviza as pontas do fade. Uma rampa com começo e fim ABRUPTOS — o valor
+        /// arranca e para de uma vez — é registrada como corte mesmo quando o meio do
+        /// movimento é longo. O SmoothStep tira a quina dos dois lados.
+        /// </summary>
+        private static float Ease(float k)
+        {
+            return Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k));
+        }
+
+        /// <summary>
+        /// Converte um nível de brilho PERCEBIDO (0 a 1) em MULTIPLICADOR DE EXPOSURE.
+        /// É o pulo do gato desta transição, e a razão de um fade longo ainda parecer
+        /// brusco quando feito ingenuamente.
+        ///
+        /// O olho não enxerga luz de forma linear: o brilho PERCEBIDO cresce mais ou
+        /// menos com a raiz 2,2 do valor que sai do render. Na prática, um céu em 10%
+        /// da exposure final já é visto com ~35% do brilho; em 20%, com metade. Uma
+        /// rampa linear de exposure, então, faz as estrelas surgirem quase inteiras no
+        /// primeiro quinto do tempo e depois se arrastarem sem nada acontecer — o
+        /// "pipoca e para" que se lê como corte, por mais longo que seja o fade.
+        ///
+        /// Elevando o nível a 2,2 antes de virar exposure, a curva de percepção é
+        /// desfeita: o brilho VISTO passa a subir de forma uniforme, e o fade inteiro é
+        /// usado para o que deveria mesmo estar usando — as estrelas aparecendo devagar.
+        ///
+        /// FALA EM BRILHO VISTO, e é por isso que quem chama passa por aqui em vez de
+        /// mexer na exposure direto: o nível de encontro dos dois céus
+        /// (<see cref="nightSkyboxHandoff"/>) só significa a mesma coisa dos dois lados
+        /// da troca porque os dois são convertidos pela mesma curva. A
+        /// <see cref="Ease"/> entra ANTES, na rampa de quem chama, para as pontas do
+        /// movimento não terem quina.
+        /// </summary>
+        private static float ExposureForPerceived(float perceived)
+        {
+            const float displayGamma = 2.2f;
+            return Mathf.Pow(Mathf.Clamp01(perceived), displayGamma);
+        }
+
+        /// <summary>
+        /// Põe o material da noite em <c>RenderSettings.skybox</c> — numa CÓPIA, pela
+        /// mesma razão do <see cref="EnsureRuntimeSkybox"/>: o asset é compartilhado e
+        /// escrever nele em Play Mode suja o projeto para sempre.
+        /// <paramref name="exposureScale"/> é o nível de encontro quando a troca chega
+        /// pela transição (o céu acende dali para cima) e 1 no salto direto do
+        /// <see cref="SkipToNight"/>. <paramref name="rebakeAmbient"/> diz se a luz
+        /// indireta deve ser refeita JÁ, e é um argumento à parte de propósito: o nível
+        /// de encontro é maior que zero, então "entrou com algum brilho" deixou de ser
+        /// sinônimo de "entrou aceso".
+        /// </summary>
+        private void InstallNightSkybox(float exposureScale, bool rebakeAmbient)
+        {
+            if (nightRuntimeSkybox == null)
+            {
+                nightRuntimeSkybox = new Material(nightSkybox);
+                nightSkyHasExposure = nightRuntimeSkybox.HasProperty(ExposureId);
+                nightSkyTargetExposure = (nightSkyHasExposure ? nightRuntimeSkybox.GetFloat(ExposureId) : 1f)
+                                       * nightSkyboxExposure;
+            }
+
+            SetNightSkyExposure(exposureScale);
+
+            RenderSettings.skybox = nightRuntimeSkybox;
+            nightSkyInstalled = true;
+
+            // Rebake só quando o céu entra ACESO (o salto do SkipToNight). Chegando pela
+            // transição ele entra no fiapo de brilho do nível de encontro, e rebakar um
+            // céu quase apagado apagaria a luz indireta da rua inteira num quadro — a
+            // piscada que a transição existe para evitar. Nesse caminho quem retoma o
+            // rebake, aos poucos, é o fade-in.
+            if (rebakeAmbient)
+                DynamicGI.UpdateEnvironment();
+        }
+
+        /// <summary>
+        /// <paramref name="k"/> 0 = céu apagado, 1 = céu da noite na exposure autorada
+        /// (já com o <see cref="nightSkyboxExposure"/> aplicado).
+        /// </summary>
+        private void SetNightSkyExposure(float k)
+        {
+            if (nightRuntimeSkybox != null && nightSkyHasExposure)
+                nightRuntimeSkybox.SetFloat(ExposureId, Mathf.Lerp(0f, nightSkyTargetExposure, k));
+        }
+
+        /// <summary>
+        /// Tira o céu da noite de cena e devolve o do poente, descartando a cópia.
+        /// Usado no replay (<see cref="Play"/>), onde deixar o céu do fim no ar faria
+        /// o anoitecer recomeçar já de noite.
+        /// </summary>
+        private void DiscardNightSkybox()
+        {
+            nightSwapRunning = false;
+            nightSwapElapsed = 0f;
+            outgoingSkyFade = 1f;
+
+            if (!nightSkyInstalled)
+                return;
+
+            nightSkyInstalled = false;
+            RenderSettings.skybox = runtimeSkybox != null ? runtimeSkybox : authoredSkybox;
+
+            if (nightRuntimeSkybox != null)
+            {
+                Destroy(nightRuntimeSkybox);
+                nightRuntimeSkybox = null;
+            }
         }
 
         // --- Aplicação ------------------------------------------------------
@@ -526,18 +846,43 @@ namespace TheDelivery.FX
                     // se aplica: quem muda o ambiente é o skybox sendo tingido. Só que
                     // esse rebake não é automático — sem o UpdateEnvironment, o céu
                     // escurece e a luz indireta continua a do meio da tarde.
-                    if (driveSkybox && Time.time - lastAmbientRefresh >= Mathf.Max(0.05f, skyboxAmbientRefreshInterval))
-                    {
-                        lastAmbientRefresh = Time.time;
-                        DynamicGI.UpdateEnvironment();
-                    }
+                    if (driveSkybox)
+                        RefreshSkyboxAmbient();
                     break;
             }
         }
 
+        /// <summary>
+        /// Rebake da luz indireta derivada do céu, com o throttle do
+        /// <see cref="skyboxAmbientRefreshInterval"/>. Vive à parte do
+        /// <see cref="ApplyAmbient"/> porque a troca de material no fim
+        /// (<see cref="TickNightSkyboxSwap"/>) precisa do mesmo rebake fora da rampa.
+        /// </summary>
+        private void RefreshSkyboxAmbient()
+        {
+            if (RenderSettings.ambientMode != AmbientMode.Skybox)
+                return;
+
+            // Fase escura da troca: o céu está sendo apagado de propósito, e rebakar
+            // agora apagaria a luz indireta da RUA junto — uma piscada global que
+            // denuncia a troca muito mais que o próprio céu. O ambiente fica congelado
+            // onde a rampa o deixou e volta a seguir o céu na subida do céu novo.
+            if (nightSwapRunning && !nightSkyInstalled)
+                return;
+
+            if (Time.time - lastAmbientRefresh < Mathf.Max(0.05f, skyboxAmbientRefreshInterval))
+                return;
+
+            lastAmbientRefresh = Time.time;
+            DynamicGI.UpdateEnvironment();
+        }
+
         private void ApplySkybox(float t)
         {
-            if (!driveSkybox || runtimeSkybox == null)
+            // nightSkyInstalled: com o céu da noite já no ar, a rampa do poente não
+            // tem mais o que dizer — e escrever nela mexeria num material que nem
+            // está em cena.
+            if (!driveSkybox || runtimeSkybox == null || nightSkyInstalled)
                 return;
 
             if (skyTintId != -1)
@@ -546,8 +891,11 @@ namespace TheDelivery.FX
             if (hasGroundColor)
                 runtimeSkybox.SetColor(GroundColorId, Rebased(groundColor, authoredGroundColor, t));
 
+            // outgoingSkyFade é 1 fora da troca, e desce a 0 enquanto o céu do poente
+            // apaga para dar lugar ao da noite (ver TickNightSkyboxSwap).
             if (hasSkyExposure)
-                runtimeSkybox.SetFloat(ExposureId, TowardNight(authoredSkyExposure * skyExposure.Evaluate(t), nightExposure, t));
+                runtimeSkybox.SetFloat(ExposureId,
+                    TowardNight(authoredSkyExposure * skyExposure.Evaluate(t), nightExposure, t) * outgoingSkyFade);
 
             if (hasSkyAtmosphere)
                 runtimeSkybox.SetFloat(AtmosphereId, TowardNight(authoredSkyAtmosphere * skyAtmosphere.Evaluate(t), nightAtmosphereThickness, t));
@@ -683,6 +1031,20 @@ namespace TheDelivery.FX
         /// </summary>
         private void RestoreEnvironment(bool restoreRenderSettings)
         {
+            // O céu da noite sai primeiro: se ele está no ar, é ELE que está em
+            // RenderSettings, e destruir a cópia sem devolver o original deixaria a
+            // cena com um material destruído no skybox (céu rosa de material faltando).
+            if (nightRuntimeSkybox != null)
+            {
+                RenderSettings.skybox = authoredSkybox;
+                Destroy(nightRuntimeSkybox);
+                nightRuntimeSkybox = null;
+            }
+
+            nightSkyInstalled = false;
+            nightSwapRunning = false;
+            outgoingSkyFade = 1f;
+
             if (runtimeSkybox != null)
             {
                 RenderSettings.skybox = authoredSkybox;
