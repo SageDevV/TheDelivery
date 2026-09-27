@@ -1688,8 +1688,21 @@ namespace TheDelivery.Narrative
             // já se encerrou antes do apagão).
             yield return new WaitForSeconds(Mathf.Max(0f, blackoutDuration));
 
-            // 11. Epílogo.
-            AdvanceToBeat(Act4Beat.Epilogue);
+            // 11. O jogo NÃO termina aqui: Clear foi levada, e a história continua na
+            //     cena Escape. O fade do GameManager escurece sobre um preto que já
+            //     está de pé, então a troca é invisível. O Beat 9 (epílogo + título)
+            //     saiu do fluxo normal — segue acessível só por debug (tecla 9 / startBeat).
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetAct(GameAct.ActEscape);
+                Debug.Log($"[Act4->Escape] SetAct(ActEscape). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
+                GameManager.Instance.StartCoroutine(
+                    GameManager.Instance.TransitionToScene(GameScene.Escape));
+            }
+            else
+            {
+                Debug.LogError("[Act4Director] GameManager.Instance nulo; impossível transicionar para a Escape.", this);
+            }
         }
 
         // --- BEAT 9: Epilogue (ÚLTIMO beat) -------------------------------

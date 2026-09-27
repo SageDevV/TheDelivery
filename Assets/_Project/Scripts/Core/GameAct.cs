@@ -26,6 +26,11 @@ namespace TheDelivery.Core
         // primeiro ato de todos, mas fica no fim do enum pela mesma razão que o
         // ActPercurso — a ordem aqui é histórico de quando o valor foi criado, não a
         // ordem da narrativa. Quem conta a cronologia é o fluxo de transições.
-        ActPesadelo
+        ActPesadelo,
+
+        // A FUGA: o ato que vem DEPOIS do Ato 4 — Clear, sequestrada no fim do
+        // apartamento, segue na cena Escape. No fim do enum pela mesma razão dos
+        // anteriores (não deslocar valores já serializados).
+        ActEscape
     }
 }

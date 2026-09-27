@@ -29,7 +29,8 @@ namespace TheDelivery.EditorTools
         /// <summary>
         /// A CRONOLOGIA, em cenas: Boot sobe o GameManager, que abre o cold open; daí cada
         /// diretor entrega ao próximo (PesadeloDirector -> Act1Director -> PercursoDirector
-        /// -> Act2Director -> Act3Director, e o Ato 4 acontece na mesma cena do 3).
+        /// -> Act2Director -> Act3Director, e o Ato 4 acontece na mesma cena do 3; o
+        /// Act4Director entrega à Escape depois do sequestro).
         /// </summary>
         private static readonly GameScene[] Flow =
         {
@@ -38,7 +39,8 @@ namespace TheDelivery.EditorTools
             GameScene.Cafeteria,   // Act1
             GameScene.Estrada,     // ActPercurso
             GameScene.Recepcao,    // Act2
-            GameScene.Apartamento  // Act3 e Act4
+            GameScene.Apartamento, // Act3 e Act4
+            GameScene.Escape       // ActEscape
         };
 
         [MenuItem("Tools/The Delivery/Boot - Registrar as cenas do fluxo (Build Settings)")]

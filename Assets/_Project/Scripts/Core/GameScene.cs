@@ -24,6 +24,10 @@ namespace TheDelivery.Core
 
         // O pesadelo do cold open (ActPesadelo). O arquivo tem que se chamar
         // Pesadelo.unity e estar no Build Settings — este enum é carregado por NOME.
-        Pesadelo
+        Pesadelo,
+
+        // A fuga (ActEscape), depois do sequestro no fim do Ato 4. O arquivo tem que se
+        // chamar Escape.unity e estar no Build Settings — este enum é carregado por NOME.
+        Escape
     }
 }

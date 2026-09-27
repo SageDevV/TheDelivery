@@ -50,6 +50,12 @@ namespace TheDelivery.Core
                  "Para iterar nos atos seguintes sem assistir ao pesadelo inteiro a cada Play. Deixe FALSE no fluxo real.")]
         [SerializeField] private bool skipNightmare = false;
 
+        // TRANSIÇÃO EM CURSO. Existe para a vigia da tela preta
+        // (<see cref="WatchStuckFade"/>) saber a diferença entre um preto que está
+        // COBRINDO uma troca — o certo — e um preto que sobrou de uma troca que
+        // parou no meio.
+        private bool transitionRunning;
+
         private void Awake()
         {
             // Singleton persistente com proteção contra duplicado: se já existe uma
@@ -107,6 +113,50 @@ namespace TheDelivery.Core
                 return;
 
             ApplyGlobalVolumeFor(scene.name);
+
+            // A VIGIA DA TELA PRETA, ligada aqui e não dentro da transição de
+            // propósito: este callback é do ENGINE, então ele chega mesmo quando a
+            // coroutine da transição não chega — e é exatamente esse o caso que a
+            // vigia existe para socorrer.
+            StartCoroutine(WatchStuckFade(scene.name));
+        }
+
+        /// <summary>
+        /// REDE DE SEGURANÇA CONTRA O JOGO PRESO NO PRETO. Some sozinha em 99% das
+        /// vezes: enquanto a <see cref="TransitionToScene"/> está conduzindo, o preto é
+        /// o certo — é ele que cobre o load — e esta rotina não faz nada.
+        ///
+        /// O QUE ELA PEGA é o caso em que a transição PAROU no meio: uma coroutine
+        /// interrompida entre o load e o clareamento deixa o jogador dentro da cena
+        /// nova, jogável, embaixo de uma tela preta que ninguém mais vai levantar. Do
+        /// lado de cá da tela isso é indistinguível de "a transição não aconteceu" — o
+        /// ato novo começou, o anoitecer começou a correr, e a tela continua preta.
+        ///
+        /// Ela clareia e AVISA: o aviso é a parte importante, porque o preto preso é
+        /// sintoma de outra coisa (algo desligou ou destruiu o GameManager no meio da
+        /// troca) e sem ele o conserto vira só um curativo silencioso.
+        /// </summary>
+        private IEnumerator WatchStuckFade(string sceneName)
+        {
+            // A ESPERA É GENEROSA: o load de uma cena grande e o fade de entrada dela
+            // cabem aqui dentro com folga, e a vigia não pode competir com a transição
+            // normal — ela é o que sobra quando a normal não termina.
+            float grace = Mathf.Max(0.01f, fadeDuration) * 2f + 1f;
+            float elapsed = 0f;
+            while (elapsed < grace)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if (transitionRunning || fadeCanvas == null || fadeCanvas.alpha <= 0.01f)
+                yield break;
+
+            Debug.LogWarning($"[GameManager] A tela preta continuou de pé {grace:0.0}s depois de \"{sceneName}\" " +
+                             "carregar, e nenhuma transição está conduzindo: alguma coisa interrompeu a coroutine da " +
+                             "troca no meio. Clareando à força para o jogo não ficar preso no preto.", this);
+
+            yield return Fade(0f);
         }
 
         /// <summary>
@@ -161,7 +211,7 @@ namespace TheDelivery.Core
         /// principal (que chamaria isto sob demanda em vez de no <see cref="Start"/>).
         ///
         /// Cronologia completa: Pesadelo -> Cafeteria (Act1) -> Estrada (ActPercurso)
-        /// -> Recepcao (Act2) -> Apartamento (Act3 e Act4).
+        /// -> Recepcao (Act2) -> Apartamento (Act3 e Act4) -> Escape (ActEscape).
         /// </summary>
         public void StartNewGame()
         {
@@ -192,24 +242,80 @@ namespace TheDelivery.Core
 
         /// <summary>
         /// Troca de cena com fade: escurece a tela, carrega a cena pelo enum e clareia
-        /// de volta — o fade (persistente) cobre o intervalo da troca. Síncrono no
-        /// load por simplicidade; pode evoluir para load assíncrono depois.
+        /// de volta — o fade (persistente) cobre o intervalo da troca.
+        ///
+        /// O LOAD É ASSÍNCRONO, e isso não é refinamento: o <c>LoadScene</c> síncrono
+        /// TRAVA O ENGINE INTEIRO enquanto a cena entra, e numa cena grande (a Estrada
+        /// desmonta ~300 MB ao chegar) isso é mais de um segundo de jogo PARADO com a
+        /// tela preta de pé. Do lado de cá da tela, tela preta congelada é
+        /// indistinguível de transição que não aconteceu — e a reação natural é achar
+        /// que travou e parar o Play, que é justamente quando ninguém chega a ver a
+        /// cena nova. Assíncrono, o quadro continua correndo durante o load.
+        ///
+        /// CADA ETAPA DEIXA UM LOG. São três (preto de pé, cena carregada, fade
+        /// clareado) porque quando esta transição falha o sintoma é sempre o mesmo —
+        /// uma tela preta — e sem os marcos não dá para saber em QUAL das três ela
+        /// parou.
         /// </summary>
         public IEnumerator TransitionToScene(GameScene scene)
         {
-            // Escurece (fade para preto).
-            yield return Fade(1f);
+            // Dois pedidos ao mesmo tempo disputariam o alpha do mesmo canvas e o
+            // segundo load atropelaria o primeiro no meio.
+            if (transitionRunning)
+            {
+                Debug.LogWarning($"[GameManager] Já existe uma transição em curso; o pedido para \"{scene}\" foi " +
+                                 "ignorado.", this);
+                yield break;
+            }
 
-            // Carrega a cena por baixo do preto.
-            SceneManager.LoadScene(scene.ToString());
+            transitionRunning = true;
 
-            // Espera um frame para a nova cena montar (Awake/Start dos objetos dela).
-            yield return null;
+            // try/finally: a trava PRECISA cair mesmo que esta coroutine seja
+            // interrompida no meio (um StopCoroutine, o Play encerrado, a cena
+            // descarregada). Sem isso, uma transição cortada deixaria o jogo achando
+            // para sempre que ainda está trocando de cena — e a vigia do preto, que
+            // depende desta trava, nunca socorreria ninguém.
+            try
+            {
+                // Escurece (fade para preto).
+                yield return Fade(1f);
 
-            // Clareia (fade de volta), revelando a cena já pronta.
-            yield return Fade(0f);
+                Debug.Log($"[GameManager] Tela preta de pé; carregando \"{scene}\".");
 
-            Debug.Log("[GameManager] Transição completa, fade clareado.");
+                AsyncOperation load = SceneManager.LoadSceneAsync(scene.ToString());
+                if (load == null)
+                {
+                    // O load assíncrono devolve null quando o nome não resolve — quase
+                    // sempre uma cena fora do Build Settings. Sem este aviso o sintoma
+                    // seria uma tela preta eterna sem uma linha de explicação.
+                    Debug.LogError($"[GameManager] Não consegui carregar a cena \"{scene}\": ela está no Build " +
+                                   "Settings? (Tools > The Delivery > Boot - Registrar as cenas do fluxo). " +
+                                   "Clareando de volta para a cena atual.", this);
+                    yield return Fade(0f);
+                    yield break;
+                }
+
+                while (!load.isDone)
+                    yield return null;
+
+                // DOIS QUADROS, e não um: o primeiro quadro de uma cena nova é o mais
+                // caro que ela vai ter (materiais, sombras e luz indireta entrando de
+                // uma vez), e começar a clarear em cima dele mostra o engasgo em vez de
+                // escondê-lo.
+                yield return null;
+                yield return null;
+
+                Debug.Log($"[GameManager] \"{scene}\" carregada; clareando.");
+
+                // Clareia (fade de volta), revelando a cena já pronta.
+                yield return Fade(0f);
+
+                Debug.Log("[GameManager] Transição completa, fade clareado.");
+            }
+            finally
+            {
+                transitionRunning = false;
+            }
         }
 
         /// <summary>
@@ -217,6 +323,12 @@ namespace TheDelivery.Core
         /// ao longo de <see cref="fadeDuration"/>. Bloqueia raycasts enquanto há preto
         /// na frente (evita cliques na cena durante a transição). Sem fadeCanvas
         /// atribuído, apenas sai — a troca de cena ainda funciona, só sem o fade.
+        ///
+        /// ANDA EM TEMPO NÃO ESCALADO: uma transição é a moldura do jogo, não parte
+        /// dele. Um <c>Time.timeScale</c> em zero (pausa, câmera lenta de cutscene,
+        /// qualquer coisa que um ato venha a fazer) congelaria o <c>deltaTime</c> e o
+        /// fade ficaria parado no meio — o jogo preso numa tela preta que não tem como
+        /// sair de lá, já que quem a levantaria é o próprio fade.
         /// </summary>
         private IEnumerator Fade(float target)
         {
@@ -228,10 +340,11 @@ namespace TheDelivery.Core
 
             float start = fadeCanvas.alpha;
             float elapsed = 0f;
-            while (elapsed < fadeDuration)
+            float duration = Mathf.Max(0.01f, fadeDuration);
+            while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
-                fadeCanvas.alpha = Mathf.Lerp(start, target, elapsed / fadeDuration);
+                elapsed += Time.unscaledDeltaTime;
+                fadeCanvas.alpha = Mathf.Lerp(start, target, elapsed / duration);
                 yield return null;
             }
 
