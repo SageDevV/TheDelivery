@@ -105,3 +105,7 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Pacotes originais baixados do Meshy (o FBX extraido e o que entra no projeto)
+/[Aa]ssets/Imports/MeshyImports/*.zip
+/[Aa]ssets/Imports/MeshyImports/*.zip.meta
