@@ -38,6 +38,19 @@ namespace TheDelivery.Narrative
                 DialogueSystem.Instance.Show(dialogue);
         }
 
+        /// <summary>
+        /// O componente <typeparamref name="T"/> no próprio <paramref name="go"/> ou, se
+        /// não houver, no primeiro filho que tiver.
+        ///
+        /// NÃO escrever isto como <c>GetComponent&lt;T&gt;() ?? GetComponentInChildren&lt;T&gt;()</c>:
+        /// no Editor, um GetComponent que não acha nada devolve um objeto "nulo falso"
+        /// (para a mensagem de erro do Unity) que o <c>??</c> do C# não reconhece como
+        /// nulo — a busca nos filhos nunca roda no Play do Editor, só no build.
+        /// TryGetComponent não tem esse problema.
+        /// </summary>
+        public static T FindInSelfOrChildren<T>(GameObject go) where T : Component =>
+            go.TryGetComponent(out T own) ? own : go.GetComponentInChildren<T>();
+
         /// <summary>Distância no plano XZ — a altura não conta para "chegou".</summary>
         public static float PlanarDistance(Vector3 a, Vector3 b)
         {

@@ -969,10 +969,7 @@ namespace TheDelivery.Narrative
                 return;
             }
 
-            GameManager.Instance.SetAct(GameAct.Act2);
-            Debug.Log($"[Percurso->Act2] SetAct(Act2). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
-            GameManager.Instance.StartCoroutine(
-                GameManager.Instance.TransitionToScene(GameScene.Recepcao));
+            GameManager.Instance.GoToAct(GameAct.Act2, GameScene.Recepcao);
         }
 
         // --- O assovio ---------------------------------------------------------

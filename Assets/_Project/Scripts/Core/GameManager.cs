@@ -234,6 +234,33 @@ namespace TheDelivery.Core
         public void SetAct(GameAct act) => CurrentAct = act;
 
         /// <summary>
+        /// Avança para o próximo ato TROCANDO DE CENA: marca o ato e conduz a transição
+        /// com fade. É o caminho que os diretores usam ao fim do ato.
+        ///
+        /// A coroutine roda NESTE componente (persistente) de propósito: rodando no
+        /// diretor, ela morreria no unload da cena dele, no meio do load, e o jogo
+        /// ficaria preso no preto. Centralizar aqui torna esse erro impossível de repetir.
+        ///
+        /// Recusa o pedido INTEIRO (ato e cena) se já houver uma transição em curso:
+        /// marcar o ato e deixar a cena para trás deixaria os dois dessincronizados.
+        /// Devolve false nesse caso.
+        /// </summary>
+        public bool GoToAct(GameAct act, GameScene scene)
+        {
+            if (transitionRunning)
+            {
+                Debug.LogWarning($"[GameManager] Transição em curso; pedido para {act} ({scene}) ignorado.", this);
+                return false;
+            }
+
+            GameAct previous = CurrentAct;
+            CurrentAct = act;
+            Debug.Log($"[GameManager] {previous} -> {act}; carregando \"{scene}\".", this);
+            StartCoroutine(TransitionToScene(scene));
+            return true;
+        }
+
+        /// <summary>
         /// Carrega uma cena IMEDIATAMENTE (sem fade), pelo enum. Como o nome do valor
         /// do enum bate com o nome do arquivo .unity, <c>ToString()</c> resolve.
         /// Para uma troca suave, prefira <see cref="TransitionToScene"/>.

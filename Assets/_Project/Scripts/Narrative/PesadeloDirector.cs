@@ -1170,6 +1170,20 @@ namespace TheDelivery.Narrative
         // 0.8 no prefab — devolver 1 aceleraria o agarrão sem ninguém entender por quê.
         private float grabAnimatorSpeed = 1f;
 
+        private void OnDestroy()
+        {
+            // O material dos riscos da queda (e a textura dele) é montado em runtime quando
+            // o Inspector não traz um: sem dono no disco, ninguém mais o destrói.
+            if (fallStreakRuntimeMaterial != null)
+            {
+                Texture streakTexture = fallStreakRuntimeMaterial.mainTexture;
+                if (streakTexture != null)
+                    Destroy(streakTexture);
+                Destroy(fallStreakRuntimeMaterial);
+                fallStreakRuntimeMaterial = null;
+            }
+        }
+
         private void Start()
         {
             if (playerController == null)
@@ -5284,10 +5298,7 @@ namespace TheDelivery.Narrative
 
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetAct(GameAct.Act1);
-                Debug.Log($"[Pesadelo->Act1] SetAct(Act1). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
-                GameManager.Instance.StartCoroutine(
-                    GameManager.Instance.TransitionToScene(GameScene.Cafeteria));
+                GameManager.Instance.GoToAct(GameAct.Act1, GameScene.Cafeteria);
             }
             else
             {

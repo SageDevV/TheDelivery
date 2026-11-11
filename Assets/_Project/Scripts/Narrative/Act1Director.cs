@@ -655,10 +655,7 @@ namespace TheDelivery.Narrative
             // o Act2 e carrega a Recepção ao chegar no destino.
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetAct(GameAct.ActPercurso);
-                Debug.Log($"[Act1->Percurso] SetAct(ActPercurso). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
-                GameManager.Instance.StartCoroutine(
-                    GameManager.Instance.TransitionToScene(GameScene.Estrada));
+                GameManager.Instance.GoToAct(GameAct.ActPercurso, GameScene.Estrada);
             }
             else
             {

@@ -40,6 +40,12 @@ namespace TheDelivery.Narrative
         private readonly Queue<ThoughtLine[]> queue = new();
         private Coroutine runner;
 
+        // O fade-out rápido da interrupção roda SOLTO (fora do runner). Guardado para
+        // ser parado quando um pensamento novo começa: sem isso os dois fades disputam
+        // o alpha do mesmo CanvasGroup, e o fade-out (que termina depois) apagaria o
+        // pensamento novo no meio do fade-in — o caso do ShowImmediate.
+        private Coroutine interruptFade;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -104,7 +110,15 @@ namespace TheDelivery.Narrative
                 StopCoroutine(runner);
                 runner = null;
             }
-            StartCoroutine(display.FadeOut(interruptFadeTime));
+
+            // Desligado no Awake (sem display) ou com o GameObject inativo, não há o que
+            // apagar — e StartCoroutine num objeto inativo lança erro. O DialogueSystem
+            // chama este método em toda conversa, então ele não pode quebrar.
+            if (display == null || !isActiveAndEnabled)
+                return;
+
+            StopInterruptFade();
+            interruptFade = StartCoroutine(display.FadeOut(interruptFadeTime));
         }
 
         /// <summary>Interrompe o atual e mostra este AGORA, à frente de tudo.</summary>
@@ -119,7 +133,19 @@ namespace TheDelivery.Narrative
         private void EnsureRunning()
         {
             if (runner == null && isActiveAndEnabled)
+            {
+                StopInterruptFade();
                 runner = StartCoroutine(ProcessQueue());
+            }
+        }
+
+        private void StopInterruptFade()
+        {
+            if (interruptFade == null)
+                return;
+
+            StopCoroutine(interruptFade);
+            interruptFade = null;
         }
 
         private IEnumerator ProcessQueue()

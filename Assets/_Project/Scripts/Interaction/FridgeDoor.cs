@@ -216,7 +216,13 @@ namespace TheDelivery.Interaction
                 yield return null;
             }
 
-            SetYaw(toYaw);
+            FinishAnimation(open);
+        }
+
+        /// <summary>Leva a porta ao estado final de uma animação (abrir ou fechar) e avisa.</summary>
+        private void FinishAnimation(bool open)
+        {
+            SetYaw(open ? closedYaw + openAngle : closedYaw);
             state = open ? DoorState.Open : DoorState.Closed;
             animationRoutine = null;
 
@@ -224,6 +230,17 @@ namespace TheDelivery.Interaction
                 SetLight(false); // só apaga quando fecha de vez
 
             StateChanged?.Invoke(open);
+        }
+
+        /// <summary>
+        /// O Unity PARA as coroutines quando o objeto é desligado. Desligada no meio da
+        /// animação, a porta ficaria para sempre em Opening/Closing (CanInteract false,
+        /// nunca mais abre). Termina a animação na hora, como se ela tivesse acabado.
+        /// </summary>
+        private void OnDisable()
+        {
+            if (state == DoorState.Opening || state == DoorState.Closing)
+                FinishAnimation(open: state == DoorState.Opening);
         }
 
         private void SetYaw(float yaw)

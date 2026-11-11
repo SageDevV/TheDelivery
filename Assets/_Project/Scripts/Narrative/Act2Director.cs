@@ -292,7 +292,7 @@ namespace TheDelivery.Narrative
             salaDoorOpened = false;
             if (salaDoor != null)
             {
-                salaDoor.Arm(this);
+                salaDoor.Arm(OnSalaDoorOpened);
                 yield return new WaitUntil(() => salaDoorOpened);
             }
             else
@@ -308,7 +308,7 @@ namespace TheDelivery.Narrative
         /// interação). Só tem efeito durante a investigação; liga o flag que o
         /// <see cref="BeatInvestigation"/> aguarda.
         /// </summary>
-        public void OnSalaDoorOpened()
+        private void OnSalaDoorOpened()
         {
             salaDoorOpened = true;
         }
@@ -427,10 +427,7 @@ namespace TheDelivery.Narrative
 
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetAct(GameAct.Act3);
-                Debug.Log($"[Act2->Act3] SetAct(Act3). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
-                GameManager.Instance.StartCoroutine(
-                    GameManager.Instance.TransitionToScene(GameScene.Apartamento));
+                GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartamento);
             }
             else
             {

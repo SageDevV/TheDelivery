@@ -976,8 +976,7 @@ namespace TheDelivery.Narrative
 
                 // Referência à FSM para PlayerIsSafe (Beat 4) consultar o estado.
                 // GetComponentInChildren: o AntagonistAI pode estar num filho do GO.
-                antagonistAI = antagonist.GetComponent<AntagonistAI>()
-                    ?? antagonist.GetComponentInChildren<AntagonistAI>();
+                antagonistAI = FindInSelfOrChildren<AntagonistAI>(antagonist);
                 if (antagonistAI == null)
                     Debug.LogWarning("[Act4Director] AntagonistAI não encontrado no antagonist; PlayerIsSafe usará só o estado de esconderijo.", this);
             }
@@ -1185,8 +1184,7 @@ namespace TheDelivery.Narrative
             // Arma o celular: só agora o componente DeadPhone aceita interação.
             if (phoneObject != null)
             {
-                DeadPhone phone = phoneObject.GetComponent<DeadPhone>()
-                    ?? phoneObject.GetComponentInChildren<DeadPhone>();
+                DeadPhone phone = FindInSelfOrChildren<DeadPhone>(phoneObject);
                 if (phone != null)
                 {
                     phone.Arm(OnPhonePickedUp);
@@ -1279,8 +1277,7 @@ namespace TheDelivery.Narrative
             // Arma o fixo: só agora o componente Landline aceita interação.
             if (landlineObject != null)
             {
-                Landline ll = landlineObject.GetComponent<Landline>()
-                    ?? landlineObject.GetComponentInChildren<Landline>();
+                Landline ll = FindInSelfOrChildren<Landline>(landlineObject);
                 if (ll != null)
                 {
                     ll.Arm(OnLandlinePickedUp);
@@ -1471,8 +1468,7 @@ namespace TheDelivery.Narrative
                 antagonist.SetActive(true);
 
                 if (antagonistAI == null)
-                    antagonistAI = antagonist.GetComponent<AntagonistAI>()
-                        ?? antagonist.GetComponentInChildren<AntagonistAI>();
+                    antagonistAI = FindInSelfOrChildren<AntagonistAI>(antagonist);
 
                 if (antagonistAI != null)
                     antagonistAI.ResumeFromDirector(); // religa a FSM suspensa no Beat 4.
@@ -1686,10 +1682,7 @@ namespace TheDelivery.Narrative
             //     saiu do fluxo normal — segue acessível só por debug (tecla 9 / startBeat).
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetAct(GameAct.ActEscape);
-                Debug.Log($"[Act4->Escape] SetAct(ActEscape). CurrentAct agora = {GameManager.Instance.CurrentAct}", this);
-                GameManager.Instance.StartCoroutine(
-                    GameManager.Instance.TransitionToScene(GameScene.Escape));
+                GameManager.Instance.GoToAct(GameAct.ActEscape, GameScene.Escape);
             }
             else
             {

@@ -1,5 +1,5 @@
+using System;
 using System.Collections;
-using TheDelivery.Narrative;
 using UnityEngine;
 
 namespace TheDelivery.Interaction
@@ -8,15 +8,15 @@ namespace TheDelivery.Interaction
     /// Porta da sala de produtos (Ato 2, recepção). É o GATE do beat
     /// <c>Investigation</c>: ao ser aberta, dispara o susto do zelador. Implementa
     /// <see cref="IInteractable"/> para ser detectada pelo PlayerInteraction, mas só
-    /// responde DEPOIS de ser ARMADA pelo <see cref="Act2Director"/> (durante o beat
-    /// Investigation) — espelhando o padrão do <see cref="DeadPhone"/>. Antes disso
+    /// responde DEPOIS de ser ARMADA pelo diretor do ato (o Act2Director, durante o
+    /// beat Investigation) — mesmo contrato do <see cref="DeadPhone"/>. Antes disso
     /// <see cref="CanInteract"/> é false, então nem o prompt "[E] Abrir" aparece.
     ///
-    /// Não conhece a lógica do beat: ao ser usada, marca <see cref="WasOpened"/> e
-    /// NOTIFICA o Director via <see cref="Act2Director.OnSalaDoorOpened"/>. O Director
-    /// é injetado em runtime por <see cref="Arm"/> (evita referência circular
-    /// serializada no Inspector). A folha gira em torno de uma DOBRADIÇA (não no
-    /// próprio centro) — ver <see cref="OpenVisual"/>.
+    /// Não conhece a lógica do beat nem quem a armou: ao ser usada, marca
+    /// <see cref="WasOpened"/> e INVOCA o callback registrado em <see cref="Arm"/>.
+    /// Injetar o callback em runtime evita referência circular serializada no
+    /// Inspector e mantém o módulo Interaction sem depender de Narrative. A folha
+    /// gira em torno de uma DOBRADIÇA (não no próprio centro) — ver <see cref="OpenVisual"/>.
     /// </summary>
     public sealed class SalaProdutosDoor : MonoBehaviour, IInteractable
     {
@@ -34,19 +34,19 @@ namespace TheDelivery.Interaction
         [Tooltip("Duração (s) da animação de abrir.")]
         [SerializeField] private float openDuration = 0.6f;
 
-        private Act2Director director;
+        private Action onOpened;
         private bool armed;
 
         /// <summary>True após a porta ser aberta. O Director pode observar este flag
-        /// como alternativa ao callback (ele usa o callback <see cref="Act2Director.OnSalaDoorOpened"/>).</summary>
+        /// como alternativa ao callback passado em <see cref="Arm"/>.</summary>
         public bool WasOpened { get; private set; }
 
         // --- IInteractable -------------------------------------------------
 
         public string InteractionPrompt => interactionPrompt;
 
-        /// <summary>Só interativa após o Director armar (durante o beat Investigation) e antes de ser aberta.</summary>
-        public bool CanInteract => armed && !WasOpened && director != null;
+        /// <summary>Só interativa após o Director armar (com um callback) e antes de ser aberta.</summary>
+        public bool CanInteract => armed && !WasOpened && onOpened != null;
 
         /// <summary>Chamado pelo PlayerInteraction ao apertar a tecla de interação: avisa o Director.</summary>
         public void Interact(PlayerInteraction source)
@@ -59,18 +59,19 @@ namespace TheDelivery.Interaction
 
             StartCoroutine(OpenVisual());
 
-            director.OnSalaDoorOpened();
+            onOpened.Invoke();
         }
 
         // --- API do Director ----------------------------------------------
 
         /// <summary>
-        /// Liga a interação e registra o Director a ser notificado. Chamado pelo
-        /// <see cref="Act2Director"/> ao entrar no beat Investigation.
+        /// Liga a interação e registra o callback a ser invocado quando o player abrir
+        /// a porta. Chamado pelo diretor do ato ao entrar no beat Investigation.
+        /// Sobrescreve um callback anterior.
         /// </summary>
-        public void Arm(Act2Director owner)
+        public void Arm(Action onOpened)
         {
-            director = owner;
+            this.onOpened = onOpened;
             armed = true;
         }
 

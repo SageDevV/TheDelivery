@@ -715,8 +715,7 @@ namespace TheDelivery.Narrative
             DeadPhone phone = null;
             if (phoneObject != null)
             {
-                phone = phoneObject.GetComponent<DeadPhone>()
-                    ?? phoneObject.GetComponentInChildren<DeadPhone>();
+                phone = FindInSelfOrChildren<DeadPhone>(phoneObject);
                 if (phone == null)
                     Debug.LogError("[Act3Director] phoneObject sem componente DeadPhone; sem celular para pedir.", this);
             }
@@ -1222,8 +1221,7 @@ namespace TheDelivery.Narrative
             Landline phone = null;
             if (ringingPhoneObject != null)
             {
-                phone = ringingPhoneObject.GetComponent<Landline>()
-                    ?? ringingPhoneObject.GetComponentInChildren<Landline>();
+                phone = FindInSelfOrChildren<Landline>(ringingPhoneObject);
                 if (phone == null)
                     Debug.LogError("[Act3Director] ringingPhoneObject sem componente Landline; o telefone não ficará interativo.", this);
             }
