@@ -56,14 +56,14 @@ namespace TheDelivery.Player
         {
             if (inputActions == null)
             {
-                Debug.LogError($"{nameof(CameraLean)}: InputActionAsset não atribuído no Inspector.", this);
+                Debug.LogError("[CameraLean] InputActionAsset não atribuído no Inspector.", this);
                 enabled = false;
                 return;
             }
 
             if (cameraTransform == null)
             {
-                Debug.LogError($"{nameof(CameraLean)}: cameraTransform (Main Camera) não atribuído no Inspector.", this);
+                Debug.LogError("[CameraLean] cameraTransform (Main Camera) não atribuído no Inspector.", this);
                 enabled = false;
                 return;
             }

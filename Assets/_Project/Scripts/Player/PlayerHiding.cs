@@ -31,6 +31,7 @@ namespace TheDelivery.Player
         private const string ActionMapName = "Player";
         private const string LookActionName = "Look";
         private const string InteractActionName = "Interact";
+        private const string AntagonistTag = "Antagonist";
 
         public static PlayerHiding Instance { get; private set; }
 
@@ -94,7 +95,7 @@ namespace TheDelivery.Player
         {
             if (Instance != null && Instance != this)
             {
-                Debug.LogWarning($"{nameof(PlayerHiding)}: instância duplicada — destruindo a nova.", this);
+                Debug.LogWarning("[PlayerHiding] Instância duplicada — destruindo a nova.", this);
                 Destroy(this);
                 return;
             }
@@ -102,7 +103,7 @@ namespace TheDelivery.Player
 
             if (playerController == null || characterController == null || cameraHolder == null || inputActions == null)
             {
-                Debug.LogError($"{nameof(PlayerHiding)}: referências não atribuídas no Inspector.", this);
+                Debug.LogError("[PlayerHiding] Referências não atribuídas no Inspector.", this);
                 enabled = false;
                 return;
             }
@@ -118,7 +119,7 @@ namespace TheDelivery.Player
             // precisa saber se ele estava vendo o player no instante da entrada).
             if (antagonistVision == null || antagonistAI == null)
             {
-                GameObject antagonist = GameObject.FindGameObjectWithTag("Antagonist");
+                GameObject antagonist = GameObject.FindGameObjectWithTag(AntagonistTag);
                 if (antagonist != null)
                 {
                     if (antagonistVision == null) antagonistVision = antagonist.GetComponent<AIVision>();

@@ -56,7 +56,7 @@ namespace TheDelivery.AI
 
             if (patrolPoints == null || patrolPoints.Length == 0)
             {
-                Debug.LogError($"{nameof(PatrolBehavior)}: nenhum ponto de patrulha atribuído.", this);
+                Debug.LogError("[PatrolBehavior] Nenhum ponto de patrulha atribuído.", this);
                 return;
             }
 

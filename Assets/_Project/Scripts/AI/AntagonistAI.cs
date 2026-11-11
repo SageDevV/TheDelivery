@@ -42,6 +42,8 @@ namespace TheDelivery.AI
             Attack       // alcançou o player (game over placeholder)
         }
 
+        private const string PlayerTag = "Player";
+
         [Header("References")]
         [Tooltip("NavMeshAgent do antagonista. Se vazio, busca via GetComponent no Start.")]
         [SerializeField] private NavMeshAgent agent;
@@ -51,6 +53,8 @@ namespace TheDelivery.AI
         [SerializeField] private AIVision vision;
         [Tooltip("Sensor de audição. Se vazio, busca via GetComponent no Start.")]
         [SerializeField] private AIHearing hearing;
+        [Tooltip("PlayerController travado quando o antagonista alcança o player. Se vazio, busca pela tag 'Player' no Start.")]
+        [SerializeField] private PlayerController playerController;
 
         [Header("Speeds")]
         [Tooltip("Velocidade ao patrulhar (m/s). Deve casar com o patrolSpeed do PatrolBehavior.")]
@@ -101,8 +105,6 @@ namespace TheDelivery.AI
         /// <summary>Estado atual da FSM (útil para depuração e para outros sistemas).</summary>
         public AIState CurrentState { get; private set; } = AIState.Patrol;
 
-        private PlayerController playerController;
-
         private float stateTimer;          // cronômetro do estado atual (Suspicious/Search)
         private float chaseLostTimer;       // tempo desde que perdeu o player de vista (Chase)
         private bool reachedTarget;         // já chegou ao destino do estado atual?
@@ -146,9 +148,14 @@ namespace TheDelivery.AI
             if (animator != null)
                 sneakLayerIndex = animator.GetLayerIndex(sneakLayerName);
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-                playerController = player.GetComponent<PlayerController>();
+            // Referência serializada primeiro; a busca por tag é só o fallback para a
+            // cena em que o campo ficou vazio (mesmo padrão do PlayerHiding).
+            if (playerController == null)
+            {
+                GameObject player = GameObject.FindGameObjectWithTag(PlayerTag);
+                if (player != null)
+                    playerController = player.GetComponent<PlayerController>();
+            }
 
             // Inicia patrulhando. O PatrolBehavior inicia a própria rotina no Start dele;
             // aqui só garantimos a velocidade e o estado inicial.
@@ -491,7 +498,7 @@ namespace TheDelivery.AI
                     StopAgent();
                     if (playerController != null)
                         playerController.CanMove = false;
-                    Debug.Log("GAME OVER - O antagonista alcançou o player", this);
+                    Debug.Log("[AntagonistAI] GAME OVER - o antagonista alcançou o player.", this);
                     OnPlayerCaught();
                     break;
             }

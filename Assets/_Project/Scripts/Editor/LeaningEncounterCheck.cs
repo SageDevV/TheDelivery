@@ -504,10 +504,10 @@ namespace TheDelivery.EditorTools
         private static float EstimateDialogue(Scene scene, DialogueData dialogue, out int lineCount)
         {
             lineCount = 0;
-            if (dialogue == null || dialogue.lines == null)
+            if (dialogue == null || dialogue.Lines == null)
                 return 0f;
 
-            lineCount = dialogue.lines.Length;
+            lineCount = dialogue.Lines.Length;
 
             float baseTime = 1.2f, timePerChar = 0.045f, fade = 0.3f, gap = 0.3f;
 
@@ -522,7 +522,7 @@ namespace TheDelivery.EditorTools
             }
 
             float total = 0f;
-            foreach (var line in dialogue.lines)
+            foreach (var line in dialogue.Lines)
             {
                 int len = line.text != null ? line.text.Length : 0;
                 total += fade + (baseTime + len * timePerChar + line.extraHold) + fade + gap;

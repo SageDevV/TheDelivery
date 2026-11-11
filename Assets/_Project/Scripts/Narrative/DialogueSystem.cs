@@ -83,7 +83,7 @@ namespace TheDelivery.Narrative
         /// <summary>Inicia a exibição sequencial das falas da conversa.</summary>
         public void Show(DialogueData dialogue)
         {
-            if (dialogue == null || dialogue.lines == null || dialogue.lines.Length == 0)
+            if (dialogue == null || dialogue.Lines == null || dialogue.Lines.Length == 0)
                 return;
 
             // Diálogo tem prioridade sobre a voz interna: ao entrar uma conversa,
@@ -101,7 +101,7 @@ namespace TheDelivery.Narrative
 
         private IEnumerator RunDialogue(DialogueData dialogue)
         {
-            foreach (var line in dialogue.lines)
+            foreach (var line in dialogue.Lines)
             {
                 // Monta "Nome: fala" (ou só a fala se sem nome).
                 string display = string.IsNullOrEmpty(line.speaker)

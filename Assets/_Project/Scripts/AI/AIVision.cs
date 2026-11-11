@@ -13,6 +13,12 @@ namespace TheDelivery.AI
     /// </summary>
     public sealed class AIVision : MonoBehaviour
     {
+        private const string PlayerTag = "Player";
+
+        [Header("References")]
+        [Tooltip("Transform do player (a raiz, com a tag 'Player'). Se vazio, busca pela tag 'Player' no Start.")]
+        [SerializeField] private Transform playerTransform;
+
         [Header("Vision Cone")]
         [Tooltip("Ângulo total do cone de visão, em graus (60 = 30° para cada lado do forward).")]
         [SerializeField] private float viewAngle = 60f;
@@ -40,20 +46,28 @@ namespace TheDelivery.AI
         /// <summary>Última posição em que o player foi efetivamente visto (útil para o estado de busca).</summary>
         public Vector3 LastKnownPlayerPosition { get; private set; }
 
-        /// <summary>Referência cacheada do transform do player (null se não encontrado).</summary>
-        public Transform PlayerTransform { get; private set; }
+        /// <summary>
+        /// Transform do player: o atribuído no Inspector ou, se vazio, o resolvido pela
+        /// tag no Start (null se não encontrado).
+        /// </summary>
+        public Transform PlayerTransform => playerTransform;
 
         private void Start()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
+            // Referência serializada primeiro; a busca por tag é só o fallback para a
+            // cena em que o campo ficou vazio (mesmo padrão do PlayerHiding).
+            if (playerTransform == null)
             {
-                Debug.LogError($"{nameof(AIVision)}: nenhum GameObject com tag 'Player' encontrado.", this);
-                enabled = false;
-                return;
+                GameObject player = GameObject.FindGameObjectWithTag(PlayerTag);
+                if (player != null)
+                    playerTransform = player.transform;
             }
 
-            PlayerTransform = player.transform;
+            if (playerTransform == null)
+            {
+                Debug.LogError("[AIVision] Player Transform não atribuído e nenhum GameObject com tag 'Player' encontrado.", this);
+                enabled = false;
+            }
         }
 
         private void Update()

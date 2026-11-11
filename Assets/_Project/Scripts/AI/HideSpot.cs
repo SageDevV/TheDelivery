@@ -44,7 +44,7 @@ namespace TheDelivery.AI
             if (PlayerHiding.Instance != null)
                 PlayerHiding.Instance.EnterHideSpot(this);
             else
-                Debug.LogError($"{nameof(HideSpot)}: PlayerHiding.Instance não encontrado na cena.", this);
+                Debug.LogError("[HideSpot] PlayerHiding.Instance não encontrado na cena.", this);
         }
 
         // --- API pública ---------------------------------------------------

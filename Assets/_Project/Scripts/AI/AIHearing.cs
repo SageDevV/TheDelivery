@@ -13,6 +13,12 @@ namespace TheDelivery.AI
     /// </summary>
     public sealed class AIHearing : MonoBehaviour
     {
+        private const string PlayerTag = "Player";
+
+        [Header("References")]
+        [Tooltip("Emissor de ruído do player. Se vazio, busca pela tag 'Player' no Start.")]
+        [SerializeField] private PlayerNoise playerNoise;
+
         [Header("Hearing")]
         [Tooltip("Desenha a linha de audição e o marcador da última posição ouvida.")]
         [SerializeField] private bool showHearingGizmo = true;
@@ -24,26 +30,30 @@ namespace TheDelivery.AI
         public Vector3 LastHeardPosition { get; private set; }
 
         private Transform playerTransform;
-        private PlayerNoise playerNoise;
 
         private void Start()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
-            {
-                Debug.LogError($"{nameof(AIHearing)}: nenhum GameObject com tag 'Player' encontrado.", this);
-                enabled = false;
-                return;
-            }
-
-            playerTransform = player.transform;
-            playerNoise = player.GetComponent<PlayerNoise>();
-
+            // Referência serializada primeiro; a busca por tag é só o fallback para a
+            // cena em que o campo ficou vazio (mesmo padrão do PlayerHiding).
             if (playerNoise == null)
             {
-                Debug.LogError($"{nameof(AIHearing)}: o Player não possui {nameof(PlayerNoise)}.", this);
-                enabled = false;
+                GameObject player = GameObject.FindGameObjectWithTag(PlayerTag);
+                if (player == null)
+                {
+                    Debug.LogError("[AIHearing] Player Noise não atribuído e nenhum GameObject com tag 'Player' encontrado.", this);
+                    enabled = false;
+                    return;
+                }
+
+                if (!player.TryGetComponent(out playerNoise))
+                {
+                    Debug.LogError("[AIHearing] O Player não possui PlayerNoise.", this);
+                    enabled = false;
+                    return;
+                }
             }
+
+            playerTransform = playerNoise.transform;
         }
 
         private void Update()

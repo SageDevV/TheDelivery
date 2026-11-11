@@ -7,7 +7,7 @@ namespace TheDelivery.Narrative
     /// <see cref="ThoughtData"/>, mas cada linha tem um locutor (nome) além
     /// do texto. Disparado via <see cref="DialogueSystem"/>.
     /// </summary>
-    [CreateAssetMenu(fileName = "Dialogue", menuName = "The Delivery/Dialogue Data")]
+    [CreateAssetMenu(menuName = "The Delivery/Dialogue", fileName = "Dialogue_")]
     public sealed class DialogueData : ScriptableObject
     {
         [System.Serializable]
@@ -28,6 +28,8 @@ namespace TheDelivery.Narrative
         }
 
         [Tooltip("As falas da conversa, em ordem.")]
-        public Line[] lines;
+        [SerializeField] private Line[] lines;
+
+        public Line[] Lines => lines;
     }
 }

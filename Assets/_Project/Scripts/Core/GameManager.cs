@@ -105,6 +105,9 @@ namespace TheDelivery.Core
             // Só o singleton de verdade chegou a se inscrever; num duplicado o
             // Awake sai antes disso e este -= é inofensivo (o delegate nem bate).
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+
+            if (Instance == this)
+                Instance = null;
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)

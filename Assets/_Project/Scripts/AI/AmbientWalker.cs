@@ -149,7 +149,7 @@ namespace TheDelivery.AI
             if (animationRootBone != null)
                 animationRootRestPosition = animationRootBone.localPosition;
             else if (keepAnimationInPlace)
-                Debug.LogWarning($"{nameof(AmbientWalker)}: 'Keep Animation In Place' está ligado mas o " +
+                Debug.LogWarning("[AmbientWalker] 'Keep Animation In Place' está ligado mas o " +
                                  "osso-raiz não foi encontrado — atribua 'Animation Root Bone' à mão " +
                                  "(o quadril do esqueleto).", this);
         }
@@ -162,14 +162,14 @@ namespace TheDelivery.AI
 
             if (walkSpeed <= 0f)
             {
-                Debug.LogError($"{nameof(AmbientWalker)}: 'Walk Speed' precisa ser > 0.", this);
+                Debug.LogError("[AmbientWalker] 'Walk Speed' precisa ser > 0.", this);
                 enabled = false;
                 return;
             }
 
             if (Vector3.Distance(origin, destination) <= arrivalThreshold)
             {
-                Debug.LogError($"{nameof(AmbientWalker)}: destino coincide com a origem — atribua um " +
+                Debug.LogError("[AmbientWalker] Destino coincide com a origem — atribua um " +
                                "'End Point' longe daqui ou aumente o 'Walk Distance'.", this);
                 enabled = false;
                 return;
@@ -363,7 +363,7 @@ namespace TheDelivery.AI
                                        Mathf.Max(minRestartDelay, maxRestartDelay));
 
             if (logCycle)
-                Debug.Log($"{nameof(AmbientWalker)}: trajeto completo em {destination} — " +
+                Debug.Log($"[AmbientWalker] Trajeto completo em {destination} — " +
                           $"renasce na origem em {delay:0.0}s.", this);
 
             if (delay <= 0f)
@@ -387,7 +387,7 @@ namespace TheDelivery.AI
             transform.rotation = travelRotation;
 
             if (logCycle)
-                Debug.Log($"{nameof(AmbientWalker)}: renasceu na origem {origin}.", this);
+                Debug.Log($"[AmbientWalker] Renasceu na origem {origin}.", this);
 
             StartWalking();
         }
