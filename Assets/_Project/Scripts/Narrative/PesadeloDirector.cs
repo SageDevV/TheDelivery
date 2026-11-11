@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using TheDelivery.Core;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
+using static TheDelivery.Narrative.DirectorUtility;
 
 namespace TheDelivery.Narrative
 {
@@ -1286,8 +1287,10 @@ namespace TheDelivery.Narrative
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugMode)
                 HandleDebugKeys();
+#endif
         }
 
         // --- Avanço de beats ----------------------------------------------
@@ -6122,12 +6125,7 @@ namespace TheDelivery.Narrative
             StartGripLoop();
         }
 
-        /// <summary>Dispara um pensamento via ThoughtSystem, se ambos existirem.</summary>
-        private void ShowThought(ThoughtData thought)
-        {
-            if (thought != null && ThoughtSystem.Instance != null)
-                ThoughtSystem.Instance.Show(thought);
-        }
+        // ShowThought/PlanarDistance vêm de DirectorUtility (using static).
 
         /// <summary>
         /// Põe o player no <see cref="spawnPoint"/>, no início do corredor. Sem o ponto
@@ -6257,13 +6255,7 @@ namespace TheDelivery.Narrative
         /// <see cref="groundMask"/>), partindo de 1 m acima. Se nada for atingido,
         /// devolve a posição original.
         /// </summary>
-        private Vector3 SnapToGround(Vector3 position)
-        {
-            Vector3 origin = position + Vector3.up * 1f;
-            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 4f, groundMask, QueryTriggerInteraction.Ignore))
-                return new Vector3(position.x, hit.point.y, position.z);
-            return position;
-        }
+        private Vector3 SnapToGround(Vector3 position) => DirectorUtility.SnapToGround(position, groundMask);
 
         /// <summary>
         /// True quando a Clear CHEGOU a um ponto do corredor — dentro do
@@ -6315,19 +6307,16 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
-        private bool PlayerInZone(Transform zone, float radius)
-        {
-            return PlanarDistance(playerController.transform.position, zone.position) <= radius;
-        }
+        private bool PlayerInZone(Transform zone, float radius) =>
+            DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
 
-        /// <summary>Distância no plano XZ — a altura não conta para "chegou".</summary>
-        private static float PlanarDistance(Vector3 a, Vector3 b)
-        {
-            float dx = a.x - b.x;
-            float dz = a.z - b.z;
-            return Mathf.Sqrt(dx * dx + dz * dz);
-        }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 
+        /// <summary>
+        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
+        /// <see cref="debugMode"/>). Só existe no Editor e em Development Build: no
+        /// build de release as teclas somem na compilação, mesmo com a flag ligada na cena.
+        /// </summary>
         private void HandleDebugKeys()
         {
             Keyboard kb = Keyboard.current;
@@ -6345,6 +6334,8 @@ namespace TheDelivery.Narrative
             else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(PesadeloBeat.TheGrab);
             else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(PesadeloBeat.TheCut);
         }
+
+#endif
 
 #if UNITY_EDITOR
         // Visualiza os pontos-chave no Editor para facilitar o setup do corredor.

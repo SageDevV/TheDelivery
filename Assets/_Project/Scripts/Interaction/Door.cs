@@ -62,7 +62,7 @@ namespace TheDelivery.Interaction
 
         private DoorState state;
         private float closedYaw;   // rotação Y local da porta fechada
-        private Coroutine animation;
+        private Coroutine animationRoutine;
         // Vigia o jogador após abrir para fechar a porta quando ele a atravessa.
         private Coroutine autoCloseRoutine;
 
@@ -237,9 +237,9 @@ namespace TheDelivery.Interaction
 
         private void StartAnim(bool open)
         {
-            if (animation != null)
-                StopCoroutine(animation);
-            animation = StartCoroutine(AnimateRoutine(open));
+            if (animationRoutine != null)
+                StopCoroutine(animationRoutine);
+            animationRoutine = StartCoroutine(AnimateRoutine(open));
         }
 
         private IEnumerator AnimateRoutine(bool open)
@@ -261,7 +261,7 @@ namespace TheDelivery.Interaction
 
             SetYaw(toYaw);
             state = open ? DoorState.Open : DoorState.Closed;
-            animation = null;
+            animationRoutine = null;
             StateChanged?.Invoke(open);
         }
 

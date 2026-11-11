@@ -2,6 +2,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using TheDelivery.AI;
@@ -9,6 +10,7 @@ using TheDelivery.Core;
 using TheDelivery.FX;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
+using static TheDelivery.Narrative.DirectorUtility;
 
 namespace TheDelivery.Narrative
 {
@@ -74,8 +76,6 @@ namespace TheDelivery.Narrative
         [SerializeField] private float blackScreenDuration = 2f;
         [Tooltip("Duração do fade da tela preta para visível (abrir os olhos).")]
         [SerializeField] private float fadeInDuration = 2f;
-        [Tooltip("Espera após disparar o pensamento, antes de liberar o player.")]
-        [SerializeField] private float awakeningThoughtHold = 3f;
 
         [Header("Beat 1 - Wake Up (deitado → em pé)")]
         [Tooltip("Empty na cama: posição (XZ + Y dos pés) e yaw do corpo ao acordar. Mantenha o Empty em pé (sem inclinar) — quem 'deita' é só a câmera.")]
@@ -440,17 +440,7 @@ namespace TheDelivery.Narrative
         /// </summary>
         private void EnsureAudioSource()
         {
-            if (audioSource == null)
-                audioSource = GetComponent<AudioSource>();
-            if (audioSource == null)
-            {
-                audioSource = gameObject.AddComponent<AudioSource>();
-                Debug.Log("[Act4Director] AudioSource ausente; criado automaticamente (2D, sem Play On Awake).", this);
-            }
-
-            audioSource.playOnAwake = false;
-            audioSource.loop = false;
-            audioSource.spatialBlend = 0f; // 2D: o clip é importado como 3D, mas sons narrativos devem ser sempre audíveis.
+            audioSource = DirectorUtility.EnsureNarrativeAudioSource(this, audioSource);
 
             // Canal de one-shots separado: o audioSource principal tem o volume
             // dirigido pelos fades (PlaySoundFaded), e PlayOneShot é escalado AO VIVO
@@ -470,8 +460,10 @@ namespace TheDelivery.Narrative
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugMode)
                 HandleDebugKeys();
+#endif
         }
 
         /// <summary>
@@ -827,7 +819,7 @@ namespace TheDelivery.Narrative
         /// <summary>True no frame em que a barra de Espaço é pressionada.</summary>
         private static bool SpacePressed()
         {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
+            Keyboard kb = Keyboard.current;
             return kb != null && kb.spaceKey.wasPressedThisFrame;
         }
 
@@ -2065,18 +2057,6 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// Orienta um transform para olhar na direção horizontal de um alvo (ignora
-        /// diferença de altura). Usado para apontar o vulto na direção da caminhada.
-        /// </summary>
-        private static void FaceTowards(Transform t, Vector3 target)
-        {
-            Vector3 dir = target - t.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-                t.rotation = Quaternion.LookRotation(dir, Vector3.up);
-        }
-
-        /// <summary>
         /// Verdadeiro quando o player está dentro do <see cref="zoneTriggerRadius"/>
         /// do ponto de referência. Distância no plano XZ — a altura não conta,
         /// já que o ponto pode estar no chão e a câmera/player na altura dos olhos.
@@ -2087,23 +2067,11 @@ namespace TheDelivery.Narrative
         /// Igual ao <see cref="PlayerInZone(Transform)"/>, mas com um raio explícito,
         /// para zonas que precisam de uma tolerância diferente da padrão.
         /// </summary>
-        private bool PlayerInZone(Transform zone, float radius)
-        {
-            Vector3 p = playerController.transform.position;
-            Vector3 z = zone.position;
-            float dx = p.x - z.x;
-            float dz = p.z - z.z;
-            return (dx * dx + dz * dz) <= radius * radius;
-        }
+        private bool PlayerInZone(Transform zone, float radius) =>
+            DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
 
         // --- Helpers -------------------------------------------------------
-
-        /// <summary>Dispara um pensamento via ThoughtSystem, se ambos existirem.</summary>
-        private void ShowThought(ThoughtData thought)
-        {
-            if (thought != null && ThoughtSystem.Instance != null)
-                ThoughtSystem.Instance.Show(thought);
-        }
+        // ShowThought/FaceTowards vêm de DirectorUtility (using static).
 
         /// <summary>
         /// Toca um clip via PlayOneShot (sem controle de volume/fade) apenas se
@@ -2596,13 +2564,17 @@ namespace TheDelivery.Narrative
             blackScreen.alpha = to;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+
         /// <summary>
         /// Teclas 1-9 pulam diretamente para o beat correspondente (atrás de
-        /// <see cref="debugMode"/>). Útil para testar um beat isolado em Play.
+        /// <see cref="debugMode"/>). Útil para testar um beat isolado em Play. Só existe
+        /// no Editor e em Development Build: no build de release as teclas somem na
+        /// compilação, mesmo com a flag ligada na cena.
         /// </summary>
         private void HandleDebugKeys()
         {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
+            Keyboard kb = Keyboard.current;
             if (kb == null)
                 return;
 
@@ -2616,6 +2588,8 @@ namespace TheDelivery.Narrative
             else if (kb.digit8Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Death);
             else if (kb.digit9Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Epilogue);
         }
+
+#endif
 
 #if UNITY_EDITOR
         // Visualiza as zonas de investigação no Editor para facilitar o setup.

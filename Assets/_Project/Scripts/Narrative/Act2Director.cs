@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using TheDelivery.Core;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
+using static TheDelivery.Narrative.DirectorUtility;
 
 namespace TheDelivery.Narrative
 {
@@ -132,8 +133,10 @@ namespace TheDelivery.Narrative
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugMode)
                 HandleDebugKeys();
+#endif
         }
 
         /// <summary>Referências realmente obrigatórias; o resto é null-checked no uso.</summary>
@@ -156,20 +159,8 @@ namespace TheDelivery.Narrative
         /// 2D (sempre audível), sem Play On Awake e sem loop. Espelha o
         /// <c>EnsureAudioSource</c> do <see cref="Act4Director"/>.
         /// </summary>
-        private void EnsureAudioSource()
-        {
-            if (audioSource == null)
-                audioSource = GetComponent<AudioSource>();
-            if (audioSource == null)
-            {
-                audioSource = gameObject.AddComponent<AudioSource>();
-                Debug.Log("[Act2Director] AudioSource ausente; criado automaticamente (2D, sem Play On Awake).", this);
-            }
-
-            audioSource.playOnAwake = false;
-            audioSource.loop = false;
-            audioSource.spatialBlend = 0f; // 2D: sons narrativos sempre audíveis.
-        }
+        private void EnsureAudioSource() =>
+            audioSource = DirectorUtility.EnsureNarrativeAudioSource(this, audioSource);
 
         // --- Avanço de beats ----------------------------------------------
 
@@ -458,34 +449,10 @@ namespace TheDelivery.Narrative
         /// player deve estar livre — assim pular direto para um beat (debug) ou chegar
         /// de outra cena nunca deixa o player travado.
         /// </summary>
-        private void EnsurePlayerFree()
-        {
-            if (characterController != null && !characterController.enabled)
-                characterController.enabled = true;
+        private void EnsurePlayerFree() =>
+            DirectorUtility.ReleasePlayer(playerController, characterController, playerInteraction, standUpPrompt);
 
-            playerController.CanLookOverride = false;
-            playerController.CanMove = true;
-
-            if (playerInteraction != null)
-                playerInteraction.InteractionEnabled = true;
-
-            if (standUpPrompt != null)
-                standUpPrompt.SetActive(false);
-        }
-
-        /// <summary>Dispara um pensamento via ThoughtSystem, se ambos existirem.</summary>
-        private void ShowThought(ThoughtData thought)
-        {
-            if (thought != null && ThoughtSystem.Instance != null)
-                ThoughtSystem.Instance.Show(thought);
-        }
-
-        /// <summary>Dispara um diálogo via DialogueSystem, se ambos existirem.</summary>
-        private void ShowDialogue(DialogueData dialogue)
-        {
-            if (dialogue != null && DialogueSystem.Instance != null)
-                DialogueSystem.Instance.Show(dialogue);
-        }
+        // ShowThought/ShowDialogue/FaceTowards vêm de DirectorUtility (using static).
 
         /// <summary>Toca um clip 2D via PlayOneShot, se source e clip existirem.</summary>
         private void PlaySound(AudioClip clip)
@@ -494,25 +461,17 @@ namespace TheDelivery.Narrative
                 audioSource.PlayOneShot(clip);
         }
 
-        /// <summary>Gira <paramref name="who"/> no plano XZ para encarar <paramref name="worldTarget"/>.</summary>
-        private static void FaceTowards(Transform who, Vector3 worldTarget)
-        {
-            Vector3 dir = worldTarget - who.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-                who.rotation = Quaternion.LookRotation(dir, Vector3.up);
-        }
-
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
-        private bool PlayerInZone(Transform zone, float radius)
-        {
-            Vector3 p = playerController.transform.position;
-            Vector3 z = zone.position;
-            float dx = p.x - z.x;
-            float dz = p.z - z.z;
-            return (dx * dx + dz * dz) <= radius * radius;
-        }
+        private bool PlayerInZone(Transform zone, float radius) =>
+            DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+
+        /// <summary>
+        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
+        /// <see cref="debugMode"/>). Só existe no Editor e em Development Build: no
+        /// build de release as teclas somem na compilação, mesmo com a flag ligada na cena.
+        /// </summary>
         private void HandleDebugKeys()
         {
             Keyboard kb = Keyboard.current;
@@ -526,6 +485,8 @@ namespace TheDelivery.Narrative
             else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.ZeladorDialogue);
             else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.GoToElevator);
         }
+
+#endif
 
 #if UNITY_EDITOR
         // Visualiza as zonas-chave no Editor para facilitar o setup.

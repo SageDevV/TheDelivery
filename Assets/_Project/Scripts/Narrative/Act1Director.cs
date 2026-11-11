@@ -5,6 +5,7 @@ using TheDelivery.Characters;
 using TheDelivery.Core;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
+using static TheDelivery.Narrative.DirectorUtility;
 
 namespace TheDelivery.Narrative
 {
@@ -164,8 +165,10 @@ namespace TheDelivery.Narrative
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugMode)
                 HandleDebugKeys();
+#endif
         }
 
         /// <summary>Referências realmente obrigatórias; o resto é null-checked no uso.</summary>
@@ -666,48 +669,25 @@ namespace TheDelivery.Narrative
         }
 
         // --- Helpers -------------------------------------------------------
+        // ShowThought/ShowDialogue vêm de DirectorUtility (using static).
 
-        /// <summary>Dispara um pensamento via ThoughtSystem, se ambos existirem.</summary>
-        private void ShowThought(ThoughtData thought)
-        {
-            if (thought != null && ThoughtSystem.Instance != null)
-                ThoughtSystem.Instance.Show(thought);
-        }
-
-        /// <summary>Dispara um diálogo via DialogueSystem, se ambos existirem.</summary>
-        private void ShowDialogue(DialogueData dialogue)
-        {
-            if (dialogue != null && DialogueSystem.Instance != null)
-                DialogueSystem.Instance.Show(dialogue);
-        }
-
-        /// <summary>
-        /// Ajusta a Y de uma posição-alvo para o chão (raycast para baixo em
-        /// <see cref="groundMask"/>), evitando que a Clear termine flutuando e
-        /// "caia" quando o CharacterController religa e o controle volta. Parte de
-        /// 1 m acima do alvo. Se nada for atingido, devolve a posição original.
-        /// </summary>
-        private Vector3 SnapToGround(Vector3 position)
-        {
-            Vector3 origin = position + Vector3.up * 1f;
-            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 4f, groundMask, QueryTriggerInteraction.Ignore))
-                return new Vector3(position.x, hit.point.y, position.z);
-            return position;
-        }
+        /// <summary>Encaixa a posição no chão do <see cref="groundMask"/> (ver <see cref="DirectorUtility.SnapToGround"/>).</summary>
+        private Vector3 SnapToGround(Vector3 position) => DirectorUtility.SnapToGround(position, groundMask);
 
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
-        private bool PlayerInZone(Transform zone, float radius)
-        {
-            Vector3 p = playerController.transform.position;
-            Vector3 z = zone.position;
-            float dx = p.x - z.x;
-            float dz = p.z - z.z;
-            return (dx * dx + dz * dz) <= radius * radius;
-        }
+        private bool PlayerInZone(Transform zone, float radius) =>
+            DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+
+        /// <summary>
+        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
+        /// <see cref="debugMode"/>). Só existe no Editor e em Development Build: no
+        /// build de release as teclas somem na compilação, mesmo com a flag ligada na cena.
+        /// </summary>
         private void HandleDebugKeys()
         {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
+            Keyboard kb = Keyboard.current;
             if (kb == null)
                 return;
 
@@ -718,6 +698,8 @@ namespace TheDelivery.Narrative
             else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.MarinaLeaves);
             else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.ClearLeaves);
         }
+
+#endif
 
 #if UNITY_EDITOR
         // Visualiza os pontos-chave da cena no Editor para facilitar o setup.

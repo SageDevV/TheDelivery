@@ -70,7 +70,7 @@ namespace TheDelivery.Interaction
         public event Action<bool> StateChanged;
 
         private DoorState state;
-        private Coroutine animation;
+        private Coroutine animationRoutine;
         private Transform door;   // o que efetivamente gira (doorVisual, ou este objeto)
         private float closedYaw;  // rotação Y local da porta fechada
 
@@ -192,9 +192,9 @@ namespace TheDelivery.Interaction
 
         private void StartAnim(bool open)
         {
-            if (animation != null)
-                StopCoroutine(animation);
-            animation = StartCoroutine(AnimateRoutine(open));
+            if (animationRoutine != null)
+                StopCoroutine(animationRoutine);
+            animationRoutine = StartCoroutine(AnimateRoutine(open));
         }
 
         private IEnumerator AnimateRoutine(bool open)
@@ -218,7 +218,7 @@ namespace TheDelivery.Interaction
 
             SetYaw(toYaw);
             state = open ? DoorState.Open : DoorState.Closed;
-            animation = null;
+            animationRoutine = null;
 
             if (!open)
                 SetLight(false); // só apaga quando fecha de vez

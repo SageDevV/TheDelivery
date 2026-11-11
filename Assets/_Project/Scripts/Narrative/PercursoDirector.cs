@@ -5,6 +5,7 @@ using TheDelivery.Core;
 using TheDelivery.FX;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
+using static TheDelivery.Narrative.DirectorUtility;
 
 namespace TheDelivery.Narrative
 {
@@ -953,13 +954,6 @@ namespace TheDelivery.Narrative
             }
 
             EnsurePlayerFree();
-        }
-
-        /// <summary>Enfileira um pensamento, se ele e o sistema existirem. Mesmo atalho dos outros diretores.</summary>
-        private void ShowThought(ThoughtData thought)
-        {
-            if (thought != null && ThoughtSystem.Instance != null)
-                ThoughtSystem.Instance.Show(thought);
         }
 
         /// <summary>
@@ -1954,24 +1948,11 @@ namespace TheDelivery.Narrative
         /// <summary>
         /// Garante o estado inicial LIVRE do player: pode andar e olhar, sem trava
         /// de olhar herdada da cena anterior, CharacterController habilitado,
-        /// interação ligada e o standUpPrompt (se houver) escondido. Espelha o
-        /// <c>EnsurePlayerFree</c> do <see cref="Act2Director"/> — a Clear chega
+        /// interação ligada e o standUpPrompt (se houver) escondido — a Clear chega
         /// andando, não há despertar aqui.
         /// </summary>
-        private void EnsurePlayerFree()
-        {
-            if (characterController != null && !characterController.enabled)
-                characterController.enabled = true;
-
-            playerController.CanLookOverride = false;
-            playerController.CanMove = true;
-
-            if (playerInteraction != null)
-                playerInteraction.InteractionEnabled = true;
-
-            if (standUpPrompt != null)
-                standUpPrompt.SetActive(false);
-        }
+        private void EnsurePlayerFree() =>
+            DirectorUtility.ReleasePlayer(playerController, characterController, playerInteraction, standUpPrompt);
 
         /// <summary>
         /// True se o player está dentro do marcador — pela FORMA dele quando ele tem um
@@ -2006,27 +1987,11 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
-        private bool PlayerInZone(Transform zone, float radius)
-        {
-            Vector3 p = playerController.transform.position;
-            Vector3 z = zone.position;
-            float dx = p.x - z.x;
-            float dz = p.z - z.z;
-            return (dx * dx + dz * dz) <= radius * radius;
-        }
+        private bool PlayerInZone(Transform zone, float radius) =>
+            DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
 
-        /// <summary>
-        /// Ajusta a Y de uma posição-alvo para o chão (raycast para baixo em
-        /// <see cref="groundMask"/>), partindo de 1 m acima. Se nada for atingido,
-        /// devolve a posição original. Mesmo helper do <see cref="Act1Director"/>.
-        /// </summary>
-        private Vector3 SnapToGround(Vector3 position)
-        {
-            Vector3 origin = position + Vector3.up * 1f;
-            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 4f, groundMask, QueryTriggerInteraction.Ignore))
-                return new Vector3(position.x, hit.point.y, position.z);
-            return position;
-        }
+        /// <summary>Encaixa a posição no chão do <see cref="groundMask"/> (ver <see cref="DirectorUtility.SnapToGround"/>).</summary>
+        private Vector3 SnapToGround(Vector3 position) => DirectorUtility.SnapToGround(position, groundMask);
 
         // --- Debug ---------------------------------------------------------------
 
