@@ -49,11 +49,14 @@ namespace TheDelivery.FX
         [Tooltip("DoF Bokeh: 'Focus Distance' (m) que conta como visão limpa. Só usado se o profile estiver em Bokeh.")]
         [SerializeField] private float clearBokehFocusDistance = 15f;
 
+        /// <summary>
+        /// Quanto a visão OSCILA em torno do alvo (fração). Uma imagem borrada e perfeitamente estável
+        /// o cérebro aprende a ler em segundos e passa a ignorar; oscilando de leve ela nunca vira só
+        /// um filtro. A oscilação é sempre para o lado de CLAREAR (o alvo do profile é o pico do
+        /// borrão), então subir isto nunca borra além do que você autorou. 0 desliga.
+        /// </summary>
         [Header("Respiração")]
-        [Tooltip("Quanto a visão OSCILA em torno do alvo (fração). Uma imagem borrada e perfeitamente estável o " +
-                 "cérebro aprende a ler em segundos e passa a ignorar; oscilando de leve ela nunca vira só um filtro. " +
-                 "A oscilação é sempre para o lado de CLAREAR (o alvo do profile é o pico do borrão), então subir " +
-                 "isto nunca borra além do que você autorou. 0 desliga.")]
+        [Tooltip("Quanto a visão OSCILA em torno do alvo (fração).")]
         [Range(0f, 1f)]
         [SerializeField] private float breathAmount = 0.12f;
         [Tooltip("Velocidade da respiração (ciclos por segundo). Baixo: ritmo de respiração cansada, não de piscar.")]

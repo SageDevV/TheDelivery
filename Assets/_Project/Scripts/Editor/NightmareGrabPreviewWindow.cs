@@ -281,7 +281,7 @@ namespace TheDelivery.EditorTools
         /// <summary>
         /// Desenha as duas câmeras do preview dentro da janela.
         ///
-        /// <see cref="Handles.DrawCamera"/> é o caminho certo aqui, e não um
+        /// <c>Handles.DrawCamera</c> é o caminho certo aqui, e não um
         /// <c>Camera.Render()</c> para RenderTexture: ele é a API que o próprio editor usa
         /// para desenhar câmeras em rects de GUI, e por isso atravessa o URP sem precisar
         /// saber nada sobre o pipeline. Renderizar à mão exigiria conversar com o

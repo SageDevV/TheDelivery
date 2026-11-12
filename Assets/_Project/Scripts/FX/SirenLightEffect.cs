@@ -38,8 +38,15 @@ namespace TheDelivery.FX
         [Tooltip("Se ligado, cada cor faz um DUPLO flash rápido (giroflex) antes de passar a vez. Desligado = um pulso único por turno.")]
         [SerializeField] private bool useDoubleFlash = true;
 
+        /// <summary>
+        /// Deslocamento de fase em segundos, somado ao tempo do padrão. Use valores IRREGULARES e
+        /// diferentes por viatura (ex.: 0 e 0.37) para as luzes nunca coincidirem. EVITE metade do
+        /// período (1/(2*flashesPerSecond)), que cria oposição perfeita — também artificial. Combine
+        /// com um flashesPerSecond levemente diferente (ex.: 3.0 e 3.3) para as viaturas 'derivarem' e
+        /// nunca repetirem o padrão combinado. 0 = sem deslocamento (comportamento de viatura única).
+        /// </summary>
         [Header("Dessincronia (múltiplas viaturas)")]
-        [Tooltip("Deslocamento de fase em segundos, somado ao tempo do padrão. Use valores IRREGULARES e diferentes por viatura (ex.: 0 e 0.37) para as luzes nunca coincidirem. EVITE metade do período (1/(2*flashesPerSecond)), que cria oposição perfeita — também artificial. Combine com um flashesPerSecond levemente diferente (ex.: 3.0 e 3.3) para as viaturas 'derivarem' e nunca repetirem o padrão combinado. 0 = sem deslocamento (comportamento de viatura única).")]
+        [Tooltip("Deslocamento de fase em segundos, somado ao tempo do padrão.")]
         [SerializeField] private float phaseOffset = 0f;
 
         [Header("Opcional")]

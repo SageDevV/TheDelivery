@@ -13,7 +13,13 @@ namespace TheDelivery.Items
     /// </summary>
     public sealed class PlayerInventory : MonoBehaviour
     {
-        [Tooltip("Ponto onde o visual do item carregado é instanciado (parentado a ele). DEVE ser filho da CÂMERA/CameraHolder — não do corpo do player — senão o item não acompanha o girar da câmera (principalmente o olhar para cima/baixo, já que o pitch fica na câmera e o yaw no corpo). Opcional — sem ele, os itens são só lógicos.")]
+        /// <summary>
+        /// Ponto onde o visual do item carregado é instanciado (parentado a ele). DEVE ser filho da
+        /// CÂMERA/CameraHolder — não do corpo do player — senão o item não acompanha o girar da câmera
+        /// (principalmente o olhar para cima/baixo, já que o pitch fica na câmera e o yaw no corpo).
+        /// Opcional — sem ele, os itens são só lógicos.
+        /// </summary>
+        [Tooltip("Ponto onde o visual do item carregado é instanciado (parentado a ele).")]
         [SerializeField] private Transform handAnchor;
 
         private readonly HashSet<ItemData> items = new HashSet<ItemData>();

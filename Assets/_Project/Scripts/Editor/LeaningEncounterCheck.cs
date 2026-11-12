@@ -67,7 +67,7 @@ namespace TheDelivery.EditorTools
             float pauseBefore = so.FindProperty("leaningPauseBeforeDialogue").floatValue;
             float approachTimeout = so.FindProperty("leaningApproachTimeout").floatValue;
 
-            var startBeat = (JourneyBeat)so.FindProperty("startBeat").enumValueIndex;
+            var startBeat = (JourneyBeat)so.FindProperty("startBeat").intValue;
             bool debugMode = so.FindProperty("debugMode").boolValue;
 
             // --- Os campos zerados ------------------------------------------
@@ -470,7 +470,7 @@ namespace TheDelivery.EditorTools
             }
 
             SerializedProperty startBeat = so.FindProperty("startBeat");
-            if (startBeat != null && startBeat.enumValueIndex == (int)JourneyBeat.None)
+            if (startBeat != null && startBeat.intValue == (int)JourneyBeat.None)
                 zeroed.Add("Start Beat (None)");
 
             return zeroed.Count > 0 ? string.Join(", ", zeroed) : null;

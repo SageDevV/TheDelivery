@@ -63,6 +63,12 @@ Padrões:
   - GameObjects: nome do campo que o referencia (DeliverymanCrossPoint ->
     deliverymanCrossPoint); paredes Wall_<Lado>, luzes Light_<n>, pontos Point_<n>.
   - Campo serializado renomeado SEMPRE leva [FormerlySerializedAs("antigo")].
+  - Diretores de ato herdam de BeatDirector<TBeat> (Narrative/BeatDirector.cs): só
+    implementam CreateBeatRoutine e, se preciso, OnBeatExit. Enums salvos no Inspector
+    (GameAct, GameScene, *Beat) têm valores EXPLÍCITOS; valor novo = próximo número livre.
+  - Tooltip = uma frase curta; explicação longa vai em /// <summary> acima do campo.
+  - Classe grande demais vira partial por assunto (ex.: NightmareDirector.Grab.cs),
+    com TODOS os campos serializados no arquivo principal (ordem do Inspector estável).
   - Log com prefixo [NomeDaClasse]. Menu: Tools/The Delivery/<Escopo> - <Ação>,
     escopo = cena (Cafeteria, Road, Nightmare...) ou Anim/FX/Cena/Colisor/Boot.
 

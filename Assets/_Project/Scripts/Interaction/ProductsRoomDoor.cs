@@ -77,9 +77,9 @@ namespace TheDelivery.Interaction
 
         /// <summary>
         /// Abre a porta girando-a EM TORNO DA DOBRADIÇA (não no próprio centro), no
-        /// eixo Y do mundo, com SmoothStep (ease-in-out). Usa <see cref="RotateAround"/>,
+        /// eixo Y do mundo, com SmoothStep (ease-in-out). Usa <see cref="Transform.RotateAround(Vector3, Vector3, float)"/>,
         /// que rotaciona posição E orientação ao redor do ponto da dobradiça — assim a
-        /// folha balança como uma porta real. <see cref="RotateAround"/> é cumulativo,
+        /// folha balança como uma porta real. <see cref="Transform.RotateAround(Vector3, Vector3, float)"/> é cumulativo,
         /// então aplicamos só o DELTA de ângulo por frame.
         /// </summary>
         private IEnumerator OpenVisual()

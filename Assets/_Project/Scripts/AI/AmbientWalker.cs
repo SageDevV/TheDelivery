@@ -80,17 +80,23 @@ namespace TheDelivery.AI
                  "'Speed' dos controllers de locomoção do projeto). Deixe VAZIO se o controller do " +
                  "NPC tem um único estado que já toca a caminhada direto — que é o caso do Shadow.")]
         [SerializeField] private string speedParameter = "";
-        [Tooltip("Velocidade (m/s) que a PASSADA do clipe tem embutida: o quanto o personagem " +
-                 "andaria por segundo se a animação o deslocasse sozinha. Com um valor > 0 o " +
-                 "Animator é acelerado/desacelerado para casar com 'Walk Speed' e o pé PARA DE " +
-                 "DESLIZAR no chão. Use o botão 'Medir passada do clipe' no Inspector para " +
-                 "preencher. 0 = desligado (a animação toca na velocidade original).")]
+        /// <summary>
+        /// Velocidade (m/s) que a PASSADA do clipe tem embutida: o quanto o personagem andaria por
+        /// segundo se a animação o deslocasse sozinha. Com um valor &gt; 0 o Animator é
+        /// acelerado/desacelerado para casar com 'Walk Speed' e o pé PARA DE DESLIZAR no chão. Use o
+        /// botão 'Medir passada do clipe' no Inspector para preencher. 0 = desligado (a animação toca
+        /// na velocidade original).
+        /// </summary>
+        [Tooltip("Velocidade (m/s) que a PASSADA do clipe tem embutida: o quanto o personagem andaria por segundo se a animação o deslocasse sozinha.")]
         [SerializeField] private float clipStrideSpeed = 0f;
-        [Tooltip("Cancela, toda frame, o deslocamento HORIZONTAL que o clipe de caminhada tem " +
-                 "embutido no osso do quadril (clipes de Mixamo vêm assim quando não são exportados " +
-                 "'in place'). Sem isso o modelo desliza para a frente durante o clipe e VOLTA ao " +
-                 "recomeçar o loop — parece que o NPC teletransporta para trás a cada 2 segundos e " +
-                 "nunca completa o trajeto. Deixe LIGADO a menos que o clipe já seja in-place.")]
+        /// <summary>
+        /// Cancela, toda frame, o deslocamento HORIZONTAL que o clipe de caminhada tem embutido no osso
+        /// do quadril (clipes de Mixamo vêm assim quando não são exportados 'in place'). Sem isso o
+        /// modelo desliza para a frente durante o clipe e VOLTA ao recomeçar o loop — parece que o NPC
+        /// teletransporta para trás a cada 2 segundos e nunca completa o trajeto. Deixe LIGADO a menos
+        /// que o clipe já seja in-place.
+        /// </summary>
+        [Tooltip("Cancela, toda frame, o deslocamento HORIZONTAL que o clipe de caminhada tem embutido no osso do quadril (clipes de Mixamo vêm assim quando não são exportados 'in place').")]
         [SerializeField] private bool keepAnimationInPlace = true;
         [Tooltip("Osso-raiz do esqueleto, o que carrega a translação do clipe (ex.: mixamorig:Hips). " +
                  "Se vazio, usa o 'Root Bone' do SkinnedMeshRenderer do modelo.")]

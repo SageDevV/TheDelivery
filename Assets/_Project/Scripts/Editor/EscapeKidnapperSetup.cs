@@ -37,11 +37,19 @@ namespace TheDelivery.EditorTools
         private const string KidnapperName = "Kidnapper";
         private const string RoutePath = "Escape_Greybox/Markers/EnemyRoute";
         private const string AntagonistTag = "Antagonist";
-        private const int AntagonistLayer = 9;
+        // Resolvido pelo NOME: o número de um layer muda se a lista do TagManager for
+        // reorganizada, o nome não. -1 = layer não existe (checado no Run).
+        private static readonly int AntagonistLayer = LayerMask.NameToLayer("Antagonist");
 
         [MenuItem("Tools/The Delivery/Escape - Sequestrador (patrol, search, chase do Ato 4)")]
         private static void Run()
         {
+            if (AntagonistLayer < 0)
+            {
+                Fail("O layer \"Antagonist\" não existe no TagManager. Nada foi alterado.");
+                return;
+            }
+
             Scene escape = EnsureEscapeOpen();
             if (!escape.IsValid())
                 return;

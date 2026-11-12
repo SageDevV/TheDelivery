@@ -34,23 +34,34 @@ namespace TheDelivery.FX
     [RequireComponent(typeof(ParticleSystem))]
     public sealed class DreamFog : MonoBehaviour
     {
+        /// <summary>
+        /// As PEÇAS do corredor: chão, as duas paredes e o teto (os Colliders delas). A neblina mede o
+        /// VÃO entre elas e deriva a caixa de emissão, o tamanho das nuvens e a contagem. Redimensionou
+        /// o corredor? A névoa acompanha sozinha.
+        ///
+        /// Não é a caixa que envolve as peças — é o espaço LIVRE dentro delas. Cada peça é reconhecida
+        /// como uma laje e o que conta é a face INTERNA dela: o topo do chão, a base do teto, a face de
+        /// dentro de cada parede. Envolver as peças mediria o corredor mais a espessura das paredes, e
+        /// a névoa nasceria dentro delas.
+        ///
+        /// A orientação vem da PRIMEIRA peça da lista, então ela deve estar alinhada ao corredor.
+        /// </summary>
         [Header("Ajuste ao corredor")]
-        [Tooltip("As PEÇAS do corredor: chão, as duas paredes e o teto (os Colliders delas). A neblina mede o VÃO entre " +
-                 "elas e deriva a caixa de emissão, o tamanho das nuvens e a contagem. Redimensionou o corredor? " +
-                 "A névoa acompanha sozinha.\n\n" +
-                 "Não é a caixa que envolve as peças — é o espaço LIVRE dentro delas. Cada peça é reconhecida como uma laje " +
-                 "e o que conta é a face INTERNA dela: o topo do chão, a base do teto, a face de dentro de cada parede. " +
-                 "Envolver as peças mediria o corredor mais a espessura das paredes, e a névoa nasceria dentro delas.\n\n" +
-                 "A orientação vem da PRIMEIRA peça da lista, então ela deve estar alinhada ao corredor.")]
+        [Tooltip("As PEÇAS do corredor: chão, as duas paredes e o teto (os Colliders delas).")]
         [SerializeField] private Collider[] corridorPieces;
         [Tooltip("Usar as peças. Desligue para voltar aos valores manuais sem precisar limpar a lista acima.")]
         [SerializeField] private bool fitToReference = true;
-        [Tooltip("PREENCHER O CORREDOR INTEIRO de ponta a ponta, cheio desde o primeiro frame, em vez de uma caixa que " +
-                 "viaja com o jogador.\n\n" +
-                 "Ligado, ele IGNORA o Max Span e o Follow Target — os dois existem para a caixa viajante e brigariam com " +
-                 "este modo. A caixa se planta no centro do vão com o comprimento todo, e o prewarm a entrega já cheia. " +
-                 "Custa mais partículas (a contagem é volume x densidade, e o volume agora é o corredor inteiro), mas " +
-                 "elimina de vez a variação de densidade com a velocidade: não há mais nada se movendo para ficar para trás.")]
+        /// <summary>
+        /// PREENCHER O CORREDOR INTEIRO de ponta a ponta, cheio desde o primeiro frame, em vez de uma
+        /// caixa que viaja com o jogador.
+        ///
+        /// Ligado, ele IGNORA o Max Span e o Follow Target — os dois existem para a caixa viajante e
+        /// brigariam com este modo. A caixa se planta no centro do vão com o comprimento todo, e o
+        /// prewarm a entrega já cheia. Custa mais partículas (a contagem é volume x densidade, e o
+        /// volume agora é o corredor inteiro), mas elimina de vez a variação de densidade com a
+        /// velocidade: não há mais nada se movendo para ficar para trás.
+        /// </summary>
+        [Tooltip("PREENCHER O CORREDOR INTEIRO de ponta a ponta, cheio desde o primeiro frame, em vez de uma caixa que viaja com o jogador.")]
         [SerializeField] private bool fillEntireCorridor = true;
         [Tooltip("Quanto (m) a caixa recua de cada superfície. Pequeno: só o suficiente para as nuvens não nascerem " +
                  "coladas no reboco.")]
@@ -64,59 +75,89 @@ namespace TheDelivery.FX
         [Tooltip("Partículas por METRO CÚBICO. É esta a espessura real da névoa, e é escala-invariante: um corredor com o " +
                  "dobro do volume ganha o dobro de nuvens e continua com a mesma cara.")]
         [SerializeField] private float fogDensity = 2.6f;
-        [Tooltip("Compensação de deslocamento. Além da emissão por TEMPO, emite por DISTÂNCIA percorrida, repondo a névoa " +
-                 "no volume novo que a caixa varre ao viajar com a Clear.\n\n" +
-                 "Sem isto a densidade depende da velocidade: parada, a população inteira fica à sua volta; andando, ela se " +
-                 "espalha pelo rastro e o entorno imediato fica ralo. 1 = reposição exata (a densidade fica igual parada e " +
-                 "em movimento). 0 = comportamento antigo, só por tempo.")]
+        /// <summary>
+        /// Compensação de deslocamento. Além da emissão por TEMPO, emite por DISTÂNCIA percorrida,
+        /// repondo a névoa no volume novo que a caixa varre ao viajar com a Clear.
+        ///
+        /// Sem isto a densidade depende da velocidade: parada, a população inteira fica à sua volta;
+        /// andando, ela se espalha pelo rastro e o entorno imediato fica ralo. 1 = reposição exata (a
+        /// densidade fica igual parada e em movimento). 0 = comportamento antigo, só por tempo.
+        /// </summary>
+        [Tooltip("Compensação de deslocamento.")]
         [Range(0f, 2f)]
         [SerializeField] private float travelCompensation = 1f;
-        [Tooltip("Teto (m) para cada eixo da caixa derivada. Existe por causa do Follow Target: num corredor de 40 m não " +
-                 "faz sentido emitir nos 40 — a caixa viaja com a Clear, então só precisa cobrir o que está à vista. " +
-                 "Sem este teto, a densidade por m³ produziria milhares de partículas para encher um corredor inteiro de uma vez.")]
+        /// <summary>
+        /// Teto (m) para cada eixo da caixa derivada. Existe por causa do Follow Target: num corredor
+        /// de 40 m não faz sentido emitir nos 40 — a caixa viaja com a Clear, então só precisa cobrir o
+        /// que está à vista. Sem este teto, a densidade por m³ produziria milhares de partículas para
+        /// encher um corredor inteiro de uma vez.
+        /// </summary>
+        [Tooltip("Teto (m) para cada eixo da caixa derivada.")]
         [SerializeField] private float maxSpan = 16f;
-        [Tooltip("Teto absoluto de partículas, como rede de segurança contra uma referência gigante por engano. " +
-                 "Preenchendo o corredor inteiro este número precisa ser generoso — o volume agora é o corredor todo, " +
-                 "não uma caixa em volta do jogador. Se o log do Awake mostrar a contagem BATENDO neste teto, é aqui " +
-                 "que a densidade está sendo cortada, não no Fog Density. São billboards sobrepostos: o custo é " +
-                 "preenchimento de tela, e o que está atrás da parede ou fora do campo de visão não chega a desenhar.")]
+        /// <summary>
+        /// Teto absoluto de partículas, como rede de segurança contra uma referência gigante por
+        /// engano. Preenchendo o corredor inteiro este número precisa ser generoso — o volume agora é o
+        /// corredor todo, não uma caixa em volta do jogador. Se o log do Awake mostrar a contagem
+        /// BATENDO neste teto, é aqui que a densidade está sendo cortada, não no Fog Density. São
+        /// billboards sobrepostos: o custo é preenchimento de tela, e o que está atrás da parede ou
+        /// fora do campo de visão não chega a desenhar.
+        /// </summary>
+        [Tooltip("Teto absoluto de partículas, como rede de segurança contra uma referência gigante por engano.")]
         [SerializeField] private int maxParticleCount = 1500;
 
+        /// <summary>
+        /// Tamanho (m) da caixa onde a neblina nasce. Com Follow Target ligado, ela VIAJA com a Clear —
+        /// então NÃO precisa cobrir o corredor inteiro, e alongá-la é contraproducente: a contagem de
+        /// partículas se espalha por um volume enorme e quase tudo nasce longe, deixando o entorno
+        /// imediato ralo. Uma caixa curta e compacta em torno do jogador dá MUITO mais névoa perto com
+        /// a mesma contagem. Só grande o bastante para as bordas ficarem fora de vista.
+        ///
+        /// NUM CORREDOR: dimensione pela SEÇÃO do corredor (largura x altura) e alongue só no eixo em
+        /// que ele corre. Partículas nascidas dentro das paredes são ocultadas pelo teste de
+        /// profundidade — não aparecem, mas contam na contagem e desperdiçam a densidade que deveria
+        /// estar no vão. E gire ESTE GameObject para alinhar a caixa com o corredor: o Follow Target
+        /// move a caixa, mas nunca mexe na rotação autorada.
+        /// </summary>
         [Header("Volume (fallback sem referência)")]
-        [Tooltip("Tamanho (m) da caixa onde a neblina nasce. Com Follow Target ligado, ela VIAJA com a Clear — então NÃO " +
-                 "precisa cobrir o corredor inteiro, e alongá-la é contraproducente: a contagem de partículas se espalha " +
-                 "por um volume enorme e quase tudo nasce longe, deixando o entorno imediato ralo. Uma caixa curta e " +
-                 "compacta em torno do jogador dá MUITO mais névoa perto com a mesma contagem. Só grande o bastante para " +
-                 "as bordas ficarem fora de vista.\n\n" +
-                 "NUM CORREDOR: dimensione pela SEÇÃO do corredor (largura x altura) e alongue só no eixo em que ele corre. " +
-                 "Partículas nascidas dentro das paredes são ocultadas pelo teste de profundidade — não aparecem, mas contam " +
-                 "na contagem e desperdiçam a densidade que deveria estar no vão. E gire ESTE GameObject para alinhar a caixa " +
-                 "com o corredor: o Follow Target move a caixa, mas nunca mexe na rotação autorada.")]
+        [Tooltip("Tamanho (m) da caixa onde a neblina nasce.")]
         [SerializeField] private Vector3 volumeSize = new Vector3(4f, 3f, 14f);
         [Tooltip("Transform que a neblina ACOMPANHA (normalmente o Player). A caixa de emissão o segue no plano XZ, " +
                  "mantendo a altura autorada, então nunca se anda 'para fora' da névoa. As partículas já criadas ficam " +
                  "onde estão (simulação em mundo) — quem viaja é só a fábrica. Vazio = banco de neblina fixo no lugar.")]
         [SerializeField] private Transform followTarget;
 
+        /// <summary>
+        /// Quantas partículas ficam vivas ao mesmo tempo. É este o controle de densidade — a taxa de
+        /// emissão é DERIVADA dele e do tempo de vida, para a névoa manter a mesma espessura quando
+        /// você redimensiona a caixa ou muda a duração. Cuidado: são billboards grandes e sobrepostos,
+        /// então isto custa preenchimento de tela, não CPU.
+        /// </summary>
         [Header("Densidade")]
-        [Tooltip("Quantas partículas ficam vivas ao mesmo tempo. É este o controle de densidade — a taxa de emissão é " +
-                 "DERIVADA dele e do tempo de vida, para a névoa manter a mesma espessura quando você redimensiona a caixa " +
-                 "ou muda a duração. Cuidado: são billboards grandes e sobrepostos, então isto custa preenchimento de tela, não CPU.")]
+        [Tooltip("Quantas partículas ficam vivas ao mesmo tempo.")]
         [SerializeField] private int particleCount = 300;
         [Tooltip("Multiplicador geral (0 = sem neblina). Exposto como Intensity em runtime para um director engrossar a névoa num beat.")]
         [Range(0f, 2f)]
         [SerializeField] private float intensity = 1f;
 
+        /// <summary>
+        /// Tamanho (m) de cada nuvem. Precisa ser MENOR que o espaço onde ela vive. Numa nuvem maior
+        /// que a largura do corredor você só vê o INTERIOR dela, que é uma névoa uniforme sem forma — a
+        /// silhueta da neblina é feita das BORDAS, e elas ficam todas enterradas nas paredes. Regra
+        /// prática: cerca de metade da largura do vão.
+        ///
+        /// TRADE-OFF: a opacidade acumulada cresce com o QUADRADO do tamanho. Ao reduzir pela metade,
+        /// são precisas ~4x mais partículas para a mesma espessura. Ajuste os dois juntos.
+        /// </summary>
         [Header("Partícula")]
-        [Tooltip("Tamanho (m) de cada nuvem. Precisa ser MENOR que o espaço onde ela vive. Numa nuvem maior que a largura do " +
-                 "corredor você só vê o INTERIOR dela, que é uma névoa uniforme sem forma — a silhueta da neblina é feita " +
-                 "das BORDAS, e elas ficam todas enterradas nas paredes. Regra prática: cerca de metade da largura do vão.\n\n" +
-                 "TRADE-OFF: a opacidade acumulada cresce com o QUADRADO do tamanho. Ao reduzir pela metade, são precisas " +
-                 "~4x mais partículas para a mesma espessura. Ajuste os dois juntos.")]
+        [Tooltip("Tamanho (m) de cada nuvem.")]
         [SerializeField] private float particleSize = 5.5f;
-        [Tooltip("Tempo de vida (s) de cada nuvem. Longo o bastante para nenhuma nascer e morrer à vista, mas não demais: " +
-                 "vida longa faz o sistema levar um lifetime INTEIRO para chegar ao equilíbrio (o que se percebe como a " +
-                 "névoa 'engrossando' enquanto você espera parado) e deixa um rastro comprido de nuvens vivas atrás de você.")]
+        /// <summary>
+        /// Tempo de vida (s) de cada nuvem. Longo o bastante para nenhuma nascer e morrer à vista, mas
+        /// não demais: vida longa faz o sistema levar um lifetime INTEIRO para chegar ao equilíbrio (o
+        /// que se percebe como a névoa 'engrossando' enquanto você espera parado) e deixa um rastro
+        /// comprido de nuvens vivas atrás de você.
+        /// </summary>
+        [Tooltip("Tempo de vida (s) de cada nuvem.")]
         [SerializeField] private float lifetime = 9f;
         [Tooltip("Quanto a nuvem cresce ao longo da vida (1 = não cresce). Um crescimento leve disfarça o nascimento.")]
         [SerializeField] private float growth = 1.4f;
@@ -138,22 +179,31 @@ namespace TheDelivery.FX
         [Tooltip("Material da neblina. Duplique o CoffeeSteam.mat (mesmo shader de partícula do URP e a textura macia " +
                  "CoffeeSteamPuff) e ajuste a cor. Vazio = usa o que já estiver no renderer.")]
         [SerializeField] private Material fogMaterial;
-        [Tooltip("COR DA NEBLINA. Aplicada por Color over Lifetime, e não por Start Color, para valer também nas partículas " +
-                 "JÁ VIVAS: o Start Color só pinta as que nascem depois, então mexer nele em Play leva um tempo de vida " +
-                 "inteiro (~9 s) para a cor trocar por completo — o que parece o campo não estar funcionando.\n\n" +
-                 "O material usa ALPHA BLEND, então uma cor escura de fato ESCURECE o que está atrás: a névoa vira sombra " +
-                 "em suspensão em vez de um véu claro. (Num material aditivo isto seria impossível — aditivo só soma luz, " +
-                 "e escurecer a cor apenas apagaria a névoa.)")]
+        /// <summary>
+        /// COR DA NEBLINA. Aplicada por Color over Lifetime, e não por Start Color, para valer também
+        /// nas partículas JÁ VIVAS: o Start Color só pinta as que nascem depois, então mexer nele em
+        /// Play leva um tempo de vida inteiro (~9 s) para a cor trocar por completo — o que parece o
+        /// campo não estar funcionando.
+        ///
+        /// O material usa ALPHA BLEND, então uma cor escura de fato ESCURECE o que está atrás: a névoa
+        /// vira sombra em suspensão em vez de um véu claro. (Num material aditivo isto seria impossível
+        /// — aditivo só soma luz, e escurecer a cor apenas apagaria a névoa.)
+        /// </summary>
+        [Tooltip("COR DA NEBLINA.")]
         [SerializeField] private Color fogColor = new Color(0.58f, 0.58f, 0.60f, 1f);
         [Tooltip("Opacidade MÁXIMA de uma única nuvem, no meio da vida dela. Baixa de propósito: a espessura vem do " +
                  "empilhamento de dezenas de camadas quase invisíveis. Subir demais faz aparecerem billboards individuais, " +
                  "e aí o olho identifica quadrados em vez de névoa — prefira subir o Particle Count primeiro.")]
         [Range(0f, 1f)]
         [SerializeField] private float peakAlpha = 0.13f;
-        [Tooltip("Quanto da ALTURA DA TELA uma única nuvem pode cobrir. O Unity limita isto em 0.5 por padrão, e é a causa " +
-                 "clássica de a névoa parecer que 'mantém distância': ao se aproximar de uma nuvem ela cresce na tela até " +
-                 "bater no limite e PARA de crescer, mesmo você continuando a andar — o cérebro lê como a névoa recuando. " +
-                 "Acima de 1 a nuvem pode engolir a câmera, que é o que se quer ao entrar num banco de neblina.")]
+        /// <summary>
+        /// Quanto da ALTURA DA TELA uma única nuvem pode cobrir. O Unity limita isto em 0.5 por padrão,
+        /// e é a causa clássica de a névoa parecer que 'mantém distância': ao se aproximar de uma nuvem
+        /// ela cresce na tela até bater no limite e PARA de crescer, mesmo você continuando a andar — o
+        /// cérebro lê como a névoa recuando. Acima de 1 a nuvem pode engolir a câmera, que é o que se
+        /// quer ao entrar num banco de neblina.
+        /// </summary>
+        [Tooltip("Quanto da ALTURA DA TELA uma única nuvem pode cobrir.")]
         [Range(0.5f, 6f)]
         [SerializeField] private float maxScreenCoverage = 3f;
 
@@ -338,7 +388,7 @@ namespace TheDelivery.FX
 
         /// <summary>
         /// Deriva caixa, tamanho de nuvem e contagem a partir do
-        /// <see cref="corridorReference"/>. Sem referência (ou com o ajuste desligado),
+        /// <see cref="corridorPieces"/>. Sem referência (ou com o ajuste desligado),
         /// apenas copia os campos manuais — assim <see cref="Apply"/> tem uma fonte
         /// única de verdade e não precisa saber de qual modo os números vieram.
         /// </summary>

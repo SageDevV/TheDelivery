@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using TheDelivery.Core;
 using TheDelivery.FX;
 using TheDelivery.Interaction;
@@ -21,13 +20,13 @@ namespace TheDelivery.Narrative
     /// </summary>
     public enum JourneyBeat
     {
-        None,
-        Walk,               // Beat 1: a caminhada livre pela rua (o jogador no controle)
-        LeaningNotice,      // Beat 2: ela nota o estranho — o corpo e a câmera giram até encará-lo
-        LeaningApproach,    // Beat 3: hesita e caminha até ele, sem tirar os olhos
-        LeaningDialogue,    // Beat 4: ele fala
-        LeaningRelease,     // Beat 5: o controle volta e sobra o pensamento dela -> Walk
-        Arrival             // Beat 6: chega na entrada do prédio e a cena troca
+        None = 0,
+        Walk = 1,            // Beat 1: a caminhada livre pela rua (o jogador no controle)
+        LeaningNotice = 2,   // Beat 2: ela nota o estranho — o corpo e a câmera giram até encará-lo
+        LeaningApproach = 3, // Beat 3: hesita e caminha até ele, sem tirar os olhos
+        LeaningDialogue = 4, // Beat 4: ele fala
+        LeaningRelease = 5,  // Beat 5: o controle volta e sobra o pensamento dela -> Walk
+        Arrival = 6          // Beat 6: chega na entrada do prédio e a cena troca
     }
 
     /// <summary>
@@ -76,7 +75,7 @@ namespace TheDelivery.Narrative
     ///
     /// Fluxo: Cafeteria (Act1) -> <b>Journey (ActJourney)</b> -> Reception (Act2).
     /// </summary>
-    public sealed class JourneyDirector : MonoBehaviour
+    public sealed class JourneyDirector : BeatDirector<JourneyBeat>
     {
         [Header("Referências")]
         [Tooltip("PlayerController da cena. Garantido LIVRE (anda e olha) ao assumir o percurso.")]
@@ -114,127 +113,204 @@ namespace TheDelivery.Narrative
         [Header("Narrativa (opcional)")]
         [Tooltip("Pensamento ao começar a caminhada (ex.: \"Melhor ir pra casa antes que escureça\"). Não bloqueia: a Clear já anda enquanto ele aparece.")]
         [SerializeField] private ThoughtData startThought;
-        [Tooltip("O PRIMEIRO PENSAMENTO DO TRAJETO, dito LOGO DEPOIS do Start Thought — a frase que aponta o caminho " +
-                 "(\"É só seguir a rua até o fim\").\n\n" +
-                 "NÃO É UM GATILHO NA RUA, e essa é a diferença: ele não acontece num LUGAR, acontece DEPOIS de outra " +
-                 "frase. Amarrado a um volume no chão, ele dependeria de quanto a Clear já andou enquanto o Start " +
-                 "Thought estava na tela — quem parasse para olhar a rua ouviria os dois juntos, quem saísse andando " +
-                 "ouviria com um buraco no meio.\n\n" +
-                 "Sai enfileirado atrás do Start Thought no mesmo quadro: a fila do ThoughtSystem garante a ordem, e o " +
-                 "respiro entre as duas frases é o DELAY DA LINHA, no asset.")]
+        /// <summary>
+        /// O PRIMEIRO PENSAMENTO DO TRAJETO, dito LOGO DEPOIS do Start Thought — a frase que aponta o
+        /// caminho ("É só seguir a rua até o fim").
+        ///
+        /// NÃO É UM GATILHO NA RUA, e essa é a diferença: ele não acontece num LUGAR, acontece DEPOIS
+        /// de outra frase. Amarrado a um volume no chão, ele dependeria de quanto a Clear já andou
+        /// enquanto o Start Thought estava na tela — quem parasse para olhar a rua ouviria os dois
+        /// juntos, quem saísse andando ouviria com um buraco no meio.
+        ///
+        /// Sai enfileirado atrás do Start Thought no mesmo quadro: a fila do ThoughtSystem garante a
+        /// ordem, e o respiro entre as duas frases é o DELAY DA LINHA, no asset.
+        /// </summary>
+        [Tooltip("O PRIMEIRO PENSAMENTO DO TRAJETO, dito LOGO DEPOIS do Start Thought — a frase que aponta o caminho (\"É só seguir a rua até o fim\").")]
         [SerializeField] private ThoughtData afterStartThought;
-        [Tooltip("PENSAMENTO DA CHEGADA: a última frase do ato, dita ao pisar na entrada do prédio.\n\n" +
-                 "ELE MORA AQUI, E NÃO NUM ThoughtTrigger no ponto de destino — e essa é a diferença entre a frase " +
-                 "ser ouvida e ser cortada no meio. Quem troca a cena é este director, no mesmo instante em que a " +
-                 "chegada é detectada: uma frase disparada por um gatilho ali começaria a aparecer com a tela já " +
-                 "escurecendo, e o ThoughtSystem morre junto com a cena. Estando aqui, a transição ESPERA por ela.\n\n" +
-                 "Os pensamentos do MEIO do trajeto, esses sim, são ThoughtTriggers espalhados pela rua — lá não há " +
-                 "nada esperando por eles.")]
+        /// <summary>
+        /// PENSAMENTO DA CHEGADA: a última frase do ato, dita ao pisar na entrada do prédio.
+        ///
+        /// ELE MORA AQUI, E NÃO NUM ThoughtTrigger no ponto de destino — e essa é a diferença entre a
+        /// frase ser ouvida e ser cortada no meio. Quem troca a cena é este director, no mesmo instante
+        /// em que a chegada é detectada: uma frase disparada por um gatilho ali começaria a aparecer
+        /// com a tela já escurecendo, e o ThoughtSystem morre junto com a cena. Estando aqui, a
+        /// transição ESPERA por ela.
+        ///
+        /// Os pensamentos do MEIO do trajeto, esses sim, são ThoughtTriggers espalhados pela rua — lá
+        /// não há nada esperando por eles.
+        /// </summary>
+        [Tooltip("PENSAMENTO DA CHEGADA: a última frase do ato, dita ao pisar na entrada do prédio.")]
         [SerializeField] private ThoughtData arrivalThought;
-        [Tooltip("Teto (s) da espera pelo pensamento da chegada antes de trocar de cena. É um TETO, não uma pausa: a " +
-                 "troca acontece assim que a frase termina, e este número só existe para o ato não ficar preso se " +
-                 "alguém encadear um pensamento longo demais (ou se outro pensamento estiver na fila na hora).\n\n" +
-                 "0 = não espera nada, e a frase da chegada será cortada pelo fade.")]
+        /// <summary>
+        /// Teto (s) da espera pelo pensamento da chegada antes de trocar de cena. É um TETO, não uma
+        /// pausa: a troca acontece assim que a frase termina, e este número só existe para o ato não
+        /// ficar preso se alguém encadear um pensamento longo demais (ou se outro pensamento estiver na
+        /// fila na hora).
+        ///
+        /// 0 = não espera nada, e a frase da chegada será cortada pelo fade.
+        /// </summary>
+        [Tooltip("Teto (s) da espera pelo pensamento da chegada antes de trocar de cena.")]
         [SerializeField] private float arrivalThoughtMaxWait = 8f;
 
         [Header("Encontro do Leaning - Onde")]
         [Tooltip("O ATOR: o estranho encostado na calçada. É o que a Clear encara e, por padrão, para onde ela caminha. " +
                  "Vazio = o encontro nunca acontece.")]
         [SerializeField] private Transform leaningActor;
-        [Tooltip("O GATILHO DO CHAMADO: o ponto em que o estranho COMEÇA A ASSOVIAR. Não coreografa nada — a rua " +
-                 "continua do jogador, e ela pode até ignorar o som e seguir andando.\n\n" +
-                 "Vigiado por RAIO, igual ao Destino: não precisa de collider nenhum, só de um Transform bem " +
-                 "posicionado. Ponha-o longe o bastante do Leaning Notice Point para a caminhada entre os dois ter " +
-                 "duração — é esse trecho, com o assovio em loop no ouvido dela, que faz o chamado ser insistente em " +
-                 "vez de um efeito sonoro. Vazio = o assovio nunca toca.")]
+        /// <summary>
+        /// O GATILHO DO CHAMADO: o ponto em que o estranho COMEÇA A ASSOVIAR. Não coreografa nada — a
+        /// rua continua do jogador, e ela pode até ignorar o som e seguir andando.
+        ///
+        /// Vigiado por RAIO, igual ao Destino: não precisa de collider nenhum, só de um Transform bem
+        /// posicionado. Ponha-o longe o bastante do Leaning Notice Point para a caminhada entre os dois
+        /// ter duração — é esse trecho, com o assovio em loop no ouvido dela, que faz o chamado ser
+        /// insistente em vez de um efeito sonoro. Vazio = o assovio nunca toca.
+        /// </summary>
+        [Tooltip("O GATILHO DO CHAMADO: o ponto em que o estranho COMEÇA A ASSOVIAR.")]
         [SerializeField] private Transform leaningTriggerPoint;
         [Tooltip("Raio (m), no plano XZ, em torno do gatilho do assovio. Generoso de propósito: o jogador " +
                  "não anda numa linha reta, e um raio apertado é um beat que \"às vezes não acontece\" — o pior " +
                  "defeito possível numa cena que só roda uma vez.")]
         [SerializeField] private float leaningTriggerRadius = 5f;
-        [Tooltip("O GATILHO DO GIRO: o ponto em que a abordagem TOMA A RUA — o beat 2 começa, o controle sai da mão do " +
-                 "jogador e a cabeça dela é virada até encará-lo.\n\n" +
-                 "É o SEGUNDO ponto do encontro, adiante do gatilho do assovio: entre um e outro ela anda livre com o " +
-                 "chamado tocando em loop, e é essa distância que dá ao assovio tempo de ser um chamado.\n\n" +
-                 "SE O OBJETO TIVER UM COLLIDER PRIMITIVO, é a FORMA dele que vale (útil para desenhar um portão " +
-                 "atravessado na rua, que dispara na linha certa em vez de num círculo). Sem collider, cai no raio " +
-                 "abaixo. Vazio = o gatilho do assovio acumula os dois papéis, como era antes de o segundo ponto " +
-                 "existir.")]
+        /// <summary>
+        /// O GATILHO DO GIRO: o ponto em que a abordagem TOMA A RUA — o beat 2 começa, o controle sai
+        /// da mão do jogador e a cabeça dela é virada até encará-lo.
+        ///
+        /// É o SEGUNDO ponto do encontro, adiante do gatilho do assovio: entre um e outro ela anda
+        /// livre com o chamado tocando em loop, e é essa distância que dá ao assovio tempo de ser um
+        /// chamado.
+        ///
+        /// SE O OBJETO TIVER UM COLLIDER PRIMITIVO, é a FORMA dele que vale (útil para desenhar um
+        /// portão atravessado na rua, que dispara na linha certa em vez de num círculo). Sem collider,
+        /// cai no raio abaixo. Vazio = o gatilho do assovio acumula os dois papéis, como era antes de o
+        /// segundo ponto existir.
+        /// </summary>
+        [Tooltip("O GATILHO DO GIRO: o ponto em que a abordagem TOMA A RUA — o beat 2 começa, o controle sai da mão do jogador e a cabeça dela é virada até encará-lo.")]
         [SerializeField] private Transform leaningNoticePoint;
         [Tooltip("Raio (m), no plano XZ, do gatilho do giro — usado só quando o objeto NÃO tem collider primitivo.")]
         [SerializeField] private float leaningNoticeRadius = 3f;
-        [Tooltip("ONDE A CLEAR PARA, se você quiser escolher o ponto à mão (ex.: para ela parar na calçada, e não em " +
-                 "cima da rua). Ela continua ENCARANDO o estranho enquanto anda até aqui — o rosto e os pés vão para " +
-                 "lugares diferentes de propósito.\n\n" +
-                 "Vazio (o padrão) = ela anda em linha reta na direção dele e para a Stop Distance de distância.")]
+        /// <summary>
+        /// ONDE A CLEAR PARA, se você quiser escolher o ponto à mão (ex.: para ela parar na calçada, e
+        /// não em cima da rua). Ela continua ENCARANDO o estranho enquanto anda até aqui — o rosto e os
+        /// pés vão para lugares diferentes de propósito.
+        ///
+        /// Vazio (o padrão) = ela anda em linha reta na direção dele e para a Stop Distance de
+        /// distância.
+        /// </summary>
+        [Tooltip("ONDE A CLEAR PARA, se você quiser escolher o ponto à mão (ex.: para ela parar na calçada, e não em cima da rua).")]
         [SerializeField] private Transform leaningApproachPoint;
 
+        /// <summary>
+        /// O ASSOVIO: o som com que o estranho CHAMA a Clear. É ele que dá o motivo do giro.
+        ///
+        /// Sem som, ela vira a cabeça sozinha para um figurante que não fez nada — o movimento
+        /// acontece, mas parece bug de câmera. Com ele, a ordem dos acontecimentos é a de quem é
+        /// abordado na rua de verdade: primeiro o barulho, depois a cabeça.
+        ///
+        /// TOCA NO QUADRO EM QUE ELA CRUZA O LEANING TRIGGER POINT, e só aí: o assovio é efeito do
+        /// gatilho, não do beat. Pular para o beat 2 pelo Start Beat ou pela tecla 2 vira a cabeça dela
+        /// em silêncio, porque ninguém passou por lugar nenhum.
+        ///
+        /// ELE TOCA EM LOOP até ela chegar no Leaning Notice Point: quem chama alguém na rua não
+        /// assovia uma vez e desiste. O loop é o que transforma o som em INSISTÊNCIA — e é ele que
+        /// sustenta o trecho em que ela ainda está no controle e pode escolher continuar andando.
+        ///
+        /// Vazio = ela vira em silêncio.
+        /// </summary>
         [Header("Encontro do Leaning - Beat 2: Notar")]
-        [Tooltip("O ASSOVIO: o som com que o estranho CHAMA a Clear. É ele que dá o motivo do giro.\n\n" +
-                 "Sem som, ela vira a cabeça sozinha para um figurante que não fez nada — o movimento acontece, mas " +
-                 "parece bug de câmera. Com ele, a ordem dos acontecimentos é a de quem é abordado na rua de verdade: " +
-                 "primeiro o barulho, depois a cabeça.\n\n" +
-                 "TOCA NO QUADRO EM QUE ELA CRUZA O LEANING TRIGGER POINT, e só aí: o assovio é efeito do gatilho, não " +
-                 "do beat. Pular para o beat 2 pelo Start Beat ou pela tecla 2 vira a cabeça dela em silêncio, porque " +
-                 "ninguém passou por lugar nenhum.\n\n" +
-                 "ELE TOCA EM LOOP até ela chegar no Leaning Notice Point: quem chama alguém na rua não assovia uma " +
-                 "vez e desiste. O loop é o que transforma o som em INSISTÊNCIA — e é ele que sustenta o trecho em que " +
-                 "ela ainda está no controle e pode escolher continuar andando.\n\n" +
-                 "Vazio = ela vira em silêncio.")]
+        [Tooltip("O ASSOVIO: o som com que o estranho CHAMA a Clear.")]
         [SerializeField] private AudioClip leaningWhistle;
-        [Tooltip("AudioSource 3D do assovio. Vazio = criado automaticamente NO ATOR, já configurado (3D, sem Play On " +
-                 "Awake, sem doppler, com alcance calculado a partir da distância até o gatilho).\n\n" +
-                 "Só preencha se quiser controlar o rolloff à mão — e mantenha o Spatial Blend em 1: um assovio 2D " +
-                 "soa dentro da cabeça dela e não aponta direção nenhuma, que é a única coisa que ele precisa fazer.")]
+        /// <summary>
+        /// AudioSource 3D do assovio. Vazio = criado automaticamente NO ATOR, já configurado (3D, sem
+        /// Play On Awake, sem doppler, com alcance calculado a partir da distância até o gatilho).
+        ///
+        /// Só preencha se quiser controlar o rolloff à mão — e mantenha o Spatial Blend em 1: um
+        /// assovio 2D soa dentro da cabeça dela e não aponta direção nenhuma, que é a única coisa que
+        /// ele precisa fazer.
+        /// </summary>
+        [Tooltip("AudioSource 3D do assovio.")]
         [SerializeField] private AudioSource leaningWhistleSource;
         [Tooltip("Volume do assovio (0-1).")]
         [Range(0f, 1f)]
         [SerializeField] private float leaningWhistleVolume = 0.9f;
-        [Tooltip("Segundos de FADE IN do assovio, contados do quadro em que ela cruza o gatilho.\n\n" +
-                 "Um som que nasce no volume cheio ESTALA no ataque — o mesmo clique do corte seco, só que na entrada. " +
-                 "E o clique denuncia o disparo: soa como um arquivo começando, não como alguém do outro lado da rua " +
-                 "resolvendo chamar.\n\n" +
-                 "CURTO É O PONTO: o assovio é um chamado, não uma trilha se aproximando. Acima de ~0.5 s ele deixa de " +
-                 "ter ataque e a Clear vira a cabeça para um som que ainda está crescendo. 0 = entra no volume cheio.")]
+        /// <summary>
+        /// Segundos de FADE IN do assovio, contados do quadro em que ela cruza o gatilho.
+        ///
+        /// Um som que nasce no volume cheio ESTALA no ataque — o mesmo clique do corte seco, só que na
+        /// entrada. E o clique denuncia o disparo: soa como um arquivo começando, não como alguém do
+        /// outro lado da rua resolvendo chamar.
+        ///
+        /// CURTO É O PONTO: o assovio é um chamado, não uma trilha se aproximando. Acima de ~0.5 s ele
+        /// deixa de ter ataque e a Clear vira a cabeça para um som que ainda está crescendo. 0 = entra
+        /// no volume cheio.
+        /// </summary>
+        [Tooltip("Segundos de FADE IN do assovio, contados do quadro em que ela cruza o gatilho.")]
         [SerializeField] private float leaningWhistleFadeIn = 0.35f;
-        [Tooltip("Respiro (s) ENTRE o assovio e o giro da cabeça. É o que faz o giro ser uma RESPOSTA ao som em vez de " +
-                 "um evento simultâneo a ele — com 0, ela vira junto com o assovio, como se já soubesse.\n\n" +
-                 "Ignorado quando não há assovio soando (sem clipe, ou num salto de debug direto para o beat 2): a " +
-                 "espera seria a Clear travada olhando para a frente por nada.")]
+        /// <summary>
+        /// Respiro (s) ENTRE o assovio e o giro da cabeça. É o que faz o giro ser uma RESPOSTA ao som
+        /// em vez de um evento simultâneo a ele — com 0, ela vira junto com o assovio, como se já
+        /// soubesse.
+        ///
+        /// Ignorado quando não há assovio soando (sem clipe, ou num salto de debug direto para o beat
+        /// 2): a espera seria a Clear travada olhando para a frente por nada.
+        /// </summary>
+        [Tooltip("Respiro (s) ENTRE o assovio e o giro da cabeça.")]
         [SerializeField] private float leaningWhistleLead = 0.8f;
-        [Tooltip("Segundos de FADE OUT do assovio quando ele morre SOZINHO — o caso em que ela IGNORA o estranho: " +
-                 "cruza o gatilho do assovio, desvia do ponto do giro e segue até o prédio com o chamado ainda no ar. " +
-                 "É a chegada que manda o som embora, e ela tem que acontecer em silêncio.\n\n" +
-                 "NÃO É O CAMINHO DO ENCONTRO. Atendendo ao chamado, o assovio é apagado num corte curto ANTES de a " +
-                 "voz do estranho entrar — os dois nunca podem soar juntos, e esperar por um fade longo aqui deixaria " +
-                 "o assovio tocando por baixo da fala.\n\n" +
-                 "Cortar seco no meio da onda ESTALA, e o clique é mais audível que o próprio assovio — daí o fade em " +
-                 "vez de um Stop. 0 = corta seco.")]
+        /// <summary>
+        /// Segundos de FADE OUT do assovio quando ele morre SOZINHO — o caso em que ela IGNORA o
+        /// estranho: cruza o gatilho do assovio, desvia do ponto do giro e segue até o prédio com o
+        /// chamado ainda no ar. É a chegada que manda o som embora, e ela tem que acontecer em
+        /// silêncio.
+        ///
+        /// NÃO É O CAMINHO DO ENCONTRO. Atendendo ao chamado, o assovio é apagado num corte curto ANTES
+        /// de a voz do estranho entrar — os dois nunca podem soar juntos, e esperar por um fade longo
+        /// aqui deixaria o assovio tocando por baixo da fala.
+        ///
+        /// Cortar seco no meio da onda ESTALA, e o clique é mais audível que o próprio assovio — daí o
+        /// fade em vez de um Stop. 0 = corta seco.
+        /// </summary>
+        [Tooltip("Segundos de FADE OUT do assovio quando ele morre SOZINHO — o caso em que ela IGNORA o estranho: cruza o gatilho do assovio, desvia do ponto do giro e segue até o prédio com o chamado ainda no ar.")]
         [SerializeField] private float leaningWhistleFadeOut = 1.5f;
-        [Tooltip("TEMPO MÍNIMO (s) que o assovio fica no ar antes de o FADE ACIMA poder começar.\n\n" +
-                 "Ele existe porque o pedido de fade pode chegar quase junto com o Play — e um assovio que vive menos " +
-                 "de um segundo, começa a morrer e some é o mesmo que ninguém ter ouvido nada. Este piso garante que o " +
-                 "chamado seja OUVIDO antes de ser desligado.\n\n" +
-                 "SOB O CHAMADO DO ESTRANHO ELE NÃO SE APLICA: lá o assovio tem que sair para a voz entrar, e segurar " +
-                 "um piso de tempo no ar seria justamente deixar os dois soando juntos.\n\n" +
-                 "Se o clipe for mais curto que isto, ele acaba sozinho e o fade não tem o que descer.")]
+        /// <summary>
+        /// TEMPO MÍNIMO (s) que o assovio fica no ar antes de o FADE ACIMA poder começar.
+        ///
+        /// Ele existe porque o pedido de fade pode chegar quase junto com o Play — e um assovio que
+        /// vive menos de um segundo, começa a morrer e some é o mesmo que ninguém ter ouvido nada. Este
+        /// piso garante que o chamado seja OUVIDO antes de ser desligado.
+        ///
+        /// SOB O CHAMADO DO ESTRANHO ELE NÃO SE APLICA: lá o assovio tem que sair para a voz entrar, e
+        /// segurar um piso de tempo no ar seria justamente deixar os dois soando juntos.
+        ///
+        /// Se o clipe for mais curto que isto, ele acaba sozinho e o fade não tem o que descer.
+        /// </summary>
+        [Tooltip("TEMPO MÍNIMO (s) que o assovio fica no ar antes de o FADE ACIMA poder começar.")]
         [SerializeField] private float leaningWhistleMinAirtime = 2.5f;
-        [Tooltip("O CHAMADO: o one-shot do estranho CHAMANDO a Clear (\"ei\", \"moça\", o que for), disparado no " +
-                 "instante em que ela cruza o Leaning Notice Point.\n\n" +
-                 "É A SEGUNDA TENTATIVA DELE, e é o que justifica a rua deixar de ser dela ali. O assovio vinha " +
-                 "insistindo desde o ponto anterior e ela seguiu andando; o chamado é ele DESISTINDO DE SER SUTIL. " +
-                 "Sem ele, o giro acontece porque o jogador pisou num lugar; com ele, acontece porque alguém falou " +
-                 "com ela.\n\n" +
-                 "AO CONTRÁRIO DO ASSOVIO, ele é do BEAT e não do gatilho: pular para o beat 2 pela tecla 2 TOCA o " +
-                 "chamado, porque ele é parte da coreografia que começa ali — é o que torna possível afinar o giro " +
-                 "sem refazer a rua inteira.\n\n" +
-                 "Vazio = ela vira só com o assovio morrendo, como era antes.")]
+        /// <summary>
+        /// O CHAMADO: o one-shot do estranho CHAMANDO a Clear ("ei", "moça", o que for), disparado no
+        /// instante em que ela cruza o Leaning Notice Point.
+        ///
+        /// É A SEGUNDA TENTATIVA DELE, e é o que justifica a rua deixar de ser dela ali. O assovio
+        /// vinha insistindo desde o ponto anterior e ela seguiu andando; o chamado é ele DESISTINDO DE
+        /// SER SUTIL. Sem ele, o giro acontece porque o jogador pisou num lugar; com ele, acontece
+        /// porque alguém falou com ela.
+        ///
+        /// AO CONTRÁRIO DO ASSOVIO, ele é do BEAT e não do gatilho: pular para o beat 2 pela tecla 2
+        /// TOCA o chamado, porque ele é parte da coreografia que começa ali — é o que torna possível
+        /// afinar o giro sem refazer a rua inteira.
+        ///
+        /// Vazio = ela vira só com o assovio morrendo, como era antes.
+        /// </summary>
+        [Tooltip("O CHAMADO: o one-shot do estranho CHAMANDO a Clear (\"ei\", \"moça\", o que for), disparado no instante em que ela cruza o Leaning Notice Point.")]
         [SerializeField] private AudioClip leaningCall;
-        [Tooltip("AudioSource 3D do chamado. Vazio = criado automaticamente NO ATOR, com a mesma curva do assovio.\n\n" +
-                 "É UM SOURCE SEPARADO do assovio de propósito, e não um PlayOneShot nele: o volume do source do " +
-                 "assovio é a ALÇA DO FADE dele, e um one-shot tocado ali sai multiplicado por essa alça. Como o " +
-                 "assovio é levado a ZERO antes de a voz entrar, o chamado sairia mudo — e o Stop() logo em seguida " +
-                 "o cortaria no meio.")]
+        /// <summary>
+        /// AudioSource 3D do chamado. Vazio = criado automaticamente NO ATOR, com a mesma curva do
+        /// assovio.
+        ///
+        /// É UM SOURCE SEPARADO do assovio de propósito, e não um PlayOneShot nele: o volume do source
+        /// do assovio é a ALÇA DO FADE dele, e um one-shot tocado ali sai multiplicado por essa alça.
+        /// Como o assovio é levado a ZERO antes de a voz entrar, o chamado sairia mudo — e o Stop()
+        /// logo em seguida o cortaria no meio.
+        /// </summary>
+        [Tooltip("AudioSource 3D do chamado.")]
         [SerializeField] private AudioSource leaningCallSource;
         [Tooltip("Volume do chamado (0-1). Mais alto que o assovio por natureza: o assovio vem de longe e é discreto, " +
                  "o chamado é a voz dele levantada.")]
@@ -279,42 +355,47 @@ namespace TheDelivery.Narrative
                  "pergunta na cabeça dela. Vazio = nenhum.")]
         [SerializeField] private ThoughtData leaningAfterThought;
 
+        /// <summary>
+        /// BEAT EM QUE O ATO COMEÇA. Permite testar um beat específico sem refazer o trajeto: escolha
+        /// "LeaningDialogue" e a Clear nasce no gatilho do estranho já ouvindo a conversa.
+        ///
+        /// O SPAWN ACOMPANHA a escolha — Walk nasce no Spawn Point, os beats do estranho nascem no
+        /// Leaning Notice Point (onde a rua deixa de ser do jogador), e Arrival nasce no Destino. Senão
+        /// "começar no diálogo" seria conversar com alguém a noventa metros.
+        ///
+        /// O ASSOVIO NÃO ACOMPANHA: ele é efeito de CRUZAR o gatilho do chamado, que fica ANTES desse
+        /// ponto, então começar direto num beat do estranho é silencioso. Para testar o assovio (e o
+        /// trecho em que ela anda livre com ele em loop) deixe em Walk: você nasce no Spawn e caminha
+        /// pelos dois pontos na ordem.
+        ///
+        /// NO FLUXO REAL, deixe em Walk.
+        /// </summary>
         [Header("Debug")]
-        [Tooltip("BEAT EM QUE O ATO COMEÇA. Permite testar um beat específico sem refazer o trajeto: escolha " +
-                 "\"LeaningDialogue\" e a Clear nasce no gatilho do estranho já ouvindo a conversa.\n\n" +
-                 "O SPAWN ACOMPANHA a escolha — Walk nasce no Spawn Point, os beats do estranho nascem no Leaning " +
-                 "Notice Point (onde a rua deixa de ser do jogador), e Arrival nasce no Destino. Senão \"começar no " +
-                 "diálogo\" seria conversar com alguém a noventa metros.\n\n" +
-                 "O ASSOVIO NÃO ACOMPANHA: ele é efeito de CRUZAR o gatilho do chamado, que fica ANTES desse ponto, " +
-                 "então começar direto num beat do estranho é silencioso. Para testar o assovio (e o trecho em que " +
-                 "ela anda livre com ele em loop) deixe em Walk: você nasce no Spawn e caminha pelos dois pontos na " +
-                 "ordem.\n\n" +
-                 "NO FLUXO REAL, deixe em Walk.")]
+        [Tooltip("BEAT EM QUE O ATO COMEÇA.")]
         [SerializeField] private JourneyBeat startBeat = JourneyBeat.Walk;
         [Tooltip("Habilita as teclas 1-6 para pular entre os beats durante o Play (1 Walk, 2 LeaningNotice, " +
                  "3 LeaningApproach, 4 LeaningDialogue, 5 LeaningRelease, 6 Arrival) e loga cada troca no Console.\n\n" +
                  "A tecla 5 é também a saída de emergência do teste: devolve o controle de onde você estiver.")]
         [SerializeField] private bool debugMode = false;
-        [Tooltip("TESTAR ESTA CENA SOZINHA: marque para dar Play direto na Road, sem passar pela Boot. " +
-                 "Sem isto o director fica INERTE ao abrir a cena avulsa — não existe GameManager (ele vem da Boot), " +
-                 "então CurrentAct nunca é ActJourney e nada acontece: não spawna, não anoitece, não transiciona. " +
-                 "Diferente do Act3/Act4Director (que dividem o apartamento e brigariam entre si), aqui é SEGURO deixar " +
-                 "marcado no fluxo real: este é o único director da cena, e quando o Ato 1 carrega a Road já é a vez dele. " +
-                 "Único efeito colateral do teste avulso: ao chegar no destino não há GameManager para trocar de cena, " +
-                 "então a chegada só loga um erro em vez de ir para a Recepção.")]
+        /// <summary>
+        /// TESTAR ESTA CENA SOZINHA: marque para dar Play direto na Road, sem passar pela Boot. Sem
+        /// isto o director fica INERTE ao abrir a cena avulsa — não existe GameManager (ele vem da
+        /// Boot), então CurrentAct nunca é ActJourney e nada acontece: não spawna, não anoitece, não
+        /// transiciona. Diferente do Act3/Act4Director (que dividem o apartamento e brigariam entre
+        /// si), aqui é SEGURO deixar marcado no fluxo real: este é o único director da cena, e quando o
+        /// Ato 1 carrega a Road já é a vez dele. Único efeito colateral do teste avulso: ao chegar no
+        /// destino não há GameManager para trocar de cena, então a chegada só loga um erro em vez de ir
+        /// para a Recepção.
+        /// </summary>
+        [Tooltip("TESTAR ESTA CENA SOZINHA: marque para dar Play direto na Road, sem passar pela Boot.")]
         [SerializeField] private bool autoStartForDebug = false;
 
         /// <summary>True quando este diretor assumiu a cena (não está inerte).</summary>
         public bool IsRunning { get; private set; }
 
-        /// <summary>Beat em execução no momento.</summary>
-        public JourneyBeat CurrentBeat { get; private set; } = JourneyBeat.None;
-
         // CharacterController do player: desabilitado durante o teleporte para o
         // spawn (o CC resiste a setar position direto) e religado logo em seguida.
         private CharacterController characterController;
-
-        private Coroutine beatRoutine;
 
         // A mira do encontro roda EM PARALELO aos beats (ela tem que se corrigir
         // enquanto a Clear anda), então é uma coroutine irmã, não filha — e por isso
@@ -491,59 +572,35 @@ namespace TheDelivery.Narrative
         // --- Máquina de beats -----------------------------------------------
 
         /// <summary>
-        /// Define o beat atual e inicia a coroutine correspondente, cancelando
-        /// qualquer beat em andamento. Ponto único de transição entre beats.
-        ///
-        /// CADA BEAT SE VIRA SOZINHO com o estado de que precisa: entrar direto no
-        /// <see cref="JourneyBeat.LeaningDialogue"/> trava o player e cola a mira no
-        /// estranho do mesmo jeito que entrar pelo <see cref="JourneyBeat.LeaningNotice"/>
-        /// teria feito. É isso que torna o salto de debug uma coisa segura em vez de um
-        /// jeito de deixar a cena num estado impossível.
+        /// Troca de beat IMEDIATA (sem esperar um quadro): as vigias do Update leem o
+        /// <see cref="BeatDirector{TBeat}.CurrentBeat"/> novo no mesmo quadro da troca e não
+        /// podem disparar duas vezes.
         /// </summary>
-        public void AdvanceToBeat(JourneyBeat beat)
-        {
-            if (beatRoutine != null)
-            {
-                StopCoroutine(beatRoutine);
-                beatRoutine = null;
-            }
+        protected override bool DeferBeatSwitch => false;
 
+        /// <summary>
+        /// A coroutine de cada beat (ver <see cref="BeatDirector{TBeat}"/>). Entrar direto no
+        /// <see cref="JourneyBeat.LeaningDialogue"/> trava o player e cola a mira no estranho
+        /// do mesmo jeito que entrar pelo <see cref="JourneyBeat.LeaningNotice"/> teria feito.
+        /// No debug, a tecla 5 (<see cref="JourneyBeat.LeaningRelease"/>) é a saída de
+        /// emergência: devolve o controle de onde estiver.
+        /// </summary>
+        protected override IEnumerator CreateBeatRoutine(JourneyBeat beat) => beat switch
+        {
+            JourneyBeat.Walk            => BeatWalk(),
+            JourneyBeat.LeaningNotice   => BeatLeaningNotice(),
+            JourneyBeat.LeaningApproach => BeatLeaningApproach(),
+            JourneyBeat.LeaningDialogue => BeatLeaningDialogue(),
+            JourneyBeat.LeaningRelease  => BeatLeaningRelease(),
+            JourneyBeat.Arrival         => BeatArrival(),
+            _ => null,
+        };
+
+        /// <summary>O que roda em paralelo aos beats e precisa morrer em qualquer troca.</summary>
+        protected override void OnBeatExit(JourneyBeat beat)
+        {
             if (debugMode)
                 Debug.Log($"[JourneyDirector] {CurrentBeat} -> {beat}", this);
-
-            CurrentBeat = beat;
-
-            switch (beat)
-            {
-                case JourneyBeat.Walk:
-                    beatRoutine = StartCoroutine(BeatWalk());
-                    break;
-
-                case JourneyBeat.LeaningNotice:
-                    beatRoutine = StartCoroutine(BeatLeaningNotice());
-                    break;
-
-                case JourneyBeat.LeaningApproach:
-                    beatRoutine = StartCoroutine(BeatLeaningApproach());
-                    break;
-
-                case JourneyBeat.LeaningDialogue:
-                    beatRoutine = StartCoroutine(BeatLeaningDialogue());
-                    break;
-
-                case JourneyBeat.LeaningRelease:
-                    beatRoutine = StartCoroutine(BeatLeaningRelease());
-                    break;
-
-                case JourneyBeat.Arrival:
-                    beatRoutine = StartCoroutine(BeatArrival());
-                    break;
-
-                case JourneyBeat.None:
-                default:
-                    Debug.LogWarning($"[JourneyDirector] AdvanceToBeat chamado com beat sem rotina: {beat}", this);
-                    break;
-            }
         }
 
         // --- BEAT 1: Walk -----------------------------------------------------
@@ -1991,30 +2048,6 @@ namespace TheDelivery.Narrative
         private Vector3 SnapToGround(Vector3 position) => DirectorUtility.SnapToGround(position, groundMask);
 
         // --- Debug ---------------------------------------------------------------
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
-        /// <summary>
-        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
-        /// <see cref="debugMode"/>), como nos diretores dos atos. Útil para testar um
-        /// beat isolado em Play sem refazer a caminhada — e a 5 (LeaningRelease) é a
-        /// saída de emergência: devolve o controle de onde estiver.
-        /// </summary>
-        private void HandleDebugKeys()
-        {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
-                return;
-
-            if (kb.digit1Key.wasPressedThisFrame) AdvanceToBeat(JourneyBeat.Walk);
-            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(JourneyBeat.LeaningNotice);
-            else if (kb.digit3Key.wasPressedThisFrame) AdvanceToBeat(JourneyBeat.LeaningApproach);
-            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(JourneyBeat.LeaningDialogue);
-            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(JourneyBeat.LeaningRelease);
-            else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(JourneyBeat.Arrival);
-        }
-
-#endif
 
 #if UNITY_EDITOR
         // Visualiza spawn, destino e o encontro no Editor para facilitar o setup da rua.

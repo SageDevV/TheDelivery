@@ -6,28 +6,19 @@ namespace TheDelivery.Core
     /// corresponder EXATAMENTE ao nome do arquivo .unity registrado no Build
     /// Settings — o <see cref="GameManager"/> carrega via <c>scene.ToString()</c>,
     /// então renomear um valor aqui exige renomear o .unity (e vice-versa).
+    ///
+    /// VALORES EXPLÍCITOS, pelo mesmo motivo do <see cref="GameAct"/>: o número salvo nos
+    /// campos do Inspector nunca muda, e a ordem abaixo é a do fluxo do jogo. Cena nova
+    /// ganha o próximo número livre (7).
     /// </summary>
     public enum GameScene
     {
-        Boot,        // cena de inicialização (só o GameManager + tela preta persistente)
-        Cafeteria,   // Ato 1
-        Reception,   // Ato 2 (início)
-        Apartment,   // Ato 4 (a cena atual renomeada); Atos 2-3 também acontecem aqui
-
-        // A rua entre a cafeteria e o prédio (ActJourney). O ATO se chama Journey
-        // (GameAct.ActJourney, JourneyDirector), mas o valor aqui é Road porque
-        // este enum espelha NOME DE ARQUIVO, e a cena no disco é Road.unity —
-        // renomear a cena exige renomear este valor junto. No FIM do enum, e não na
-        // sua posição cronológica (entre Cafeteria e Reception), para não deslocar os
-        // índices dos valores já serializados no Inspector.
-        Road,
-
-        // O pesadelo do cold open (ActNightmare). O arquivo tem que se chamar
-        // Nightmare.unity e estar no Build Settings — este enum é carregado por NOME.
-        Nightmare,
-
-        // A fuga (ActEscape), depois do sequestro no fim do Ato 4. O arquivo tem que se
-        // chamar Escape.unity e estar no Build Settings — este enum é carregado por NOME.
-        Escape
+        Boot = 0,      // inicialização: só o GameManager e a tela preta persistente
+        Nightmare = 5, // ActNightmare (cold open)
+        Cafeteria = 1, // Act1
+        Road = 4,      // ActJourney — o ATO se chama Journey; a CENA (o arquivo) é Road
+        Reception = 2, // Act2
+        Apartment = 3, // Act3 e Act4
+        Escape = 6     // ActEscape
     }
 }

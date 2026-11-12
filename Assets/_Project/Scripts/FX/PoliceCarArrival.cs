@@ -47,8 +47,16 @@ namespace TheDelivery.FX
         [Range(0f, 1f)]
         [SerializeField] private float curveHandleScale = 0.4f;
 
+        /// <summary>
+        /// Rigs que devem SEGUIR a viatura como se fossem presos a ela (ex.: o objeto do rig de luzes
+        /// da sirene / SirenLightEffect). O offset de MONTAGEM é capturado no início do trajeto
+        /// (viatura ainda na pose autorada) e reaplicado a cada frame — a sirene acompanha o carro até
+        /// a vaga. Use isto EM VEZ de tornar a sirene filha da viatura: evita herdar a ESCALA do prefab
+        /// (que aqui é ~138x) e não depende da hierarquia. Vazio = a sirene precisa ser filha de
+        /// verdade da viatura para acompanhá-la.
+        /// </summary>
         [Header("Sirene acoplada")]
-        [Tooltip("Rigs que devem SEGUIR a viatura como se fossem presos a ela (ex.: o objeto do rig de luzes da sirene / SirenLightEffect). O offset de MONTAGEM é capturado no início do trajeto (viatura ainda na pose autorada) e reaplicado a cada frame — a sirene acompanha o carro até a vaga. Use isto EM VEZ de tornar a sirene filha da viatura: evita herdar a ESCALA do prefab (que aqui é ~138x) e não depende da hierarquia. Vazio = a sirene precisa ser filha de verdade da viatura para acompanhá-la.")]
+        [Tooltip("Rigs que devem SEGUIR a viatura como se fossem presos a ela (ex.: o objeto do rig de luzes da sirene / SirenLightEffect).")]
         [SerializeField] private Transform[] mountedRigs;
 
         [Header("Opcional")]

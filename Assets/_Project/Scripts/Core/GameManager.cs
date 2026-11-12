@@ -39,10 +39,14 @@ namespace TheDelivery.Core
                  "então viaja no DontDestroyOnLoad e vale para TODAS as cenas. Deixe VAZIO para resolver sozinho o " +
                  "Volume filho — é o caso normal, já que ele faz parte deste mesmo rig persistente.")]
         [SerializeField] private Volume globalVolume;
-        [Tooltip("Cenas que NÃO recebem o tratamento global — porque trazem o próprio. O Nightmare é o caso: a visão " +
-                 "turva do sonho (NightmareVision) já tem grão, vinheta e desfoque autorados para ela, e dois Volumes " +
-                 "globais disputando os mesmos overrides fazem o resultado depender de quem tem mais prioridade em vez " +
-                 "de depender do que foi autorado. Ao sair da cena o tratamento global volta sozinho.")]
+        /// <summary>
+        /// Cenas que NÃO recebem o tratamento global — porque trazem o próprio. O Nightmare é o caso: a
+        /// visão turva do sonho (NightmareVision) já tem grão, vinheta e desfoque autorados para ela, e
+        /// dois Volumes globais disputando os mesmos overrides fazem o resultado depender de quem tem
+        /// mais prioridade em vez de depender do que foi autorado. Ao sair da cena o tratamento global
+        /// volta sozinho.
+        /// </summary>
+        [Tooltip("Cenas que NÃO recebem o tratamento global — porque trazem o próprio.")]
         [SerializeField] private GameScene[] scenesWithoutGlobalVolume = { GameScene.Nightmare };
 
         [Header("Debug")]

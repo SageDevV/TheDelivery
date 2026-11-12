@@ -67,14 +67,20 @@ namespace TheDelivery.AI
         [Header("Passos")]
         [Tooltip("Toca os passos enquanto este objeto se move.")]
         [SerializeField] private bool enableFootsteps = true;
-        [Tooltip("QUE TIPO DE ÁUDIO você tem — igual ao do jogador. LoopingClip: uma gravação CONTÍNUA de caminhada " +
-                 "(vários passos no mesmo arquivo), tocada em loop enquanto anda. PerStepClips: samples de UM passo " +
-                 "cada, disparados a cada passada.\n\n" +
-                 "SINCRONIA COM O PÉ SÓ EXISTE NO PerStepClips. Uma gravação contínua traz a cadência dela embutida, e " +
-                 "não há como alinhá-la à da animação — o que se pode fazer é aproximar o pitch, e aproximar não é " +
-                 "sincronizar. Para o som bater com o pé na tela: PerStepClips + cadência AnimationCycle.\n\n" +
-                 "Escolher errado é audível: disparar um loop a cada passada empilha cópias sobrepostas que continuam " +
-                 "tocando depois que a criatura para.")]
+        /// <summary>
+        /// QUE TIPO DE ÁUDIO você tem — igual ao do jogador. LoopingClip: uma gravação CONTÍNUA de
+        /// caminhada (vários passos no mesmo arquivo), tocada em loop enquanto anda. PerStepClips:
+        /// samples de UM passo cada, disparados a cada passada.
+        ///
+        /// SINCRONIA COM O PÉ SÓ EXISTE NO PerStepClips. Uma gravação contínua traz a cadência dela
+        /// embutida, e não há como alinhá-la à da animação — o que se pode fazer é aproximar o pitch, e
+        /// aproximar não é sincronizar. Para o som bater com o pé na tela: PerStepClips + cadência
+        /// AnimationCycle.
+        ///
+        /// Escolher errado é audível: disparar um loop a cada passada empilha cópias sobrepostas que
+        /// continuam tocando depois que a criatura para.
+        /// </summary>
+        [Tooltip("QUE TIPO DE ÁUDIO você tem — igual ao do jogador.")]
         [SerializeField] private FootstepMode footstepMode = FootstepMode.LoopingClip;
         [Tooltip("AudioSource dos passos. Auto-criado se vazio (3D, sem Play On Awake). Aponte para um source em um " +
                  "FILHO se quiser o som saindo dos PÉS e não do pivô — numa criatura alta a diferença é audível de perto.")]
@@ -100,33 +106,48 @@ namespace TheDelivery.AI
         [Header("Modo PerStepClips")]
         [Tooltip("Samples de passo avulsos. Um só já funciona (o pitch varia a cada passo); com 3-5 variações o padrão some.")]
         [SerializeField] private AudioClip[] footstepClips;
-        [Tooltip("O QUE DISPARA CADA PASSO — e é aqui que se decide se o som bate com o PÉ na tela.\n\n" +
-                 "AnimationCycle (o certo para uma criatura visível): o passo sai na FASE do ciclo da animação em que " +
-                 "o pé encosta, listada em Step Phases. Fica sincronizado para sempre, inclusive quando o Animator " +
-                 "muda de velocidade — a fase é uma fração do ciclo, não um relógio.\n\n" +
-                 "AnimationEvent: o passo sai quando o CLIPE chamar a função Footstep() por Animation Event. É a " +
-                 "sincronia exata, quadro a quadro, e a única que continua certa se a animação tiver passos " +
-                 "irregulares — em troca, exige marcar os eventos no clipe.\n\n" +
-                 "Distance: um passo a cada Step Stride metros andados. Não olha para a animação nenhuma vez: serve " +
-                 "para quem não tem Animator (ou não se vê), e é o modo em que o pé e o som saem de fase assim que a " +
-                 "cadência do clipe não corresponder exatamente à passada configurada.")]
+        /// <summary>
+        /// O QUE DISPARA CADA PASSO — e é aqui que se decide se o som bate com o PÉ na tela.
+        ///
+        /// AnimationCycle (o certo para uma criatura visível): o passo sai na FASE do ciclo da animação
+        /// em que o pé encosta, listada em Step Phases. Fica sincronizado para sempre, inclusive quando
+        /// o Animator muda de velocidade — a fase é uma fração do ciclo, não um relógio.
+        ///
+        /// AnimationEvent: o passo sai quando o CLIPE chamar a função Footstep() por Animation Event. É
+        /// a sincronia exata, quadro a quadro, e a única que continua certa se a animação tiver passos
+        /// irregulares — em troca, exige marcar os eventos no clipe.
+        ///
+        /// Distance: um passo a cada Step Stride metros andados. Não olha para a animação nenhuma vez:
+        /// serve para quem não tem Animator (ou não se vê), e é o modo em que o pé e o som saem de fase
+        /// assim que a cadência do clipe não corresponder exatamente à passada configurada.
+        /// </summary>
+        [Tooltip("O QUE DISPARA CADA PASSO — e é aqui que se decide se o som bate com o PÉ na tela.")]
         [SerializeField] private FootstepCadence stepCadence = FootstepCadence.AnimationCycle;
         [Tooltip("MODO AnimationCycle: o Animator que toca a caminhada. Vazio = procura um neste objeto ou nos filhos, " +
                  "que é o caso normal (o Animator vem no FBX).")]
         [SerializeField] private Animator animator;
         [Tooltip("MODO AnimationCycle: a camada do Animator de onde a fase é lida. 0 na esmagadora maioria dos casos.")]
         [SerializeField] private int animatorLayer = 0;
-        [Tooltip("MODO AnimationCycle: EM QUE PONTO DO CICLO cada pé encosta no chão, de 0 (primeiro quadro do clipe) a " +
-                 "1 (último). Uma caminhada normal tem DOIS valores — um pé e o outro —, tipicamente perto de 0 e de " +
-                 "0,5.\n\n" +
-                 "Não chute: rode Tools ▸ The Delivery ▸ Nightmare - Passos da Criatura: medir a cadência. Ele varre o " +
-                 "clipe, acha o instante em que cada pé chega ao ponto mais baixo e escreve os números aqui. Meio " +
-                 "ciclo de erro é o som saindo com o pé NO AR, que é pior do que passo nenhum.")]
+        /// <summary>
+        /// MODO AnimationCycle: EM QUE PONTO DO CICLO cada pé encosta no chão, de 0 (primeiro quadro do
+        /// clipe) a 1 (último). Uma caminhada normal tem DOIS valores — um pé e o outro —, tipicamente
+        /// perto de 0 e de 0,5.
+        ///
+        /// Não chute: rode Tools ▸ The Delivery ▸ Nightmare - Passos da Criatura: medir a cadência. Ele
+        /// varre o clipe, acha o instante em que cada pé chega ao ponto mais baixo e escreve os números
+        /// aqui. Meio ciclo de erro é o som saindo com o pé NO AR, que é pior do que passo nenhum.
+        /// </summary>
+        [Tooltip("MODO AnimationCycle: EM QUE PONTO DO CICLO cada pé encosta no chão, de 0 (primeiro quadro do clipe) a 1 (último).")]
         [SerializeField] private float[] stepPhases = { 0f, 0.5f };
-        [Tooltip("MODO Distance: PASSADA (m) percorrida entre um passo e o outro. Sem animação para consultar, quem " +
-                 "marca a cadência é o CHÃO percorrido — um passo continua sendo um passo por metro andado, então a " +
-                 "cadência acompanha a velocidade sozinha.\n\n" +
-                 "Meça na animação (a distância entre dois contatos do mesmo pé) e multiplique pela escala do modelo.")]
+        /// <summary>
+        /// MODO Distance: PASSADA (m) percorrida entre um passo e o outro. Sem animação para consultar,
+        /// quem marca a cadência é o CHÃO percorrido — um passo continua sendo um passo por metro
+        /// andado, então a cadência acompanha a velocidade sozinha.
+        ///
+        /// Meça na animação (a distância entre dois contatos do mesmo pé) e multiplique pela escala do
+        /// modelo.
+        /// </summary>
+        [Tooltip("MODO Distance: PASSADA (m) percorrida entre um passo e o outro.")]
         [SerializeField] private float stepStride = 1.6f;
         [Tooltip("Faixa de variação aleatória do pitch por passo (min, max). É o que impede um clipe único de virar " +
                  "metralhadora: sem isso o ouvido reconhece o MESMO sample repetindo.")]
@@ -159,10 +180,13 @@ namespace TheDelivery.AI
         [Tooltip("Raio (m) dentro do qual o som toca no volume cheio, sem atenuar. Pequeno: é a partir daqui que a " +
                  "aproximação começa a ser audível.")]
         [SerializeField] private float minDistance = 2f;
-        [Tooltip("Distância (m) em que o som some. Precisa cobrir o CORREDOR INTEIRO — a criatura nasce nove metros " +
-                 "atrás da Clear e o valor tem que dar conta de ela ficar para trás quando o jogador corre. Curto " +
-                 "demais e a criatura desaparece do áudio no meio da fuga, que é justamente quando o jogador mais " +
-                 "precisa ouvi-la.")]
+        /// <summary>
+        /// Distância (m) em que o som some. Precisa cobrir o CORREDOR INTEIRO — a criatura nasce nove
+        /// metros atrás da Clear e o valor tem que dar conta de ela ficar para trás quando o jogador
+        /// corre. Curto demais e a criatura desaparece do áudio no meio da fuga, que é justamente
+        /// quando o jogador mais precisa ouvi-la.
+        /// </summary>
+        [Tooltip("Distância (m) em que o som some.")]
         [SerializeField] private float maxDistance = 40f;
 
         [Header("Detecção de movimento")]

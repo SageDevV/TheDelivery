@@ -26,6 +26,12 @@ namespace TheDelivery.UI
         private CanvasGroup canvasGroup;
         private IInteractable current;
 
+        // O que está escrito agora. Os prompts e a tecla são strings fixas (referências que
+        // só mudam quando o estado muda), então comparar as duas basta para saber se o
+        // texto precisa ser remontado — sem alocar uma string nova a cada quadro.
+        private string shownKey;
+        private string shownPrompt;
+
         private void Awake()
         {
             canvasGroup = GetComponent<CanvasGroup>();
@@ -57,9 +63,16 @@ namespace TheDelivery.UI
             bool show = current != null && current.CanInteract;
 
             if (show)
-                label.text = string.Format(format,
-                    playerInteraction.GetInteractKeyDisplay(),
-                    current.InteractionPrompt);
+            {
+                string key = playerInteraction.GetInteractKeyDisplay();
+                string prompt = current.InteractionPrompt;
+                if (!ReferenceEquals(key, shownKey) || !ReferenceEquals(prompt, shownPrompt))
+                {
+                    shownKey = key;
+                    shownPrompt = prompt;
+                    label.text = string.Format(format, key, prompt);
+                }
+            }
 
             float target = show ? 1f : 0f;
             canvasGroup.alpha = Mathf.MoveTowards(

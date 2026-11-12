@@ -23,32 +23,32 @@ namespace TheDelivery.Narrative
     /// </summary>
     public enum Act4Beat
     {
-        None,
-        Awakening,      // Beat 1: acorda com som
-        Investigation,  // Beat 2: investiga o apartamento
-        Discovery,      // Beat 3: descobre que ele está dentro (futuro)
-        DeadPhone,      // Beat 4: celular morto (futuro)
-        RunToLandline,  // Beat 5: corre pro fixo (futuro)
-        TheCall,        // Beat 6: a ligação (futuro)
-        FinalHiding,    // Beat 7: esconde no banheiro (futuro)
-        Death,          // Beat 8: a morte (futuro)
-        Epilogue        // Beat 9: epílogo (futuro)
+        None = 0,
+        Awakening = 1,     // Beat 1: acorda com som
+        Investigation = 2, // Beat 2: investiga o apartamento
+        Discovery = 3,     // Beat 3: descobre que ele está dentro
+        DeadPhone = 4,     // Beat 4: celular morto
+        RunToLandline = 5, // Beat 5: corre pro fixo
+        TheCall = 6,       // Beat 6: a ligação
+        FinalHiding = 7,   // Beat 7: esconde no banheiro
+        Death = 8,         // Beat 8: a morte
+        Epilogue = 9       // Beat 9: epílogo
     }
 
     /// <summary>
     /// "Maestro" do Ato 4. Conduz a sequência narrativa beat a beat por meio de
     /// coroutines sequenciais — cada beat é uma coroutine isolada
     /// (<see cref="BeatAwakening"/>, <see cref="BeatInvestigation"/>, ...) e o
-    /// avanço é explícito via <see cref="AdvanceToBeat"/>. Não desenha UI nem
+    /// avanço é explícito via <see cref="BeatDirector{TBeat}.AdvanceToBeat"/>. Não desenha UI nem
     /// gerencia o antagonista diretamente; coordena referências atribuídas no
     /// Inspector (player, tela preta, áudio placeholder) e dispara pensamentos
     /// pelo <see cref="ThoughtSystem"/>.
     ///
     /// Expansão: para adicionar um beat futuro, implemente a coroutine
-    /// <c>BeatXxx()</c> correspondente, encadeie <see cref="AdvanceToBeat"/> ao
-    /// final dela e registre o case no switch de <see cref="AdvanceToBeat"/>.
+    /// <c>BeatXxx()</c> correspondente, encadeie <see cref="BeatDirector{TBeat}.AdvanceToBeat"/> ao
+    /// final dela e registre o case no switch de <see cref="BeatDirector{TBeat}.AdvanceToBeat"/>.
     /// </summary>
-    public sealed class Act4Director : MonoBehaviour
+    public sealed class Act4Director : BeatDirector<Act4Beat>
     {
         [Header("References")]
         [Tooltip("PlayerController travado/liberado ao longo dos beats.")]
@@ -352,12 +352,8 @@ namespace TheDelivery.Narrative
         [Tooltip("Permite iniciar o Ato 4 sozinho mesmo sem CurrentAct==Act4 (testar o Ato 4 isolado dando Play na cena). No fluxo real (vindo do Ato 3), deixe FALSE — o Ato 4 é acionado pelo Act3Director via BeginAct4().")]
         [SerializeField] private bool autoStartForDebug = false;
 
-        /// <summary>Beat em execução no momento.</summary>
-        public Act4Beat CurrentBeat { get; private set; } = Act4Beat.None;
-
         // Coroutine do beat atual — guardada para que um salto (debug) ou um
         // avanço cancele limpa o beat anterior antes de iniciar o próximo.
-        private Coroutine beatRoutine;
 
         // Fade de áudio em andamento. Como há um único AudioSource, um novo som
         // com fade cancela o anterior (sobrepor faria duas coroutines disputarem
@@ -494,17 +490,30 @@ namespace TheDelivery.Narrative
         // --- Avanço de beats ----------------------------------------------
 
         /// <summary>
-        /// Define o beat atual e inicia a coroutine correspondente, cancelando
-        /// qualquer beat em andamento. Ponto único de transição entre beats.
+        /// Troca de beat IMEDIATA (sem esperar um quadro): as vigias do Update leem o
+        /// <see cref="BeatDirector{TBeat}.CurrentBeat"/> novo no mesmo quadro da troca e não
+        /// podem disparar duas vezes.
         /// </summary>
-        public void AdvanceToBeat(Act4Beat beat)
-        {
-            if (beatRoutine != null)
-            {
-                StopCoroutine(beatRoutine);
-                beatRoutine = null;
-            }
+        protected override bool DeferBeatSwitch => false;
 
+        /// <summary>A coroutine de cada beat (ver <see cref="BeatDirector{TBeat}"/>).</summary>
+        protected override IEnumerator CreateBeatRoutine(Act4Beat beat) => beat switch
+        {
+            Act4Beat.Awakening     => BeatAwakening(),
+            Act4Beat.Investigation => BeatInvestigation(),
+            Act4Beat.Discovery     => BeatDiscovery(),
+            Act4Beat.DeadPhone     => BeatDeadPhone(),
+            Act4Beat.RunToLandline => BeatRunToLandline(),
+            Act4Beat.TheCall       => BeatTheCall(),
+            Act4Beat.FinalHiding   => BeatFinalHiding(),
+            Act4Beat.Death         => BeatDeath(),
+            Act4Beat.Epilogue      => BeatEpilogue(),
+            _ => null,
+        };
+
+        /// <summary>O que roda em paralelo aos beats e precisa morrer em qualquer troca.</summary>
+        protected override void OnBeatExit(Act4Beat beat)
+        {
             // O monitor do Beat 4 roda fora do beatRoutine (em paralelo à caçada).
             // Qualquer transição de beat o cancela para não disparar tarde demais
             // nem duas vezes (ex.: salto de debug ou o próprio avanço para DeadPhone).
@@ -512,51 +521,6 @@ namespace TheDelivery.Narrative
             {
                 StopCoroutine(deadPhoneMonitor);
                 deadPhoneMonitor = null;
-            }
-
-            CurrentBeat = beat;
-
-            switch (beat)
-            {
-                case Act4Beat.Awakening:
-                    beatRoutine = StartCoroutine(BeatAwakening());
-                    break;
-                case Act4Beat.Investigation:
-                    beatRoutine = StartCoroutine(BeatInvestigation());
-                    break;
-
-                case Act4Beat.Discovery:
-                    beatRoutine = StartCoroutine(BeatDiscovery());
-                    break;
-
-                case Act4Beat.DeadPhone:
-                    beatRoutine = StartCoroutine(BeatDeadPhone());
-                    break;
-
-                case Act4Beat.RunToLandline:
-                    beatRoutine = StartCoroutine(BeatRunToLandline());
-                    break;
-
-                case Act4Beat.TheCall:
-                    beatRoutine = StartCoroutine(BeatTheCall());
-                    break;
-
-                case Act4Beat.FinalHiding:
-                    beatRoutine = StartCoroutine(BeatFinalHiding());
-                    break;
-
-                case Act4Beat.Death:
-                    beatRoutine = StartCoroutine(BeatDeath());
-                    break;
-
-                case Act4Beat.Epilogue:
-                    beatRoutine = StartCoroutine(BeatEpilogue());
-                    break;
-
-                case Act4Beat.None:
-                default:
-                    Debug.LogWarning($"[Act4Director] AdvanceToBeat chamado com beat sem rotina: {beat}", this);
-                    break;
             }
         }
 
@@ -1077,7 +1041,7 @@ namespace TheDelivery.Narrative
         /// <see cref="deadPhoneDelay"/> desde o início da caçada E o player está
         /// seguro agora (<see cref="PlayerIsSafe"/>). Roda em paralelo ao gameplay
         /// de perseguição (não é o beatRoutine) e, ao satisfazer ambos, avança para
-        /// <see cref="Act4Beat.DeadPhone"/>. Cancelada por <see cref="AdvanceToBeat"/>
+        /// <see cref="Act4Beat.DeadPhone"/>. Cancelada por <see cref="BeatDirector{TBeat}.AdvanceToBeat"/>
         /// em qualquer transição, então não dispara duas vezes nem tarde demais.
         /// </summary>
         private IEnumerator MonitorDeadPhoneTrigger()
@@ -1220,7 +1184,7 @@ namespace TheDelivery.Narrative
 
             // Reusa o slot de beatRoutine: AdvanceToBeat o cancelaria de qualquer
             // forma, mas aqui a transição para o Beat 5 sai de dentro da rotina.
-            beatRoutine = StartCoroutine(PickUpPhoneRoutine());
+            RunInBeatSlot(PickUpPhoneRoutine());
         }
 
         /// <summary>
@@ -2559,33 +2523,6 @@ namespace TheDelivery.Narrative
 
             blackScreen.alpha = to;
         }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
-        /// <summary>
-        /// Teclas 1-9 pulam diretamente para o beat correspondente (atrás de
-        /// <see cref="debugMode"/>). Útil para testar um beat isolado em Play. Só existe
-        /// no Editor e em Development Build: no build de release as teclas somem na
-        /// compilação, mesmo com a flag ligada na cena.
-        /// </summary>
-        private void HandleDebugKeys()
-        {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
-                return;
-
-            if (kb.digit1Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Awakening);
-            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Investigation);
-            else if (kb.digit3Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Discovery);
-            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.DeadPhone);
-            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.RunToLandline);
-            else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.TheCall);
-            else if (kb.digit7Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.FinalHiding);
-            else if (kb.digit8Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Death);
-            else if (kb.digit9Key.wasPressedThisFrame) AdvanceToBeat(Act4Beat.Epilogue);
-        }
-
-#endif
 
 #if UNITY_EDITOR
         // Visualiza as zonas de investigação no Editor para facilitar o setup.

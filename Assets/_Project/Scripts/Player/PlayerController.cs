@@ -89,10 +89,14 @@ namespace TheDelivery.Player
         [Header("Passos")]
         [Tooltip("Toca os passos ao andar.")]
         [SerializeField] private bool enableFootsteps = true;
-        [Tooltip("QUE TIPO DE ÁUDIO você tem. LoopingClip: uma gravação CONTÍNUA de caminhada (vários passos no mesmo arquivo) " +
-                 "— toca em loop enquanto anda e para quando para. PerStepClips: samples de UM passo cada, disparados um por passada, " +
-                 "sincronizados ao head bob. Escolher errado é audível: disparar um loop a cada passada empilha cópias sobrepostas " +
-                 "que continuam tocando depois que você para.")]
+        /// <summary>
+        /// QUE TIPO DE ÁUDIO você tem. LoopingClip: uma gravação CONTÍNUA de caminhada (vários passos
+        /// no mesmo arquivo) — toca em loop enquanto anda e para quando para. PerStepClips: samples de
+        /// UM passo cada, disparados um por passada, sincronizados ao head bob. Escolher errado é
+        /// audível: disparar um loop a cada passada empilha cópias sobrepostas que continuam tocando
+        /// depois que você para.
+        /// </summary>
+        [Tooltip("QUE TIPO DE ÁUDIO você tem.")]
         [SerializeField] private FootstepMode footstepMode = FootstepMode.LoopingClip;
         [Tooltip("AudioSource dos passos. Auto-criado se vazio (2D, sem Play On Awake). Deixe vazio a menos que queira um source configurado à mão.")]
         [SerializeField] private AudioSource footstepSource;
@@ -102,9 +106,13 @@ namespace TheDelivery.Player
         [Tooltip("MODO LoopingClip: segundos para o loop entrar e sair. Curto, mas NÃO zero: cortar o som seco no meio de " +
                  "uma passada estala, e o clique é mais audível que o próprio passo.")]
         [SerializeField] private float loopFadeDuration = 0.12f;
-        [Tooltip("MODO LoopingClip: MEDE o silêncio nas pontas do clipe no carregamento (lendo as amostras) e corta sozinho. " +
-                 "É o que tira o buraco mudo a cada volta do loop sem você calibrar nada — o silêncio de rabo que toda " +
-                 "gravação e todo encoder com perdas (MP3/Vorbis) deixam. Os campos manuais abaixo continuam somando por cima.")]
+        /// <summary>
+        /// MODO LoopingClip: MEDE o silêncio nas pontas do clipe no carregamento (lendo as amostras) e
+        /// corta sozinho. É o que tira o buraco mudo a cada volta do loop sem você calibrar nada — o
+        /// silêncio de rabo que toda gravação e todo encoder com perdas (MP3/Vorbis) deixam. Os campos
+        /// manuais abaixo continuam somando por cima.
+        /// </summary>
+        [Tooltip("MODO LoopingClip: MEDE o silêncio nas pontas do clipe no carregamento (lendo as amostras) e corta sozinho.")]
         [SerializeField] private bool autoTrimSilence = true;
         [Tooltip("Amplitude (0-1) abaixo da qual uma amostra conta como silêncio na medição automática. 0.01 é ~-40 dB: " +
                  "corta ruído de fundo e padding de encoder sem comer o ataque de um passo de verdade. Suba se a gravação " +

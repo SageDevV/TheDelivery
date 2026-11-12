@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.AI;
-using UnityEngine.InputSystem;
 using TheDelivery.AI;
 using TheDelivery.Core;
 using TheDelivery.FX;
@@ -22,19 +21,19 @@ namespace TheDelivery.Narrative
     /// </summary>
     public enum Act3Beat
     {
-        None,
-        CorridorMeeting, // Beat 1: corredor + o entregador sinistro que cruza com a Clear
-        EnterApartment,  // Beat 2: Clear chega na porta e entra no apartamento
-        HungerAndOrder,  // Beat 3: fome -> decide pedir um lanche -> espera a entrega
-        Delivery,        // Beat 4: a entrega (campainha, o entregador, algo errado)
-        Phenomena,       // Beat 5: a escalada (sequência fixa de fenômenos)
-        EatAndSleep      // Beat 6: come, deita, fade -> handoff pro Ato 4
+        None = 0,
+        CorridorMeeting = 1, // Beat 1: corredor + o entregador sinistro que cruza com a Clear
+        EnterApartment = 2,  // Beat 2: Clear chega na porta e entra no apartamento
+        HungerAndOrder = 3,  // Beat 3: fome -> decide pedir um lanche -> espera a entrega
+        Delivery = 4,        // Beat 4: a entrega (campainha, o entregador, algo errado)
+        Phenomena = 5,       // Beat 5: a escalada (sequência fixa de fenômenos)
+        EatAndSleep = 6      // Beat 6: come, deita, fade -> handoff pro Ato 4
     }
 
     /// <summary>
     /// "Maestro" do Ato 3. Conduz a cena do apartamento (corredor -> dentro) beat a
     /// beat por coroutines sequenciais — cada beat é uma coroutine isolada e o avanço
-    /// é explícito via <see cref="AdvanceToBeat"/>, espelhando o <see cref="Act2Director"/>.
+    /// é explícito via <see cref="BeatDirector{TBeat}.AdvanceToBeat"/>, espelhando o <see cref="Act2Director"/>.
     /// Não desenha UI: dispara pensamentos pelo <see cref="ThoughtSystem"/>, a conversa
     /// pelo <see cref="DialogueSystem"/>, comanda a aparição scriptada do entregador
     /// (sem NavMesh) e os fenômenos da escalada.
@@ -48,9 +47,9 @@ namespace TheDelivery.Narrative
     /// sem trocar de cena — só passa o controle.
     ///
     /// Expansão: para um beat novo, implemente <c>BeatXxx()</c>, encadeie
-    /// <see cref="AdvanceToBeat"/> ao final e registre o case no switch.
+    /// <see cref="BeatDirector{TBeat}.AdvanceToBeat"/> ao final e registre o case no switch.
     /// </summary>
-    public sealed class Act3Director : MonoBehaviour
+    public sealed class Act3Director : BeatDirector<Act3Beat>
     {
         [Header("Referências")]
         [Tooltip("PlayerController travado/liberado ao longo dos beats.")]
@@ -103,7 +102,13 @@ namespace TheDelivery.Narrative
         [Tooltip("Nome do parâmetro BOOL de perseguição no Animator do entregador. Fica FALSE no Ato 3 — o entregador só CAMINHA, nunca persegue.")]
         [FormerlySerializedAs("entregadorChasingParam")]
         [SerializeField] private string deliverymanChasingParam = "IsChasing";
-        [Tooltip("Animator que TOCA a animação do entregador. IMPORTANTE: o entregador é um objeto COMPOSTO — a raiz é um modelo e o Animator que anima o corpo está num FILHO. Atribua AQUI exatamente o MESMO Animator usado no Ato 4 (campo shadowAnimator do Act4Director). Se ficar vazio, tenta achar sozinho (GetComponentInChildren), mas pode pegar o Animator errado da raiz.")]
+        /// <summary>
+        /// Animator que TOCA a animação do entregador. IMPORTANTE: o entregador é um objeto COMPOSTO —
+        /// a raiz é um modelo e o Animator que anima o corpo está num FILHO. Atribua AQUI exatamente o
+        /// MESMO Animator usado no Ato 4 (campo shadowAnimator do Act4Director). Se ficar vazio, tenta
+        /// achar sozinho (GetComponentInChildren), mas pode pegar o Animator errado da raiz.
+        /// </summary>
+        [Tooltip("Animator que TOCA a animação do entregador.")]
         [FormerlySerializedAs("entregadorAnimator")]
         [SerializeField] private Animator deliverymanAnimator;
         [Tooltip("Som (sting) tocado no INSTANTE em que a câmera VIRA para travar no entregador — o susto/baque do encontro. Opcional.")]
@@ -203,7 +208,13 @@ namespace TheDelivery.Narrative
         [Tooltip("3. Toque do telefone, em LOOP, até a Clear atender. Ao atender, silêncio/respiração.")]
         [FormerlySerializedAs("telefoneSound")]
         [SerializeField] private AudioClip phoneRingSound;
-        [Tooltip("Telefone fixo que TOCA na ligação muda (precisa do componente Landline — o MESMO objeto que o Ato 4 usa). A Clear precisa ir até ele e ATENDER (F) para a escalada seguir. Se vazio, a ligação muda só toca o som uma vez e dispara o pensamento, sem exigir atender (fallback). É um telefone DIFERENTE do celular do Beat 3.")]
+        /// <summary>
+        /// Telefone fixo que TOCA na ligação muda (precisa do componente Landline — o MESMO objeto que
+        /// o Ato 4 usa). A Clear precisa ir até ele e ATENDER (F) para a escalada seguir. Se vazio, a
+        /// ligação muda só toca o som uma vez e dispara o pensamento, sem exigir atender (fallback). É
+        /// um telefone DIFERENTE do celular do Beat 3.
+        /// </summary>
+        [Tooltip("Telefone fixo que TOCA na ligação muda (precisa do componente Landline — o MESMO objeto que o Ato 4 usa).")]
         [SerializeField] private GameObject ringingPhoneObject;
         [Tooltip("Pensamento da ligação muda (Thought_Act3-6, \"Alô? ...tem alguém aí?\"). SÓ dispara DEPOIS de a Clear atender o telefone. Opcional.")]
         [SerializeField] private ThoughtData phoneSilenceThought;
@@ -279,7 +290,14 @@ namespace TheDelivery.Narrative
         [Tooltip("Onde o ENTREGADOR aparece, de longe, encarando a Clear enquanto ela come na sacada. Posicione bem visível da sacada, à distância. Se vazio, o susto da sacada é pulado (só o pensamento).")]
         [FormerlySerializedAs("entregadorBalconyPoint")]
         [SerializeField] private Transform deliverymanBalconyPoint;
-        [Tooltip("Zona de REVELAÇÃO (objeto vazio 'DeliverymanBalconyRevealZone') no caminho para a sacada, UM POUCO ANTES dela. Ao a Clear entrar aqui, o entregador JÁ é posicionado no deliverymanBalconyPoint e ativado — assim ele já ESTÁ lá, parado encarando, quando ela chega e olha (não 'pipoca' no momento). Se vazia, revela ao entrar num raio maior da própria sacada (fallback).")]
+        /// <summary>
+        /// Zona de REVELAÇÃO (objeto vazio 'DeliverymanBalconyRevealZone') no caminho para a sacada, UM
+        /// POUCO ANTES dela. Ao a Clear entrar aqui, o entregador JÁ é posicionado no
+        /// deliverymanBalconyPoint e ativado — assim ele já ESTÁ lá, parado encarando, quando ela chega
+        /// e olha (não 'pipoca' no momento). Se vazia, revela ao entrar num raio maior da própria
+        /// sacada (fallback).
+        /// </summary>
+        [Tooltip("Zona de REVELAÇÃO (objeto vazio 'DeliverymanBalconyRevealZone') no caminho para a sacada, UM POUCO ANTES dela.")]
         [FormerlySerializedAs("entregadorBalconyRevealZone")]
         [SerializeField] private Transform deliverymanBalconyRevealZone;
         [Tooltip("Raio (m) da zona de revelação do entregador da sacada.")]
@@ -291,7 +309,13 @@ namespace TheDelivery.Narrative
         [Tooltip("Ponto único de SAÍDA do entregador da sacada (FALLBACK do deliverymanBalconyExitPath). Ao fim do foco, ele caminha até aqui em linha reta e some. Se ambos vazios, ele some sem caminhar (comportamento antigo, com warning).")]
         [FormerlySerializedAs("entregadorBalconyExitPoint")]
         [SerializeField] private Transform deliverymanBalconyExitPoint;
-        [Tooltip("Luminária da CALÇADA em cima do entregador (visto da sacada). Depois que ele encara a Clear (fim do pensamento), esta luz PISCA até APAGAR por completo; só então ele sai andando. Usa os mesmos flickerCount/flickerMinInterval/flickerMaxInterval/flickerSound do Beat 5. Se vazia, o passo do flicker é pulado. Opcional.")]
+        /// <summary>
+        /// Luminária da CALÇADA em cima do entregador (visto da sacada). Depois que ele encara a Clear
+        /// (fim do pensamento), esta luz PISCA até APAGAR por completo; só então ele sai andando. Usa
+        /// os mesmos flickerCount/flickerMinInterval/flickerMaxInterval/flickerSound do Beat 5. Se
+        /// vazia, o passo do flicker é pulado. Opcional.
+        /// </summary>
+        [Tooltip("Luminária da CALÇADA em cima do entregador (visto da sacada).")]
         [SerializeField] private Light balconyLampLight;
         [Tooltip("Som (sting) no instante em que a câmera trava no entregador visto da sacada. Opcional.")]
         [FormerlySerializedAs("balconyEntregadorSound")]
@@ -344,12 +368,6 @@ namespace TheDelivery.Narrative
         [Tooltip("Permite iniciar o Ato 3 sozinho mesmo sem CurrentAct==Act3 (testar o Ato 3 isolado dando Play na cena). No fluxo real, deixe FALSE — o Ato 3 começa porque o GameManager o indica.")]
         [SerializeField] private bool autoStartForDebug = false;
 
-        /// <summary>Beat atual da sequência.</summary>
-        public Act3Beat CurrentBeat { get; private set; } = Act3Beat.None;
-
-        private Coroutine beatRoutine;
-        // Coroutine que faz a troca de beat de forma desacoplada (ver AdvanceToBeat).
-        private Coroutine switchRoutine;
         // Foco forçado da câmera num alvo (entregador). Roda em paralelo ao beat,
         // então é parada explicitamente (StopCameraFocus) ao fim do encontro e em
         // qualquer troca de beat (debug), evitando a câmera "presa" seguindo o alvo.
@@ -488,46 +506,21 @@ namespace TheDelivery.Narrative
 
         // --- Avanço de beats ----------------------------------------------
 
-        /// <summary>
-        /// Define o beat atual e inicia a coroutine correspondente, cancelando
-        /// qualquer beat em andamento. Ponto único de transição entre beats.
-        ///
-        /// Pode ser chamado de DENTRO da coroutine de um beat (avanço natural) ou de
-        /// FORA (startBeat no Start, teclas de debug). Por isso a troca é DESACOPLADA:
-        /// em vez de parar o <see cref="beatRoutine"/> aqui — o que, no avanço natural,
-        /// mataria a própria coroutine chamadora e abortaria o resto deste método
-        /// (auto-cancelamento) —, delega a um <see cref="SwitchBeatRoutine"/> que espera
-        /// um frame. Aí a chamadora já terminou naturalmente e parar/trocar o beat é
-        /// seguro tanto no avanço natural quanto no salto forçado (debug). Mesmo padrão
-        /// do <see cref="Act2Director"/>.
-        /// </summary>
-        public void AdvanceToBeat(Act3Beat beat)
+        /// <summary>A coroutine de cada beat (ver <see cref="BeatDirector{TBeat}"/>).</summary>
+        protected override IEnumerator CreateBeatRoutine(Act3Beat beat) => beat switch
         {
-            // Se já há uma troca pendente (ex.: dois saltos de debug no mesmo frame),
-            // cancela a anterior — vale a última intenção.
-            if (switchRoutine != null)
-                StopCoroutine(switchRoutine);
-            switchRoutine = StartCoroutine(SwitchBeatRoutine(beat));
-        }
+            Act3Beat.CorridorMeeting => BeatCorridorMeeting(),
+            Act3Beat.EnterApartment  => BeatEnterApartment(),
+            Act3Beat.HungerAndOrder  => BeatHungerAndOrder(),
+            Act3Beat.Delivery        => BeatDelivery(),
+            Act3Beat.Phenomena       => BeatPhenomena(),
+            Act3Beat.EatAndSleep     => BeatEatAndSleep(),
+            _ => null,
+        };
 
-        /// <summary>
-        /// Executa a troca de beat de forma desacoplada da coroutine que a pediu.
-        /// Espera um frame (para a chamadora terminar sua execução natural), então
-        /// para o beat anterior e inicia o próximo. Roda fora do
-        /// <see cref="beatRoutine"/>, então o <see cref="StopCoroutine"/> abaixo
-        /// nunca mata a si mesmo nem a coroutine chamadora.
-        /// </summary>
-        private IEnumerator SwitchBeatRoutine(Act3Beat beat)
+        /// <summary>O que roda em paralelo aos beats e precisa morrer em qualquer troca.</summary>
+        protected override void OnBeatExit(Act3Beat beat)
         {
-            yield return null;
-            switchRoutine = null;
-
-            if (beatRoutine != null)
-            {
-                StopCoroutine(beatRoutine);
-                beatRoutine = null;
-            }
-
             // Se um foco de câmera estava ativo (ex.: salto de debug no meio do encontro),
             // encerra-o para não deixar a câmera presa seguindo o entregador.
             StopCameraFocus();
@@ -558,35 +551,6 @@ namespace TheDelivery.Narrative
             {
                 StopCoroutine(stepAsideRoutine);
                 stepAsideRoutine = null;
-            }
-
-            CurrentBeat = beat;
-
-            switch (beat)
-            {
-                case Act3Beat.CorridorMeeting:
-                    beatRoutine = StartCoroutine(BeatCorridorMeeting());
-                    break;
-                case Act3Beat.EnterApartment:
-                    beatRoutine = StartCoroutine(BeatEnterApartment());
-                    break;
-                case Act3Beat.HungerAndOrder:
-                    beatRoutine = StartCoroutine(BeatHungerAndOrder());
-                    break;
-                case Act3Beat.Delivery:
-                    beatRoutine = StartCoroutine(BeatDelivery());
-                    break;
-                case Act3Beat.Phenomena:
-                    beatRoutine = StartCoroutine(BeatPhenomena());
-                    break;
-                case Act3Beat.EatAndSleep:
-                    beatRoutine = StartCoroutine(BeatEatAndSleep());
-                    break;
-
-                case Act3Beat.None:
-                default:
-                    Debug.LogWarning($"[Act3Director] AdvanceToBeat chamado com beat sem rotina: {beat}", this);
-                    break;
             }
         }
 
@@ -1656,7 +1620,7 @@ namespace TheDelivery.Narrative
             else
                 Debug.LogError("[Act3Director] act4Director não atribuído; o Ato 4 não será acionado no handoff.", this);
 
-            beatRoutine = null;
+            ReleaseBeatRoutine();
         }
 
         /// <summary>
@@ -2367,29 +2331,6 @@ namespace TheDelivery.Narrative
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
         private bool PlayerInZone(Transform zone, float radius) =>
             DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
-        /// <summary>
-        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
-        /// <see cref="debugMode"/>). Só existe no Editor e em Development Build: no
-        /// build de release as teclas somem na compilação, mesmo com a flag ligada na cena.
-        /// </summary>
-        private void HandleDebugKeys()
-        {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
-                return;
-
-            if (kb.digit1Key.wasPressedThisFrame) AdvanceToBeat(Act3Beat.CorridorMeeting);
-            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(Act3Beat.EnterApartment);
-            else if (kb.digit3Key.wasPressedThisFrame) AdvanceToBeat(Act3Beat.HungerAndOrder);
-            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(Act3Beat.Delivery);
-            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act3Beat.Phenomena);
-            else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act3Beat.EatAndSleep);
-        }
-
-#endif
 
 #if UNITY_EDITOR
         // Visualiza as zonas-chave no Editor para facilitar o setup.

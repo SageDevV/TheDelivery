@@ -80,7 +80,7 @@ namespace TheDelivery.EditorTools
         /// onde esse deslocamento pode estar, porque depende de como o FBX foi importado:
         /// <list type="number">
         /// <item>com 'Root node' definido no Rig, a translação foi EXTRAÍDA para as curvas de
-        /// root motion do clipe — é o que <see cref="AnimationClip.averageSpeed"/> devolve;</item>
+        /// root motion do clipe — é o que <see cref="Motion.averageSpeed"/> devolve;</item>
         /// <item>sem 'Root node', ela continua crua dentro do osso do quadril, e só aparece
         /// lendo a curva de posição desse osso.</item>
         /// </list>

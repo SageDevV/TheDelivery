@@ -173,9 +173,9 @@ namespace TheDelivery.EditorTools
             // O Start Beat em None é o mesmo caso: o dropdown mostra a primeira entrada
             // do enum, de aparência inocente, e o ato inteiro fica sem rotina nenhuma.
             SerializedProperty startBeat = so.FindProperty("startBeat");
-            if (startBeat != null && startBeat.enumValueIndex == (int)JourneyBeat.None)
+            if (startBeat != null && startBeat.intValue == (int)JourneyBeat.None)
             {
-                startBeat.enumValueIndex = (int)JourneyBeat.Walk;
+                startBeat.intValue = (int)JourneyBeat.Walk;
                 written++;
             }
 

@@ -17,28 +17,28 @@ namespace TheDelivery.Narrative
     /// </summary>
     public enum Act1Beat
     {
-        None,
-        Awakening,      // Beat 1: desperta no café (câmera endireita)
-        FreeRoam,       // Beat 2: anda livre até a Marina chegar
-        MarinaArrives,  // Beat 3: Marina caminha até a mesa e senta
-        Conversation,   // Beat 4: conversa (ambas sentadas)
-        MarinaLeaves,   // Beat 5: Marina vai embora e some
-        ClearLeaves     // Beat 6: Clear levanta e sai -> transição p/ o Journey (a rua)
+        None = 0,
+        Awakening = 1,     // Beat 1: desperta no café (câmera endireita)
+        FreeRoam = 2,      // Beat 2: anda livre até a Marina chegar
+        MarinaArrives = 3, // Beat 3: Marina caminha até a mesa e senta
+        Conversation = 4,  // Beat 4: conversa (ambas sentadas)
+        MarinaLeaves = 5,  // Beat 5: Marina vai embora e some
+        ClearLeaves = 6    // Beat 6: Clear levanta e sai -> transição p/ o Journey (a rua)
     }
 
     /// <summary>
     /// "Maestro" do Ato 1. Conduz a cena da cafeteria beat a beat por coroutines
     /// sequenciais — cada beat é uma coroutine isolada e o avanço é explícito via
-    /// <see cref="AdvanceToBeat"/>, espelhando o <see cref="Act4Director"/>. Não
+    /// <see cref="BeatDirector{TBeat}.AdvanceToBeat"/>, espelhando o <see cref="Act4Director"/>. Não
     /// desenha UI: dispara pensamentos pelo <see cref="ThoughtSystem"/>, a conversa
     /// pelo <see cref="DialogueSystem"/>, comanda a <see cref="Marina"/> (NavMesh) e
     /// lê o <see cref="SittableChair.IsSeated"/> da Clear. A transição final delega
     /// ao <see cref="GameManager"/>.
     ///
     /// Expansão: para um beat novo, implemente <c>BeatXxx()</c>, encadeie
-    /// <see cref="AdvanceToBeat"/> ao final e registre o case no switch.
+    /// <see cref="BeatDirector{TBeat}.AdvanceToBeat"/> ao final e registre o case no switch.
     /// </summary>
-    public sealed class Act1Director : MonoBehaviour
+    public sealed class Act1Director : BeatDirector<Act1Beat>
     {
         [Header("Referências")]
         [Tooltip("PlayerController travado/liberado ao longo dos beats.")]
@@ -52,16 +52,20 @@ namespace TheDelivery.Narrative
                  "do Player é nos pés), na cadeira, com o yaw olhando para a mesa/Marina.")]
         [SerializeField] private Transform spawnPoint;
 
+        /// <summary>
+        /// O PRIMEIRO pensamento do ato: o que sobra do PESADELO, e não o fim de tarde. O ato anterior
+        /// termina no baque da queda e entrega a cafeteria no corte, então a Clear acorda AINDA dentro
+        /// daquilo — sem esta linha o primeiro som da voz dela é sobre ter dormido estudando, e o
+        /// pesadelo inteiro fica sem reação nenhuma.
+        ///
+        /// Aparece com a cabeça ainda na mesa e NÃO segura o endireitar: ela levanta a cabeça enquanto
+        /// ainda pensa no sonho, e o pensamento de fim de tarde entra atrás dele (o ThoughtSystem é uma
+        /// fila). O respiro antes da primeira linha é o DELAY DA LINHA, no próprio asset — é lá que se
+        /// ajusta, porque a tela ainda está clareando do fade quando o beat começa. Opcional: vazio, o
+        /// ato abre direto no fim de tarde, como antes.
+        /// </summary>
         [Header("Beat 1 - Awakening")]
-        [Tooltip("O PRIMEIRO pensamento do ato: o que sobra do PESADELO, e não o fim de tarde. " +
-                 "O ato anterior termina no baque da queda e entrega a cafeteria no corte, então a Clear " +
-                 "acorda AINDA dentro daquilo — sem esta linha o primeiro som da voz dela é sobre ter " +
-                 "dormido estudando, e o pesadelo inteiro fica sem reação nenhuma.\n\n" +
-                 "Aparece com a cabeça ainda na mesa e NÃO segura o endireitar: ela levanta a cabeça " +
-                 "enquanto ainda pensa no sonho, e o pensamento de fim de tarde entra atrás dele (o " +
-                 "ThoughtSystem é uma fila). O respiro antes da primeira linha é o DELAY DA LINHA, no " +
-                 "próprio asset — é lá que se ajusta, porque a tela ainda está clareando do fade quando " +
-                 "o beat começa. Opcional: vazio, o ato abre direto no fim de tarde, como antes.")]
+        [Tooltip("O PRIMEIRO pensamento do ato: o que sobra do PESADELO, e não o fim de tarde.")]
         [SerializeField] private ThoughtData nightmareThought;
         [Tooltip("Pensamento ao acordar (sobre o fim de tarde). Entra DEPOIS do pensamento do pesadelo.")]
         [SerializeField] private ThoughtData awakeningThought;
@@ -139,12 +143,6 @@ namespace TheDelivery.Narrative
         [Tooltip("Habilita teclas numéricas para saltar entre beats.")]
         [SerializeField] private bool debugMode = false;
 
-        /// <summary>Beat atual da sequência.</summary>
-        public Act1Beat CurrentBeat { get; private set; } = Act1Beat.None;
-
-        private Coroutine beatRoutine;
-        // Coroutine que faz a troca de beat de forma desacoplada (ver AdvanceToBeat).
-        private Coroutine switchRoutine;
         // CharacterController do player — desabilitado durante o teleporte do spawn
         // (o CC resiste a setar position direto), reabilitado ao liberar o controle.
         private CharacterController characterController;
@@ -200,76 +198,17 @@ namespace TheDelivery.Narrative
 
         // --- Avanço de beats ----------------------------------------------
 
-        /// <summary>
-        /// Define o beat atual e inicia a coroutine correspondente, cancelando
-        /// qualquer beat em andamento. Ponto único de transição entre beats.
-        ///
-        /// Pode ser chamado de DENTRO da coroutine de um beat (avanço natural, ao
-        /// final do beat) ou de FORA (startBeat no Start, teclas de debug). Por isso
-        /// a troca é DESACOPLADA: em vez de parar o <see cref="beatRoutine"/> aqui
-        /// — o que, no avanço natural, mataria a própria coroutine chamadora e
-        /// abortaria o resto deste método antes de iniciar o próximo beat
-        /// (auto-cancelamento) —, delega a um <see cref="SwitchBeatRoutine"/> que
-        /// espera um frame. Aí a coroutine chamadora já terminou naturalmente, e
-        /// parar/trocar o beat é seguro tanto no avanço natural quanto no salto
-        /// forçado (debug).
-        /// </summary>
-        public void AdvanceToBeat(Act1Beat beat)
+        /// <summary>A coroutine de cada beat (ver <see cref="BeatDirector{TBeat}"/>).</summary>
+        protected override IEnumerator CreateBeatRoutine(Act1Beat beat) => beat switch
         {
-            // Se já há uma troca pendente (ex.: dois saltos de debug no mesmo frame),
-            // cancela a anterior — vale a última intenção.
-            if (switchRoutine != null)
-                StopCoroutine(switchRoutine);
-            switchRoutine = StartCoroutine(SwitchBeatRoutine(beat));
-        }
-
-        /// <summary>
-        /// Executa a troca de beat de forma desacoplada da coroutine que a pediu.
-        /// Espera um frame (para a chamadora terminar sua execução natural), então
-        /// para o beat anterior e inicia o próximo. Roda fora do
-        /// <see cref="beatRoutine"/>, então o <see cref="StopCoroutine"/> abaixo
-        /// nunca mata a si mesmo nem a coroutine chamadora.
-        /// </summary>
-        private IEnumerator SwitchBeatRoutine(Act1Beat beat)
-        {
-            yield return null;
-            switchRoutine = null;
-
-            if (beatRoutine != null)
-            {
-                StopCoroutine(beatRoutine);
-                beatRoutine = null;
-            }
-
-            CurrentBeat = beat;
-
-            switch (beat)
-            {
-                case Act1Beat.Awakening:
-                    beatRoutine = StartCoroutine(BeatAwakening());
-                    break;
-                case Act1Beat.FreeRoam:
-                    beatRoutine = StartCoroutine(BeatFreeRoam());
-                    break;
-                case Act1Beat.MarinaArrives:
-                    beatRoutine = StartCoroutine(BeatMarinaArrives());
-                    break;
-                case Act1Beat.Conversation:
-                    beatRoutine = StartCoroutine(BeatConversation());
-                    break;
-                case Act1Beat.MarinaLeaves:
-                    beatRoutine = StartCoroutine(BeatMarinaLeaves());
-                    break;
-                case Act1Beat.ClearLeaves:
-                    beatRoutine = StartCoroutine(BeatClearLeaves());
-                    break;
-
-                case Act1Beat.None:
-                default:
-                    Debug.LogWarning($"[Act1Director] AdvanceToBeat chamado com beat sem rotina: {beat}", this);
-                    break;
-            }
-        }
+            Act1Beat.Awakening     => BeatAwakening(),
+            Act1Beat.FreeRoam      => BeatFreeRoam(),
+            Act1Beat.MarinaArrives => BeatMarinaArrives(),
+            Act1Beat.Conversation  => BeatConversation(),
+            Act1Beat.MarinaLeaves  => BeatMarinaLeaves(),
+            Act1Beat.ClearLeaves   => BeatClearLeaves(),
+            _ => null,
+        };
 
         // --- BEAT 1: Awakening --------------------------------------------
 
@@ -665,7 +604,7 @@ namespace TheDelivery.Narrative
                 Debug.LogError("[Act1Director] GameManager.Instance nulo; impossível transicionar para o Journey.", this);
             }
 
-            beatRoutine = null;
+            ReleaseBeatRoutine();
         }
 
         // --- Helpers -------------------------------------------------------
@@ -677,29 +616,6 @@ namespace TheDelivery.Narrative
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
         private bool PlayerInZone(Transform zone, float radius) =>
             DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
-        /// <summary>
-        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
-        /// <see cref="debugMode"/>). Só existe no Editor e em Development Build: no
-        /// build de release as teclas somem na compilação, mesmo com a flag ligada na cena.
-        /// </summary>
-        private void HandleDebugKeys()
-        {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
-                return;
-
-            if (kb.digit1Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.Awakening);
-            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.FreeRoam);
-            else if (kb.digit3Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.MarinaArrives);
-            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.Conversation);
-            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.MarinaLeaves);
-            else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act1Beat.ClearLeaves);
-        }
-
-#endif
 
 #if UNITY_EDITOR
         // Visualiza os pontos-chave da cena no Editor para facilitar o setup.

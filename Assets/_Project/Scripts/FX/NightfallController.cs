@@ -55,10 +55,15 @@ namespace TheDelivery.FX
         [SerializeField] private float duration = 25f;
         [Tooltip("Molda o ritmo do anoitecer (entrada/saída suaves). O eixo X é o tempo normalizado (0-1) e o Y é o progresso aplicado. Ease-in-out evita que a mudança 'comece' e 'pare' de forma perceptível — é o que deixa o efeito sutil.")]
         [SerializeField] private AnimationCurve progressCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-        [Tooltip("PARTIR DA CENA: em t=0 usa as CORES JÁ AUTORADAS na cena (sol, ambiente, névoa, céu) em vez da primeira chave dos gradientes. " +
-                 "A rampa inteira é deslocada para casar com esse ponto de partida e o deslocamento se dissolve até t=1, onde vale a cor de destino do gradiente. " +
-                 "Ligado, o primeiro frame do anoitecer é IDÊNTICO à cena parada — sem o degrau que faz a transição parecer brusca. " +
-                 "Desligue só se quiser que os gradientes mandem sozinhos, ignorando a luz autorada.")]
+        /// <summary>
+        /// PARTIR DA CENA: em t=0 usa as CORES JÁ AUTORADAS na cena (sol, ambiente, névoa, céu) em vez
+        /// da primeira chave dos gradientes. A rampa inteira é deslocada para casar com esse ponto de
+        /// partida e o deslocamento se dissolve até t=1, onde vale a cor de destino do gradiente.
+        /// Ligado, o primeiro frame do anoitecer é IDÊNTICO à cena parada — sem o degrau que faz a
+        /// transição parecer brusca. Desligue só se quiser que os gradientes mandem sozinhos, ignorando
+        /// a luz autorada.
+        /// </summary>
+        [Tooltip("PARTIR DA CENA: em t=0 usa as CORES JÁ AUTORADAS na cena (sol, ambiente, névoa, céu) em vez da primeira chave dos gradientes.")]
         [SerializeField] private bool startFromScene = true;
         [Tooltip("Começa a anoitecer sozinho no Start. No Journey deixe FALSE — quem dispara é o JourneyDirector, depois de checar que é a vez do ato.")]
         [SerializeField] private bool playOnStart = false;
@@ -76,13 +81,21 @@ namespace TheDelivery.FX
         [SerializeField] private AnimationCurve sunIntensity = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.10f);
         [Tooltip("Aplicar a descida do sol. Desligue se as sombras da rua foram autoradas numa direção fixa que não pode mudar.")]
         [SerializeField] private bool driveSunRotation = true;
-        [Tooltip("ELEVAÇÃO FINAL do sol em graus acima do horizonte. Tem que ser NEGATIVA: o Skybox/Procedural desenha o disco " +
-                 "do sol a partir da direção desta Light, então enquanto a elevação for positiva o sol continua VISÍVEL no céu — " +
-                 "por mais escura que a cena fique. Cruzar o horizonte é o que faz o disco sumir de verdade.")]
+        /// <summary>
+        /// ELEVAÇÃO FINAL do sol em graus acima do horizonte. Tem que ser NEGATIVA: o Skybox/Procedural
+        /// desenha o disco do sol a partir da direção desta Light, então enquanto a elevação for
+        /// positiva o sol continua VISÍVEL no céu — por mais escura que a cena fique. Cruzar o
+        /// horizonte é o que faz o disco sumir de verdade.
+        /// </summary>
+        [Tooltip("ELEVAÇÃO FINAL do sol em graus acima do horizonte.")]
         [SerializeField] private float sunEndElevation = -10f;
-        [Tooltip("Quantos GRAUS o sol desliza lateralmente (azimute) durante a descida. É isto que transforma a queda numa " +
-                 "PARÁBOLA: a elevação cai por uma curva quadrática enquanto o azimute anda por uma reta, e o traçado " +
-                 "resultante no céu é um arco. Com 0 o sol despenca em linha reta, que lê como elevador em vez de pôr do sol.")]
+        /// <summary>
+        /// Quantos GRAUS o sol desliza lateralmente (azimute) durante a descida. É isto que transforma
+        /// a queda numa PARÁBOLA: a elevação cai por uma curva quadrática enquanto o azimute anda por
+        /// uma reta, e o traçado resultante no céu é um arco. Com 0 o sol despenca em linha reta, que
+        /// lê como elevador em vez de pôr do sol.
+        /// </summary>
+        [Tooltip("Quantos GRAUS o sol desliza lateralmente (azimute) durante a descida.")]
         [SerializeField] private float sunAzimuthDrift = 22f;
         [Tooltip("Formato da DESCIDA (não do tempo — quem controla o ritmo é o Progress Curve lá em cima). O padrão é " +
                  "quadrático: o sol quase não desce no começo (o fim de tarde se arrasta) e mergulha no fim. Combinado com " +
@@ -160,13 +173,18 @@ namespace TheDelivery.FX
             (0.00f, new Color(0.16f, 0.16f, 0.16f)),
             (1.00f, new Color(0.02f, 0.02f, 0.04f)));
 
+        /// <summary>
+        /// Garante que o céu CHEGUE a valores de noite, em vez de só multiplicar os do fim de tarde.
+        ///
+        /// Por que existe: no Skybox/Procedural, o amarelo do poente no horizonte é produzido pela
+        /// ESPESSURA DA ATMOSFERA — é assim que o shader desenha um pôr do sol. Enquanto ela ficar
+        /// alta, o horizonte continua quente por mais azul que esteja o tint e por mais baixa que
+        /// esteja a exposure. Como as curvas acima são multiplicadores do valor autorado (calibrado
+        /// PARA um poente), elas sozinhas nunca chegam a uma atmosfera de noite. Estes dois campos são
+        /// absolutos e fecham o destino.
+        /// </summary>
         [Header("3b. Céu à noite (alvos absolutos)")]
-        [Tooltip("Garante que o céu CHEGUE a valores de noite, em vez de só multiplicar os do fim de tarde.\n\n" +
-                 "Por que existe: no Skybox/Procedural, o amarelo do poente no horizonte é produzido pela ESPESSURA DA " +
-                 "ATMOSFERA — é assim que o shader desenha um pôr do sol. Enquanto ela ficar alta, o horizonte continua " +
-                 "quente por mais azul que esteja o tint e por mais baixa que esteja a exposure. Como as curvas acima são " +
-                 "multiplicadores do valor autorado (calibrado PARA um poente), elas sozinhas nunca chegam a uma atmosfera " +
-                 "de noite. Estes dois campos são absolutos e fecham o destino.")]
+        [Tooltip("Garante que o céu CHEGUE a valores de noite, em vez de só multiplicar os do fim de tarde.")]
         [SerializeField] private bool forceNightSky = true;
         [Tooltip("_AtmosphereThickness na noite fechada. BAIXO: ar rarefeito espalha pouca luz, o céu fica fundo e o " +
                  "horizonte apaga. Subir isto traz o amarelo de volta.")]
@@ -176,21 +194,32 @@ namespace TheDelivery.FX
         [Range(0f, 8f)]
         [SerializeField] private float nightExposure = 0.35f;
 
+        /// <summary>
+        /// Material de céu que ENTRA quando a noite fecha. O Skybox/Procedural sabe escurecer, mas não
+        /// sabe desenhar uma noite: não tem estrelas, e por mais baixa que fique a exposure o que sobra
+        /// é um azul liso. Aqui entra um céu noturno autorado (cubemap/6 Sided) no lugar dele. Deixe
+        /// VAZIO para terminar no procedural tingido, que é o comportamento de antes.
+        ///
+        /// A troca acontece só no FIM do anoitecer (t=1) ou num SkipToNight — nunca no meio, onde quem
+        /// manda é a rampa.
+        /// </summary>
         [Header("3c. Céu da noite fechada (troca de material)")]
-        [Tooltip("Material de céu que ENTRA quando a noite fecha. O Skybox/Procedural sabe escurecer, mas não sabe " +
-                 "desenhar uma noite: não tem estrelas, e por mais baixa que fique a exposure o que sobra é um azul " +
-                 "liso. Aqui entra um céu noturno autorado (cubemap/6 Sided) no lugar dele. Deixe VAZIO para terminar " +
-                 "no procedural tingido, que é o comportamento de antes.\n\n" +
-                 "A troca acontece só no FIM do anoitecer (t=1) ou num SkipToNight — nunca no meio, onde quem manda é a rampa.")]
+        [Tooltip("Material de céu que ENTRA quando a noite fecha.")]
         [SerializeField] private Material nightSkybox;
-        [Tooltip("EM QUE PONTO DO ANOITECER a troca começa (0 = saindo da cafeteria, 1 = noite fechada). Abaixo de 1 " +
-                 "de propósito, e é o ajuste que mais importa para a troca ficar sutil.\n\n" +
-                 "MUDANÇA ESCONDIDA ATRÁS DE MUDANÇA: uma alteração no céu é quase indetectável enquanto o resto da " +
-                 "cena também está se mexendo — sol descendo, névoa encorpando, ambiente esfriando. Terminado o " +
-                 "anoitecer, nada mais se move, e aí QUALQUER coisa que mude no céu vira a única coisa acontecendo no " +
-                 "quadro: o olho vai direto nela. Começando a troca no fim da rampa, ela acontece por baixo do " +
-                 "anoitecer; a noite fechada ainda chega com o Cold Night no ar, que é o que interessa.\n\n" +
-                 "Ponha em 1 para a troca só começar depois que a noite fechar (mais exposta, mas previsível).")]
+        /// <summary>
+        /// EM QUE PONTO DO ANOITECER a troca começa (0 = saindo da cafeteria, 1 = noite fechada).
+        /// Abaixo de 1 de propósito, e é o ajuste que mais importa para a troca ficar sutil.
+        ///
+        /// MUDANÇA ESCONDIDA ATRÁS DE MUDANÇA: uma alteração no céu é quase indetectável enquanto o
+        /// resto da cena também está se mexendo — sol descendo, névoa encorpando, ambiente esfriando.
+        /// Terminado o anoitecer, nada mais se move, e aí QUALQUER coisa que mude no céu vira a única
+        /// coisa acontecendo no quadro: o olho vai direto nela. Começando a troca no fim da rampa, ela
+        /// acontece por baixo do anoitecer; a noite fechada ainda chega com o Cold Night no ar, que é o
+        /// que interessa.
+        ///
+        /// Ponha em 1 para a troca só começar depois que a noite fechar (mais exposta, mas previsível).
+        /// </summary>
+        [Tooltip("EM QUE PONTO DO ANOITECER a troca começa (0 = saindo da cafeteria, 1 = noite fechada).")]
         [Range(0f, 1f)]
         [SerializeField] private float nightSkyboxStartAt = 0.8f;
         [Tooltip("Segundos BAIXANDO o céu do fim de tarde até o nível de encontro (ver Night Skybox Handoff). Os dois " +
@@ -205,18 +234,25 @@ namespace TheDelivery.FX
                  "olhando: apagar um céu que já estava escuro passa batido, mas as estrelas APARECENDO são o evento. " +
                  "Devagar elas emergem; rápido elas pipocam.")]
         [SerializeField] private float nightSkyboxFadeIn = 9f;
-        [Tooltip("O NÍVEL EM QUE OS DOIS CÉUS SE ENCONTRAM, em brilho percebido (0-1). É o ajuste que tira o BURACO " +
-                 "PRETO do meio da troca.\n\n" +
-                 "COM 0 a passagem vai até o preto, como era antes: o céu do poente apaga por completo, sobra um vazio " +
-                 "liso por cima da rua e só então o Cold Night começa a nascer. Mesmo com os dois fades longos, isso " +
-                 "SALTA — um céu totalmente escuro não é um céu escuro, é a ausência dele, e o céu autorado entrando " +
-                 "depois lê como OUTRA IMAGEM em vez da mesma noite ficando mais tarde. É o contraste entre o nada e " +
-                 "uma skybox inteira.\n\n" +
-                 "ACIMA DE 0 o poente PARA DE DESCER nesse fiapo de brilho, o céu da noite entra JÁ ACESO no mesmo " +
-                 "fiapo e sobe dali até o brilho cheio. Nunca existe um quadro sem céu, e o que muda no instante da " +
-                 "troca é só o desenho — num nível baixo demais para o olho ir atrás.\n\n" +
-                 "É UM NÍVEL RELATIVO A CADA CÉU, não um brilho absoluto: os dois shaders não têm a mesma escala. Se a " +
-                 "troca ainda pula para MAIS CLARO, baixe; se o céu some de vez no meio, suba. 0.2-0.35 é a faixa útil.")]
+        /// <summary>
+        /// O NÍVEL EM QUE OS DOIS CÉUS SE ENCONTRAM, em brilho percebido (0-1). É o ajuste que tira o
+        /// BURACO PRETO do meio da troca.
+        ///
+        /// COM 0 a passagem vai até o preto, como era antes: o céu do poente apaga por completo, sobra
+        /// um vazio liso por cima da rua e só então o Cold Night começa a nascer. Mesmo com os dois
+        /// fades longos, isso SALTA — um céu totalmente escuro não é um céu escuro, é a ausência dele,
+        /// e o céu autorado entrando depois lê como OUTRA IMAGEM em vez da mesma noite ficando mais
+        /// tarde. É o contraste entre o nada e uma skybox inteira.
+        ///
+        /// ACIMA DE 0 o poente PARA DE DESCER nesse fiapo de brilho, o céu da noite entra JÁ ACESO no
+        /// mesmo fiapo e sobe dali até o brilho cheio. Nunca existe um quadro sem céu, e o que muda no
+        /// instante da troca é só o desenho — num nível baixo demais para o olho ir atrás.
+        ///
+        /// É UM NÍVEL RELATIVO A CADA CÉU, não um brilho absoluto: os dois shaders não têm a mesma
+        /// escala. Se a troca ainda pula para MAIS CLARO, baixe; se o céu some de vez no meio, suba.
+        /// 0.2-0.35 é a faixa útil.
+        /// </summary>
+        [Tooltip("O NÍVEL EM QUE OS DOIS CÉUS SE ENCONTRAM, em brilho percebido (0-1).")]
         [Range(0f, 1f)]
         [SerializeField] private float nightSkyboxHandoff = 0.25f;
         [Tooltip("MULTIPLICADOR da _Exposure autorada no material da noite. 1 entrega o céu exatamente como o asset " +

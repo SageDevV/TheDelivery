@@ -59,14 +59,23 @@ namespace TheDelivery.EditorTools
         private const float HatchHeight = 3f;      // vão da escotilha na parede norte
         private const float WaterTriggerHeight = 1f;
 
-        // Layers do TagManager do projeto.
-        private const int LayerWater = 4;
-        private const int LayerInteractable = 7;
-        private const int LayerCeiling = 10;
+        // Layers do TagManager do projeto, resolvidos pelo NOME: o número de um layer muda se
+        // alguém reorganizar a lista, o nome não. -1 = layer não existe (checado no Run).
+        private static readonly int LayerWater = LayerMask.NameToLayer("Water");
+        private static readonly int LayerInteractable = LayerMask.NameToLayer("Interactable");
+        private static readonly int LayerCeiling = LayerMask.NameToLayer("Ceiling");
 
         [MenuItem("Tools/The Delivery/Escape - Montar greybox do porão (primitivos)")]
         private static void Run()
         {
+            if (LayerWater < 0 || LayerInteractable < 0 || LayerCeiling < 0)
+            {
+                EditorUtility.DisplayDialog("Greybox da Escape",
+                    "Faltam layers no TagManager (Water, Interactable e Ceiling são usados pela greybox). " +
+                    "Nada foi alterado.", "Ok");
+                return;
+            }
+
             Scene scene = EnsureSceneOpen();
             if (!scene.IsValid())
                 return;

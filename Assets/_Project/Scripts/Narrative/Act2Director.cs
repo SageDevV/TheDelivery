@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Serialization;
-using UnityEngine.InputSystem;
 using TheDelivery.Core;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
@@ -16,19 +15,19 @@ namespace TheDelivery.Narrative
     /// </summary>
     public enum Act2Beat
     {
-        None,
-        Arrival,            // Beat 1: Clear chega no prédio (anda livre)
-        ReceptionistAbsent, // Beat 2: estranha o balcão vazio (a semente)
-        Investigation,      // Beat 3: explora; o gate é a porta da sala de produtos
-        JanitorScare,       // Beat 4: o zelador "desliza" para a vista ao abrir a porta (falso susto)
-        JanitorDialogue,    // Beat 5: conversa automática com o zelador (red herring)
-        GoToElevator        // Beat 6: elevador liberado -> transição para o apartamento
+        None = 0,
+        Arrival = 1,            // Beat 1: Clear chega no prédio (anda livre)
+        ReceptionistAbsent = 2, // Beat 2: estranha o balcão vazio (a semente)
+        Investigation = 3,      // Beat 3: explora; o gate é a porta da sala de produtos
+        JanitorScare = 4,       // Beat 4: o zelador "desliza" para a vista ao abrir a porta (falso susto)
+        JanitorDialogue = 5,    // Beat 5: conversa automática com o zelador (red herring)
+        GoToElevator = 6        // Beat 6: elevador liberado -> transição para o apartamento
     }
 
     /// <summary>
     /// "Maestro" do Ato 2. Conduz a cena da recepção beat a beat por coroutines
     /// sequenciais — cada beat é uma coroutine isolada e o avanço é explícito via
-    /// <see cref="AdvanceToBeat"/>, espelhando o <see cref="Act1Director"/>. Não
+    /// <see cref="BeatDirector{TBeat}.AdvanceToBeat"/>, espelhando o <see cref="Act1Director"/>. Não
     /// desenha UI: dispara pensamentos pelo <see cref="ThoughtSystem"/>, a conversa
     /// pelo <see cref="DialogueSystem"/>, comanda o susto scriptado do zelador e lê o
     /// gate da porta (<see cref="ProductsRoomDoor"/>). A transição final delega ao
@@ -39,9 +38,9 @@ namespace TheDelivery.Narrative
     /// evitando herdar estado travado de outra cena.
     ///
     /// Expansão: para um beat novo, implemente <c>BeatXxx()</c>, encadeie
-    /// <see cref="AdvanceToBeat"/> ao final e registre o case no switch.
+    /// <see cref="BeatDirector{TBeat}.AdvanceToBeat"/> ao final e registre o case no switch.
     /// </summary>
-    public sealed class Act2Director : MonoBehaviour
+    public sealed class Act2Director : BeatDirector<Act2Beat>
     {
         [Header("Referências")]
         [Tooltip("PlayerController travado/liberado ao longo dos beats.")]
@@ -114,12 +113,6 @@ namespace TheDelivery.Narrative
         [Tooltip("Habilita teclas numéricas (1-6) para saltar entre beats.")]
         [SerializeField] private bool debugMode = false;
 
-        /// <summary>Beat atual da sequência.</summary>
-        public Act2Beat CurrentBeat { get; private set; } = Act2Beat.None;
-
-        private Coroutine beatRoutine;
-        // Coroutine que faz a troca de beat de forma desacoplada (ver AdvanceToBeat).
-        private Coroutine switchRoutine;
         // CharacterController do player — garantido habilitado no início (a cena
         // anterior pode tê-lo desabilitado em alguma cutscene).
         private CharacterController characterController;
@@ -176,75 +169,17 @@ namespace TheDelivery.Narrative
 
         // --- Avanço de beats ----------------------------------------------
 
-        /// <summary>
-        /// Define o beat atual e inicia a coroutine correspondente, cancelando
-        /// qualquer beat em andamento. Ponto único de transição entre beats.
-        ///
-        /// Pode ser chamado de DENTRO da coroutine de um beat (avanço natural) ou de
-        /// FORA (startBeat no Start, teclas de debug). Por isso a troca é DESACOPLADA:
-        /// em vez de parar o <see cref="beatRoutine"/> aqui — o que, no avanço natural,
-        /// mataria a própria coroutine chamadora e abortaria o resto deste método
-        /// (auto-cancelamento, bug que ocorreu no Act1Director) —, delega a um
-        /// <see cref="SwitchBeatRoutine"/> que espera um frame. Aí a chamadora já
-        /// terminou naturalmente e parar/trocar o beat é seguro tanto no avanço
-        /// natural quanto no salto forçado (debug).
-        /// </summary>
-        public void AdvanceToBeat(Act2Beat beat)
+        /// <summary>A coroutine de cada beat (ver <see cref="BeatDirector{TBeat}"/>).</summary>
+        protected override IEnumerator CreateBeatRoutine(Act2Beat beat) => beat switch
         {
-            // Se já há uma troca pendente (ex.: dois saltos de debug no mesmo frame),
-            // cancela a anterior — vale a última intenção.
-            if (switchRoutine != null)
-                StopCoroutine(switchRoutine);
-            switchRoutine = StartCoroutine(SwitchBeatRoutine(beat));
-        }
-
-        /// <summary>
-        /// Executa a troca de beat de forma desacoplada da coroutine que a pediu.
-        /// Espera um frame (para a chamadora terminar sua execução natural), então
-        /// para o beat anterior e inicia o próximo. Roda fora do
-        /// <see cref="beatRoutine"/>, então o <see cref="StopCoroutine"/> abaixo
-        /// nunca mata a si mesmo nem a coroutine chamadora.
-        /// </summary>
-        private IEnumerator SwitchBeatRoutine(Act2Beat beat)
-        {
-            yield return null;
-            switchRoutine = null;
-
-            if (beatRoutine != null)
-            {
-                StopCoroutine(beatRoutine);
-                beatRoutine = null;
-            }
-
-            CurrentBeat = beat;
-
-            switch (beat)
-            {
-                case Act2Beat.Arrival:
-                    beatRoutine = StartCoroutine(BeatArrival());
-                    break;
-                case Act2Beat.ReceptionistAbsent:
-                    beatRoutine = StartCoroutine(BeatReceptionistAbsent());
-                    break;
-                case Act2Beat.Investigation:
-                    beatRoutine = StartCoroutine(BeatInvestigation());
-                    break;
-                case Act2Beat.JanitorScare:
-                    beatRoutine = StartCoroutine(BeatJanitorScare());
-                    break;
-                case Act2Beat.JanitorDialogue:
-                    beatRoutine = StartCoroutine(BeatJanitorDialogue());
-                    break;
-                case Act2Beat.GoToElevator:
-                    beatRoutine = StartCoroutine(BeatGoToElevator());
-                    break;
-
-                case Act2Beat.None:
-                default:
-                    Debug.LogWarning($"[Act2Director] AdvanceToBeat chamado com beat sem rotina: {beat}", this);
-                    break;
-            }
-        }
+            Act2Beat.Arrival            => BeatArrival(),
+            Act2Beat.ReceptionistAbsent => BeatReceptionistAbsent(),
+            Act2Beat.Investigation      => BeatInvestigation(),
+            Act2Beat.JanitorScare       => BeatJanitorScare(),
+            Act2Beat.JanitorDialogue    => BeatJanitorDialogue(),
+            Act2Beat.GoToElevator       => BeatGoToElevator(),
+            _ => null,
+        };
 
         // --- BEAT 1: Arrival ----------------------------------------------
 
@@ -446,7 +381,7 @@ namespace TheDelivery.Narrative
                 Debug.LogError("[Act2Director] GameManager.Instance nulo; impossível transicionar para o apartamento.", this);
             }
 
-            beatRoutine = null;
+            ReleaseBeatRoutine();
         }
 
         // --- Helpers -------------------------------------------------------
@@ -473,29 +408,6 @@ namespace TheDelivery.Narrative
         /// <summary>True se o player está dentro do raio (XZ) da zona.</summary>
         private bool PlayerInZone(Transform zone, float radius) =>
             DirectorUtility.IsWithinRadiusXZ(playerController.transform.position, zone.position, radius);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
-        /// <summary>
-        /// Teclas 1-6 pulam diretamente para o beat correspondente (atrás de
-        /// <see cref="debugMode"/>). Só existe no Editor e em Development Build: no
-        /// build de release as teclas somem na compilação, mesmo com a flag ligada na cena.
-        /// </summary>
-        private void HandleDebugKeys()
-        {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
-                return;
-
-            if (kb.digit1Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.Arrival);
-            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.ReceptionistAbsent);
-            else if (kb.digit3Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.Investigation);
-            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.JanitorScare);
-            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.JanitorDialogue);
-            else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.GoToElevator);
-        }
-
-#endif
 
 #if UNITY_EDITOR
         // Visualiza as zonas-chave no Editor para facilitar o setup.

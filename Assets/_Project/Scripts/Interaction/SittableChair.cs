@@ -28,7 +28,14 @@ namespace TheDelivery.Interaction
         [SerializeField] private string interactionPrompt = "Sentar";
         [Tooltip("Verbo exibido quando JÁ está sentado (para levantar).")]
         [SerializeField] private string standPrompt = "Levantar";
-        [Tooltip("Se ligado, o player também LEVANTA com a MESMA tecla de interação (F), além do Espaço — útil em assentos de exploração livre (ex.: sofá da sala), onde a câmera assume o assento e o raycast deixa de mirar o objeto. DEIXE DESLIGADO em cadeiras controladas por roteiro (ex.: a do Ato 1, onde o F avança o diálogo): senão apertar F levantaria a Clear no meio da conversa. Só afeta o levantar; sentar é sempre por F/foco.")]
+        /// <summary>
+        /// Se ligado, o player também LEVANTA com a MESMA tecla de interação (F), além do Espaço — útil
+        /// em assentos de exploração livre (ex.: sofá da sala), onde a câmera assume o assento e o
+        /// raycast deixa de mirar o objeto. DEIXE DESLIGADO em cadeiras controladas por roteiro (ex.: a
+        /// do Ato 1, onde o F avança o diálogo): senão apertar F levantaria a Clear no meio da
+        /// conversa. Só afeta o levantar; sentar é sempre por F/foco.
+        /// </summary>
+        [Tooltip("Se ligado, o player também LEVANTA com a MESMA tecla de interação (F), além do Espaço — útil em assentos de exploração livre (ex.: sofá da sala), onde a câmera assume o assento e o raycast deixa de mirar o objeto.")]
         [SerializeField] private bool standWithInteractKey = false;
 
         [Header("Câmera sentada")]
@@ -43,8 +50,14 @@ namespace TheDelivery.Interaction
                  "standEyeHeight do PlayerController (~1.65).")]
         [SerializeField] private float standingCameraHeight = 1.65f;
 
+        /// <summary>
+        /// Se ligado, o player pode OLHAR ao redor (mouse/analógico) enquanto sentado — a câmera fica
+        /// FIXA no assento e só GIRA, com o ângulo clampado. Use no sofá (exploração livre). DEIXE
+        /// DESLIGADO em cadeiras de roteiro (Ato 1), onde a câmera deve ficar travada encarando a cena
+        /// (Marina). Sem isto, a câmera fica congelada na direção do seatCameraPoint.
+        /// </summary>
         [Header("Olhar enquanto sentado")]
-        [Tooltip("Se ligado, o player pode OLHAR ao redor (mouse/analógico) enquanto sentado — a câmera fica FIXA no assento e só GIRA, com o ângulo clampado. Use no sofá (exploração livre). DEIXE DESLIGADO em cadeiras de roteiro (Ato 1), onde a câmera deve ficar travada encarando a cena (Marina). Sem isto, a câmera fica congelada na direção do seatCameraPoint.")]
+        [Tooltip("Se ligado, o player pode OLHAR ao redor (mouse/analógico) enquanto sentado — a câmera fica FIXA no assento e só GIRA, com o ângulo clampado.")]
         [SerializeField] private bool allowLookWhileSeated = false;
         [Tooltip("Graus de giro horizontal permitidos para CADA lado, a partir da direção do assento (forward do seatCameraPoint). Ex.: 90.")]
         [SerializeField] private float maxLookYaw = 90f;
