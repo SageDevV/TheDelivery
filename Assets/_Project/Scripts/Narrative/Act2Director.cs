@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.InputSystem;
 using TheDelivery.Core;
 using TheDelivery.Interaction;
@@ -16,12 +17,12 @@ namespace TheDelivery.Narrative
     public enum Act2Beat
     {
         None,
-        Arrival,         // Beat 1: Clear chega no prédio (anda livre)
-        PorteiroAusente, // Beat 2: estranha o balcão vazio (a semente)
-        Investigation,   // Beat 3: explora; o gate é a porta da sala de produtos
-        ZeladorScare,    // Beat 4: o zelador "desliza" para a vista ao abrir a porta (falso susto)
-        ZeladorDialogue, // Beat 5: conversa automática com o zelador (red herring)
-        GoToElevator     // Beat 6: elevador liberado -> transição para o apartamento
+        Arrival,            // Beat 1: Clear chega no prédio (anda livre)
+        ReceptionistAbsent, // Beat 2: estranha o balcão vazio (a semente)
+        Investigation,      // Beat 3: explora; o gate é a porta da sala de produtos
+        JanitorScare,       // Beat 4: o zelador "desliza" para a vista ao abrir a porta (falso susto)
+        JanitorDialogue,    // Beat 5: conversa automática com o zelador (red herring)
+        GoToElevator        // Beat 6: elevador liberado -> transição para o apartamento
     }
 
     /// <summary>
@@ -30,7 +31,7 @@ namespace TheDelivery.Narrative
     /// <see cref="AdvanceToBeat"/>, espelhando o <see cref="Act1Director"/>. Não
     /// desenha UI: dispara pensamentos pelo <see cref="ThoughtSystem"/>, a conversa
     /// pelo <see cref="DialogueSystem"/>, comanda o susto scriptado do zelador e lê o
-    /// gate da porta (<see cref="SalaProdutosDoor"/>). A transição final delega ao
+    /// gate da porta (<see cref="ProductsRoomDoor"/>). A transição final delega ao
     /// <see cref="GameManager"/>.
     ///
     /// Diferente do Ato 1, NÃO há despertar: a Clear chega andando. O director apenas
@@ -60,21 +61,27 @@ namespace TheDelivery.Narrative
 
         [Header("Beat 2 - Porteiro ausente (a semente)")]
         [Tooltip("Ponto perto do balcão; ao entrar nesta zona, dispara o estranhamento.")]
-        [SerializeField] private Transform porteiroAusenteZone;
+        [FormerlySerializedAs("porteiroAusenteZone")]
+        [SerializeField] private Transform receptionistAbsentZone;
         [Tooltip("Raio (m) da zona do balcão.")]
-        [SerializeField] private float porteiroZoneRadius = 2f;
+        [FormerlySerializedAs("porteiroZoneRadius")]
+        [SerializeField] private float receptionistZoneRadius = 2f;
         [Tooltip("Pensamento de estranhamento: o balcão está vazio.")]
-        [SerializeField] private ThoughtData porteiroThought;
+        [FormerlySerializedAs("porteiroThought")]
+        [SerializeField] private ThoughtData receptionistThought;
 
         [Header("Beat 3 - Porta da sala (gate)")]
         [Tooltip("A porta interativa da sala de produtos. Armada no beat Investigation; ao abrir, dispara o susto.")]
-        [SerializeField] private SalaProdutosDoor salaDoor;
+        [FormerlySerializedAs("salaDoor")]
+        [SerializeField] private ProductsRoomDoor productsRoomDoor;
 
         [Header("Beat 4 - Susto do zelador")]
         [Tooltip("Transform do zelador (placeholder). Parado na sala; desliza lateralmente para aparecer no susto.")]
-        [SerializeField] private Transform zeladorTransform;
+        [FormerlySerializedAs("zeladorTransform")]
+        [SerializeField] private Transform janitorTransform;
         [Tooltip("Som do susto (sting).")]
-        [SerializeField] private AudioClip somDoSusto;
+        [FormerlySerializedAs("somDoSusto")]
+        [SerializeField] private AudioClip scareSound;
         [Tooltip("Duração (s) do deslize lateral do zelador.")]
         [SerializeField] private float slideDuration = 0.3f;
         [Tooltip("Distância (m) do deslize lateral, no eixo do próprio zelador (transform.right). Negativo desliza para o outro lado.")]
@@ -84,17 +91,22 @@ namespace TheDelivery.Narrative
 
         [Header("Beat 5 - Diálogo do zelador")]
         [Tooltip("A conversa com o zelador (evasivo/estranho — red herring).")]
-        [SerializeField] private DialogueData zeladorDialogue;
+        [FormerlySerializedAs("zeladorDialogue")]
+        [SerializeField] private DialogueData janitorDialogue;
 
         [Header("Beat 6 - Elevador")]
         [Tooltip("Ponto do elevador; ao entrar nesta zona (já liberado), dispara a transição.")]
-        [SerializeField] private Transform elevadorZone;
+        [FormerlySerializedAs("elevadorZone")]
+        [SerializeField] private Transform elevatorZone;
         [Tooltip("Raio (m) da zona do elevador.")]
-        [SerializeField] private float elevadorRadius = 1.5f;
+        [FormerlySerializedAs("elevadorRadius")]
+        [SerializeField] private float elevatorRadius = 1.5f;
         [Tooltip("Som da porta do elevador fechando.")]
-        [SerializeField] private AudioClip somElevador;
+        [FormerlySerializedAs("somElevador")]
+        [SerializeField] private AudioClip elevatorSound;
         [Tooltip("Atraso (s) após o som do elevador antes de trocar de cena.")]
-        [SerializeField] private float elevadorDelay = 1.5f;
+        [FormerlySerializedAs("elevadorDelay")]
+        [SerializeField] private float elevatorDelay = 1.5f;
 
         [Header("Debug")]
         [Tooltip("Beat inicial. Use para pular beats ao testar.")]
@@ -112,9 +124,9 @@ namespace TheDelivery.Narrative
         // anterior pode tê-lo desabilitado em alguma cutscene).
         private CharacterController characterController;
 
-        // Set pelo callback OnSalaDoorOpened quando o player abre a porta da sala.
+        // Set pelo callback OnProductsRoomDoorOpened quando o player abre a porta da sala.
         // O beat Investigation espera por ele para avançar ao susto.
-        private bool salaDoorOpened;
+        private bool productsRoomDoorOpened;
 
         private void Start()
         {
@@ -211,17 +223,17 @@ namespace TheDelivery.Narrative
                 case Act2Beat.Arrival:
                     beatRoutine = StartCoroutine(BeatArrival());
                     break;
-                case Act2Beat.PorteiroAusente:
-                    beatRoutine = StartCoroutine(BeatPorteiroAusente());
+                case Act2Beat.ReceptionistAbsent:
+                    beatRoutine = StartCoroutine(BeatReceptionistAbsent());
                     break;
                 case Act2Beat.Investigation:
                     beatRoutine = StartCoroutine(BeatInvestigation());
                     break;
-                case Act2Beat.ZeladorScare:
-                    beatRoutine = StartCoroutine(BeatZeladorScare());
+                case Act2Beat.JanitorScare:
+                    beatRoutine = StartCoroutine(BeatJanitorScare());
                     break;
-                case Act2Beat.ZeladorDialogue:
-                    beatRoutine = StartCoroutine(BeatZeladorDialogue());
+                case Act2Beat.JanitorDialogue:
+                    beatRoutine = StartCoroutine(BeatJanitorDialogue());
                     break;
                 case Act2Beat.GoToElevator:
                     beatRoutine = StartCoroutine(BeatGoToElevator());
@@ -239,7 +251,7 @@ namespace TheDelivery.Narrative
         /// <summary>
         /// Chegada: garante o estado livre do player (sem herdar travas de outra
         /// cena), dispara o pensamento de chegada e segue direto para o
-        /// <see cref="Act2Beat.PorteiroAusente"/>, que monitora a aproximação do
+        /// <see cref="Act2Beat.ReceptionistAbsent"/>, que monitora a aproximação do
         /// balcão. O player anda à vontade o tempo todo.
         /// </summary>
         private IEnumerator BeatArrival()
@@ -251,27 +263,27 @@ namespace TheDelivery.Narrative
             // Sem trava: a semente do estranhamento é plantada no próximo beat,
             // que vigia a zona do balcão enquanto o player explora.
             yield return null;
-            AdvanceToBeat(Act2Beat.PorteiroAusente);
+            AdvanceToBeat(Act2Beat.ReceptionistAbsent);
         }
 
-        // --- BEAT 2: PorteiroAusente --------------------------------------
+        // --- BEAT 2: ReceptionistAbsent --------------------------------------
 
         /// <summary>
         /// A semente: quando o player se aproxima do balcão (entra na
-        /// <see cref="porteiroAusenteZone"/>), dispara o estranhamento — o balcão
+        /// <see cref="receptionistAbsentZone"/>), dispara o estranhamento — o balcão
         /// está vazio. NÃO trava o player; apenas planta a inquietação e avança para
         /// a investigação (cujo gate real é a porta da sala).
         /// </summary>
-        private IEnumerator BeatPorteiroAusente()
+        private IEnumerator BeatReceptionistAbsent()
         {
             EnsurePlayerFree();
 
-            if (porteiroAusenteZone != null)
-                yield return new WaitUntil(() => PlayerInZone(porteiroAusenteZone, porteiroZoneRadius));
+            if (receptionistAbsentZone != null)
+                yield return new WaitUntil(() => PlayerInZone(receptionistAbsentZone, receptionistZoneRadius));
             else
-                Debug.LogWarning("[Act2Director] porteiroAusenteZone não atribuída; pulando o estranhamento do balcão.", this);
+                Debug.LogWarning("[Act2Director] receptionistAbsentZone não atribuída; pulando o estranhamento do balcão.", this);
 
-            ShowThought(porteiroThought);
+            ShowThought(receptionistThought);
 
             AdvanceToBeat(Act2Beat.Investigation);
         }
@@ -280,40 +292,40 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Investigação: o player explora livremente. O GATE é a porta da sala de
-        /// produtos — armada aqui (<see cref="SalaProdutosDoor.Arm"/>), só agora
-        /// aceita interação. Ao ser aberta, ela chama <see cref="OnSalaDoorOpened"/>,
-        /// que liga <see cref="salaDoorOpened"/>; este beat aguarda esse flag e avança
+        /// produtos — armada aqui (<see cref="ProductsRoomDoor.Arm"/>), só agora
+        /// aceita interação. Ao ser aberta, ela chama <see cref="OnProductsRoomDoorOpened"/>,
+        /// que liga <see cref="productsRoomDoorOpened"/>; este beat aguarda esse flag e avança
         /// para o susto.
         /// </summary>
         private IEnumerator BeatInvestigation()
         {
             EnsurePlayerFree();
 
-            salaDoorOpened = false;
-            if (salaDoor != null)
+            productsRoomDoorOpened = false;
+            if (productsRoomDoor != null)
             {
-                salaDoor.Arm(OnSalaDoorOpened);
-                yield return new WaitUntil(() => salaDoorOpened);
+                productsRoomDoor.Arm(OnProductsRoomDoorOpened);
+                yield return new WaitUntil(() => productsRoomDoorOpened);
             }
             else
             {
-                Debug.LogWarning("[Act2Director] salaDoor não atribuída; sem gate para o susto. Avançando direto.", this);
+                Debug.LogWarning("[Act2Director] productsRoomDoor não atribuída; sem gate para o susto. Avançando direto.", this);
             }
 
-            AdvanceToBeat(Act2Beat.ZeladorScare);
+            AdvanceToBeat(Act2Beat.JanitorScare);
         }
 
         /// <summary>
-        /// Callback da <see cref="SalaProdutosDoor"/> ao ser aberta (tecla de
+        /// Callback da <see cref="ProductsRoomDoor"/> ao ser aberta (tecla de
         /// interação). Só tem efeito durante a investigação; liga o flag que o
         /// <see cref="BeatInvestigation"/> aguarda.
         /// </summary>
-        private void OnSalaDoorOpened()
+        private void OnProductsRoomDoorOpened()
         {
-            salaDoorOpened = true;
+            productsRoomDoorOpened = true;
         }
 
-        // --- BEAT 4: ZeladorScare -----------------------------------------
+        // --- BEAT 4: JanitorScare -----------------------------------------
 
         /// <summary>
         /// O falso susto: ao abrir a porta, o zelador (placeholder, parado na sala)
@@ -322,7 +334,7 @@ namespace TheDelivery.Narrative
         /// encarando o player — revela-se "só" o zelador. Sem avanço à câmera nem recuo.
         /// Movimento scriptado direto (sem NavMesh).
         /// </summary>
-        private IEnumerator BeatZeladorScare()
+        private IEnumerator BeatJanitorScare()
         {
             // Trava o player para o instante de tensão (encarar o susto). Sem mexer
             // na câmera dele — quem se move é o zelador, então não há "snap" ao soltar.
@@ -331,12 +343,12 @@ namespace TheDelivery.Narrative
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
-            PlaySound(somDoSusto);
+            PlaySound(scareSound);
 
-            if (zeladorTransform != null)
+            if (janitorTransform != null)
                 yield return SlideRoutine();
             else
-                Debug.LogWarning("[Act2Director] zeladorTransform não atribuído; pulando o deslize do susto.", this);
+                Debug.LogWarning("[Act2Director] janitorTransform não atribuído; pulando o deslize do susto.", this);
 
             // Folga do susto, se sobrar tempo além do deslize, para a tensão assentar
             // antes da conversa começar.
@@ -345,7 +357,7 @@ namespace TheDelivery.Narrative
             if (remaining > 0f)
                 yield return new WaitForSeconds(remaining);
 
-            AdvanceToBeat(Act2Beat.ZeladorDialogue);
+            AdvanceToBeat(Act2Beat.JanitorDialogue);
         }
 
         /// <summary>
@@ -356,9 +368,9 @@ namespace TheDelivery.Narrative
         /// </summary>
         private IEnumerator SlideRoutine()
         {
-            Vector3 origin = zeladorTransform.position;
+            Vector3 origin = janitorTransform.position;
             // Alvo lateral, no plano (mantém a altura original).
-            Vector3 target = origin + zeladorTransform.right * slideDistance;
+            Vector3 target = origin + janitorTransform.right * slideDistance;
             target.y = origin.y;
 
             float dur = Mathf.Max(0.0001f, slideDuration);
@@ -368,16 +380,16 @@ namespace TheDelivery.Narrative
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / dur));
-                zeladorTransform.position = Vector3.Lerp(origin, target, t);
+                janitorTransform.position = Vector3.Lerp(origin, target, t);
                 yield return null;
             }
-            zeladorTransform.position = target;
+            janitorTransform.position = target;
 
             // Permanece na posição visível e encara o player para a conversa.
-            FaceTowards(zeladorTransform, playerController.transform.position);
+            FaceTowards(janitorTransform, playerController.transform.position);
         }
 
-        // --- BEAT 5: ZeladorDialogue --------------------------------------
+        // --- BEAT 5: JanitorDialogue --------------------------------------
 
         /// <summary>
         /// Logo após o susto, a conversa começa AUTOMATICAMENTE. O player segue
@@ -385,12 +397,12 @@ namespace TheDelivery.Narrative
         /// (<see cref="PlayerController.CanLookOverride"/>). Ao fim do diálogo, libera
         /// o player e avança para o elevador (agora liberado).
         /// </summary>
-        private IEnumerator BeatZeladorDialogue()
+        private IEnumerator BeatJanitorDialogue()
         {
             playerController.CanMove = false;
             playerController.CanLookOverride = true; // pode olhar, não andar.
 
-            ShowDialogue(zeladorDialogue);
+            ShowDialogue(janitorDialogue);
             yield return null;
             yield return new WaitUntil(() => DialogueSystem.Instance == null || !DialogueSystem.Instance.IsShowing);
 
@@ -407,7 +419,7 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Elevador LIBERADO (só após o diálogo). O gate é implícito: a
-        /// <see cref="elevadorZone"/> só é monitorada neste beat — antes dele,
+        /// <see cref="elevatorZone"/> só é monitorada neste beat — antes dele,
         /// entrar no elevador não faz nada. Ao entrar na zona, toca o som da porta,
         /// espera um instante e delega a troca de cena ao <see cref="GameManager"/>
         /// (persistente) — a coroutine roda NELE para sobreviver ao unload desta cena.
@@ -416,18 +428,18 @@ namespace TheDelivery.Narrative
         {
             EnsurePlayerFree();
 
-            if (elevadorZone != null)
-                yield return new WaitUntil(() => PlayerInZone(elevadorZone, elevadorRadius));
+            if (elevatorZone != null)
+                yield return new WaitUntil(() => PlayerInZone(elevatorZone, elevatorRadius));
             else
-                Debug.LogWarning("[Act2Director] elevadorZone não atribuída; transição não será disparada.", this);
+                Debug.LogWarning("[Act2Director] elevatorZone não atribuída; transição não será disparada.", this);
 
             // A porta do elevador fecha; pequeno respiro antes da troca.
-            PlaySound(somElevador);
-            yield return new WaitForSeconds(Mathf.Max(0f, elevadorDelay));
+            PlaySound(elevatorSound);
+            yield return new WaitForSeconds(Mathf.Max(0f, elevatorDelay));
 
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartamento);
+                GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartment);
             }
             else
             {
@@ -476,10 +488,10 @@ namespace TheDelivery.Narrative
                 return;
 
             if (kb.digit1Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.Arrival);
-            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.PorteiroAusente);
+            else if (kb.digit2Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.ReceptionistAbsent);
             else if (kb.digit3Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.Investigation);
-            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.ZeladorScare);
-            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.ZeladorDialogue);
+            else if (kb.digit4Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.JanitorScare);
+            else if (kb.digit5Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.JanitorDialogue);
             else if (kb.digit6Key.wasPressedThisFrame) AdvanceToBeat(Act2Beat.GoToElevator);
         }
 
@@ -490,16 +502,16 @@ namespace TheDelivery.Narrative
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.yellow;
-            if (porteiroAusenteZone != null)
-                Gizmos.DrawWireSphere(porteiroAusenteZone.position, porteiroZoneRadius);
+            if (receptionistAbsentZone != null)
+                Gizmos.DrawWireSphere(receptionistAbsentZone.position, receptionistZoneRadius);
 
             Gizmos.color = Color.red;
-            if (zeladorTransform != null)
-                Gizmos.DrawWireSphere(zeladorTransform.position, 0.3f);
+            if (janitorTransform != null)
+                Gizmos.DrawWireSphere(janitorTransform.position, 0.3f);
 
             Gizmos.color = Color.cyan;
-            if (elevadorZone != null)
-                Gizmos.DrawWireSphere(elevadorZone.position, elevadorRadius);
+            if (elevatorZone != null)
+                Gizmos.DrawWireSphere(elevatorZone.position, elevatorRadius);
         }
 #endif
     }

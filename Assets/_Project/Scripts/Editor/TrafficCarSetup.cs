@@ -12,7 +12,7 @@ namespace TheDelivery.EditorTools
     /// rodas visuais de cada carro, para os pneus girarem sozinhos.
     ///
     /// Uso: selecione os carros na cena (raiz de cada um) e rode
-    /// <c>Tools ▸ The Delivery ▸ Traffic - Configurar Carros Selecionados</c>. Carros que já
+    /// <c>Tools ▸ The Delivery ▸ FX - Configurar Carros de Tráfego (Selecionados)</c>. Carros que já
     /// tenham o componente são respeitados — o comando reescalona a largada e só preenche as
     /// rodas se a lista estiver VAZIA (nunca atropela o que você amarrou na mão).
     ///
@@ -31,14 +31,14 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static readonly string[] WheelNameHints = { "wheel", "tire", "roda", "pneu" };
 
-        [MenuItem("Tools/The Delivery/Traffic - Configurar Carros Selecionados")]
+        [MenuItem("Tools/The Delivery/FX - Configurar Carros de Tráfego (Selecionados)")]
         public static void SetupSelectedCars()
         {
             GameObject[] selection = Selection.gameObjects;
 
             if (selection.Length == 0)
             {
-                Debug.LogWarning("[TrafficCar] Selecione na Hierarchy os carros (a raiz de cada um) antes de rodar o comando.");
+                Debug.LogWarning("[TrafficCarSetup] Selecione na Hierarchy os carros (a raiz de cada um) antes de rodar o comando.");
                 return;
             }
 
@@ -81,7 +81,7 @@ namespace TheDelivery.EditorTools
 
                 if (wheelCount == 0)
                 {
-                    Debug.LogWarning($"[TrafficCar] '{car.name}': não achei as rodas pelo nome. " +
+                    Debug.LogWarning($"[TrafficCarSetup] '{car.name}': não achei as rodas pelo nome. " +
                                      "Arraste os objetos das rodas para a lista Wheels no Inspector.", car);
                 }
             }
@@ -89,7 +89,7 @@ namespace TheDelivery.EditorTools
             if (touched > 0)
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
-            Debug.Log($"[TrafficCar] {added} carro(s) configurado(s), {restaggered} já tinha(m) o componente (largada reescalonada). " +
+            Debug.Log($"[TrafficCarSetup] {added} carro(s) configurado(s), {restaggered} já tinha(m) o componente (largada reescalonada). " +
                       "Ajuste o Travel Distance e o Forward Axis de cada um no Inspector — o gizmo amarelo mostra o percurso.");
         }
 

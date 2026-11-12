@@ -12,13 +12,13 @@ using UnityEngine.SceneManagement;
 namespace TheDelivery.EditorTools
 {
     /// <summary>
-    /// Monta a VISÃO TURVA do Pesadelo: cria (uma vez) o Volume Profile com o tratamento
+    /// Monta a VISÃO TURVA do Nightmare: cria (uma vez) o Volume Profile com o tratamento
     /// — Depth of Field, Vignette, Chromatic Aberration, Film Grain e Color Adjustments —,
     /// põe na cena um Global Volume com o <see cref="NightmareVision"/> e liga esse
-    /// GameObject ao campo <c>dreamVolume</c> do <c>PesadeloDirector</c>, que é quem acende
+    /// GameObject ao campo <c>dreamVolume</c> do <c>NightmareDirector</c>, que é quem acende
     /// no início do ato e apaga no corte final.
     ///
-    /// Uso: <c>Tools ▸ The Delivery ▸ FX - Visão Turva do Pesadelo</c>. A cena Pesadelo é
+    /// Uso: <c>Tools ▸ The Delivery ▸ Nightmare - Visão Turva</c>. A cena Nightmare é
     /// aberta se ainda não estiver.
     ///
     /// IDEMPOTENTE, E DE UM JEITO ESPECÍFICO: rodar de novo reaproveita o Volume da cena e
@@ -32,10 +32,10 @@ namespace TheDelivery.EditorTools
     /// </summary>
     public static class NightmareVisionSetup
     {
-        private const string ScenePath = "Assets/Scenes/Pesadelo.unity";
+        private const string ScenePath = "Assets/Scenes/Nightmare.unity";
         private const string ProfileFolder = "Assets/_Project/Settings";
-        private const string ProfilePath = ProfileFolder + "/PesadeloVisaoTurva.asset";
-        private const string HostName = "VisaoTurva";
+        private const string ProfilePath = ProfileFolder + "/NightmareBlurryVision.asset";
+        private const string HostName = "BlurryVision";
         private const string EnvironmentRootName = "_Environment";
 
         // --- Preset da visão turva ----------------------------------------
@@ -58,7 +58,7 @@ namespace TheDelivery.EditorTools
         private const float Saturation = -25f;
         private const float PostExposure = -0.15f;
 
-        [MenuItem("Tools/The Delivery/FX - Visão Turva do Pesadelo")]
+        [MenuItem("Tools/The Delivery/Nightmare - Visão Turva")]
         private static void Run()
         {
             Scene scene = EnsureSceneOpen();
@@ -83,10 +83,10 @@ namespace TheDelivery.EditorTools
             EditorGUIUtility.PingObject(profile);
 
             Debug.Log(
-                $"[NightmareVisionSetup] Visão turva pronta na Pesadelo. " +
+                $"[NightmareVisionSetup] Visão turva pronta na Nightmare. " +
                 $"Volume \"{host.name}\" {(hostCreated ? "criado" : "reaproveitado")}; " +
                 $"profile {(profileCreated ? "criado em " + ProfilePath : "reaproveitado (valores preservados)")}; " +
-                $"campo dreamVolume do PesadeloDirector {(wired ? "ligado" : "NÃO ligado — ver avisos acima")}.\n" +
+                $"campo dreamVolume do NightmareDirector {(wired ? "ligado" : "NÃO ligado — ver avisos acima")}.\n" +
                 "Ajuste o quanto borra no asset do profile (Depth of Field ▸ Gaussian End: menor = mais turvo) com o " +
                 "Game view aberto — o componente NightmareVision usa o que estiver ali como alvo.",
                 host);
@@ -224,7 +224,7 @@ namespace TheDelivery.EditorTools
             }
 
             var host = new GameObject(HostName);
-            Undo.RegisterCreatedObjectUndo(host, "Criar Visão Turva do Pesadelo");
+            Undo.RegisterCreatedObjectUndo(host, "Criar Visão Turva do Nightmare");
             SceneManager.MoveGameObjectToScene(host, scene);
 
             Transform parent = FindRoot(scene, EnvironmentRootName);
@@ -312,17 +312,17 @@ namespace TheDelivery.EditorTools
         /// <summary>Liga o GameObject do Volume ao campo <c>dreamVolume</c> do diretor.</summary>
         private static bool WireDirector(Scene scene, GameObject host)
         {
-            PesadeloDirector director = null;
+            NightmareDirector director = null;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                director = root.GetComponentInChildren<PesadeloDirector>(includeInactive: true);
+                director = root.GetComponentInChildren<NightmareDirector>(includeInactive: true);
                 if (director != null)
                     break;
             }
 
             if (director == null)
             {
-                Debug.LogWarning("[NightmareVisionSetup] PesadeloDirector não encontrado na cena; o Volume ficou montado, " +
+                Debug.LogWarning("[NightmareVisionSetup] NightmareDirector não encontrado na cena; o Volume ficou montado, " +
                                  "mas ninguém vai apagá-lo no corte final. Arraste o GameObject para o campo " +
                                  "\"Dream Volume\" do diretor quando ele existir.");
                 return false;
@@ -395,7 +395,7 @@ namespace TheDelivery.EditorTools
             return AssetDatabase.IsValidFolder(folder);
         }
 
-        /// <summary>Garante a cena Pesadelo aberta, oferecendo salvar o que estiver aberto antes.</summary>
+        /// <summary>Garante a cena Nightmare aberta, oferecendo salvar o que estiver aberto antes.</summary>
         private static Scene EnsureSceneOpen()
         {
             Scene open = EditorSceneManager.GetSceneByPath(ScenePath);
@@ -411,7 +411,7 @@ namespace TheDelivery.EditorTools
         private static void Fail(string message)
         {
             Debug.LogError($"[NightmareVisionSetup] {message}");
-            EditorUtility.DisplayDialog("Visão Turva do Pesadelo", message, "OK");
+            EditorUtility.DisplayDialog("Visão Turva do Nightmare", message, "OK");
         }
     }
 }

@@ -23,7 +23,7 @@ namespace TheDelivery.AI
     ///
     /// Animação: este script SÓ move o Transform. Quem faz as pernas mexerem é o
     /// <see cref="Animator"/> do modelo, que precisa de um AnimatorController tocando o clipe
-    /// de caminhada EM LOOP (use o Tools ▸ The Delivery ▸ Build Looping Clip Controller).
+    /// de caminhada EM LOOP (use o Tools ▸ The Delivery ▸ Anim - Montar controller de clipe em loop).
     /// Root motion é FORÇADO A FALSE: quem manda no deslocamento é este script, senão a
     /// animação empurraria o personagem junto e o passo ficaria "patinando" ou dobrado.
     ///

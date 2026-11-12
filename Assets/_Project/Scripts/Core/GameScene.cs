@@ -11,20 +11,20 @@ namespace TheDelivery.Core
     {
         Boot,        // cena de inicialização (só o GameManager + tela preta persistente)
         Cafeteria,   // Ato 1
-        Recepcao,    // Ato 2 (início)
-        Apartamento, // Ato 4 (a cena atual renomeada); Atos 2-3 também acontecem aqui
+        Reception,   // Ato 2 (início)
+        Apartment,   // Ato 4 (a cena atual renomeada); Atos 2-3 também acontecem aqui
 
-        // A rua entre a cafeteria e o prédio (ActPercurso). O ATO se chama Percurso
-        // (GameAct.ActPercurso, PercursoDirector), mas o valor aqui é Estrada porque
-        // este enum espelha NOME DE ARQUIVO, e a cena no disco é Estrada.unity —
+        // A rua entre a cafeteria e o prédio (ActJourney). O ATO se chama Journey
+        // (GameAct.ActJourney, JourneyDirector), mas o valor aqui é Road porque
+        // este enum espelha NOME DE ARQUIVO, e a cena no disco é Road.unity —
         // renomear a cena exige renomear este valor junto. No FIM do enum, e não na
-        // sua posição cronológica (entre Cafeteria e Recepcao), para não deslocar os
+        // sua posição cronológica (entre Cafeteria e Reception), para não deslocar os
         // índices dos valores já serializados no Inspector.
-        Estrada,
+        Road,
 
-        // O pesadelo do cold open (ActPesadelo). O arquivo tem que se chamar
-        // Pesadelo.unity e estar no Build Settings — este enum é carregado por NOME.
-        Pesadelo,
+        // O pesadelo do cold open (ActNightmare). O arquivo tem que se chamar
+        // Nightmare.unity e estar no Build Settings — este enum é carregado por NOME.
+        Nightmare,
 
         // A fuga (ActEscape), depois do sequestro no fim do Ato 4. O arquivo tem que se
         // chamar Escape.unity e estar no Build Settings — este enum é carregado por NOME.

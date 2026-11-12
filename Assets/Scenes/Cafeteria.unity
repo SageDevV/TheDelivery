@@ -281,7 +281,7 @@ GameObject:
   - component: {fileID: 56800226}
   - component: {fileID: 56800225}
   m_Layer: 0
-  m_Name: FumacaCafe
+  m_Name: CoffeeSteam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5148,7 +5148,7 @@ GameObject:
   - component: {fileID: 72687954}
   - component: {fileID: 72687953}
   m_Layer: 0
-  m_Name: NorthWallLeft
+  m_Name: Wall_North_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5539,7 +5539,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 1655b451da1e76648b6aced305048df9, type: 3}
       propertyPath: m_Name
-      value: PrateleiraVerticalCafeteria
+      value: CafeteriaShelf_Vertical
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5791,7 +5791,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5f32e5c1ac8e3994fb890a23bbd76121, type: 3}
       propertyPath: m_Name
-      value: PrateleiraHorizontalCafeteria
+      value: CafeteriaShelf_Horizontal
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5875,7 +5875,7 @@ GameObject:
   m_Component:
   - component: {fileID: 134643330}
   m_Layer: 0
-  m_Name: Sit_2
+  m_Name: Sit_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6129,7 +6129,7 @@ GameObject:
   - component: {fileID: 193927738}
   - component: {fileID: 193927737}
   m_Layer: 0
-  m_Name: SouthWall_Up
+  m_Name: Wall_South_Upper
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6782,7 +6782,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 20c9c00b1e375704394d43f1958f16a5, type: 3}
       propertyPath: m_Name
-      value: Liquidificador
+      value: Blender
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6856,7 +6856,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: c72f8ab6dc0a37140bc4f4615967b952, type: 3}
       propertyPath: m_Name
-      value: Xicara
+      value: CoffeeCup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7262,7 +7262,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4e78f46c5bf1d3c4b897ecf3e5c9c065, type: 3}
       propertyPath: m_Name
-      value: Mesa_Cafeteria
+      value: CafeteriaTable
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7494,7 +7494,7 @@ GameObject:
   - component: {fileID: 353575767}
   - component: {fileID: 353575766}
   m_Layer: 0
-  m_Name: WindowLight
+  m_Name: Light_Window
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7659,7 +7659,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7437569597727868586, guid: 4ddd5b9d6470ed74eb58f89fd22bd593, type: 3}
       propertyPath: m_Name
-      value: Poste_1
+      value: StreetLight_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8554,7 +8554,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8742,7 +8742,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: c72f8ab6dc0a37140bc4f4615967b952, type: 3}
       propertyPath: m_Name
-      value: Xicara
+      value: CoffeeCup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8839,7 +8839,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2d8fac4dea680974f98cb5c279a0c616, type: 3}
       propertyPath: m_Name
-      value: MostruarioComida
+      value: FoodDisplay
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8931,7 +8931,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7437569597727868586, guid: 4ddd5b9d6470ed74eb58f89fd22bd593, type: 3}
       propertyPath: m_Name
-      value: Poste_1
+      value: StreetLight_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8953,7 +8953,7 @@ GameObject:
   m_Component:
   - component: {fileID: 501841548}
   m_Layer: 0
-  m_Name: Sit_4
+  m_Name: Sit_04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9054,7 +9054,7 @@ GameObject:
   - component: {fileID: 506645699}
   - component: {fileID: 506645698}
   m_Layer: 0
-  m_Name: NorthWallCenterUp
+  m_Name: Wall_North_CenterUpper
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9635,7 +9635,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 234d45b92f35de84882dbfc749981576, type: 3}
       propertyPath: m_Name
-      value: Lampada_Cafeteria
+      value: CafeteriaLamp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9709,7 +9709,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9850,7 +9850,7 @@ GameObject:
   - component: {fileID: 542362036}
   - component: {fileID: 542362035}
   m_Layer: 0
-  m_Name: NorthWallRight
+  m_Name: Wall_North_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10313,7 +10313,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7437569597727868586, guid: 4ddd5b9d6470ed74eb58f89fd22bd593, type: 3}
       propertyPath: m_Name
-      value: Poste_1
+      value: StreetLight_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10370,7 +10370,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5992877970787089910, guid: 11fd6a1de14cb7a4084e01d5622bac99, type: 3}
       propertyPath: m_Name
-      value: Poste_2
+      value: StreetLight_02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10439,7 +10439,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10581,7 +10581,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 65618d6e465d7374c801254566f46a62, type: 3}
       propertyPath: m_Name
-      value: IdosaAtendente
+      value: OldLadyAttendant
       objectReference: {fileID: 0}
     - target: {fileID: 3281478326015239055, guid: 65618d6e465d7374c801254566f46a62, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -10691,7 +10691,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 9abbb65035ff82947847a6fca66fe9b4, type: 3}
       propertyPath: m_Name
-      value: IdosoTomandoCafe
+      value: OldManDrinkingCoffee
       objectReference: {fileID: 0}
     - target: {fileID: 1224838648081573186, guid: 9abbb65035ff82947847a6fca66fe9b4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -10774,7 +10774,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4e78f46c5bf1d3c4b897ecf3e5c9c065, type: 3}
       propertyPath: m_Name
-      value: Mesa_Cafeteria
+      value: CafeteriaTable
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11188,7 +11188,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 234d45b92f35de84882dbfc749981576, type: 3}
       propertyPath: m_Name
-      value: Lampada_Cafeteria
+      value: CafeteriaLamp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11262,7 +11262,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4433062694735862296, guid: 11741e0c08606534ab0f96073642910d, type: 3}
       propertyPath: m_Name
-      value: Tv_Glow
+      value: TV_Glow
       objectReference: {fileID: 0}
     - target: {fileID: 5602279727954644111, guid: 11741e0c08606534ab0f96073642910d, type: 3}
       propertyPath: m_Range
@@ -11653,7 +11653,7 @@ GameObject:
   m_Component:
   - component: {fileID: 752085281}
   m_Layer: 0
-  m_Name: Sit
+  m_Name: Sit_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11743,7 +11743,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: e61a11a1626c11d438617be594dafde6, type: 3}
       propertyPath: m_Name
-      value: XicaraCafe2
+      value: CoffeeCup_02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11781,7 +11781,7 @@ GameObject:
   - component: {fileID: 845637473}
   - component: {fileID: 845637472}
   m_Layer: 0
-  m_Name: FumacaCafe
+  m_Name: CoffeeSteam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16765,7 +16765,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -16871,7 +16871,7 @@ GameObject:
   m_Component:
   - component: {fileID: 967801968}
   m_Layer: 0
-  m_Name: ShadowEndpoint
+  m_Name: ShadowEndPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16904,7 +16904,7 @@ GameObject:
   - component: {fileID: 970957368}
   - component: {fileID: 970957367}
   m_Layer: 0
-  m_Name: AmbientRedLight
+  m_Name: Light_AmbientRed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17034,7 +17034,7 @@ GameObject:
   - component: {fileID: 980772403}
   - component: {fileID: 980772402}
   m_Layer: 0
-  m_Name: EastWall
+  m_Name: Wall_East
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17675,7 +17675,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 612f0f5c65a085d4d9c8e9646b911b03, type: 3}
       propertyPath: m_Name
-      value: TapeteCafeteria
+      value: CafeteriaRug
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17737,7 +17737,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5992877970787089910, guid: 11fd6a1de14cb7a4084e01d5622bac99, type: 3}
       propertyPath: m_Name
-      value: Poste_2
+      value: StreetLight_02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17847,7 +17847,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19199,7 +19199,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 1386791c36906b441ad2d8db1a01656e, type: 2}
     - target: {fileID: 5725555406852335063, guid: a1c057227b6f63e45a20be7d33005c69, type: 3}
       propertyPath: m_Name
-      value: Janela
+      value: Window
       objectReference: {fileID: 0}
     - target: {fileID: 5771422890073191273, guid: a1c057227b6f63e45a20be7d33005c69, type: 3}
       propertyPath: m_LocalScale.y
@@ -19490,7 +19490,7 @@ GameObject:
   - component: {fileID: 1227311092}
   - component: {fileID: 1227311091}
   m_Layer: 0
-  m_Name: NorthWallCenterBottom
+  m_Name: Wall_North_CenterBottom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19905,7 +19905,7 @@ GameObject:
   - component: {fileID: 1253730884}
   - component: {fileID: 1253730883}
   m_Layer: 0
-  m_Name: InnerLight_2
+  m_Name: Light_Inner_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20067,7 +20067,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1270524198}
   m_Layer: 0
-  m_Name: Ato1
+  m_Name: Act1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20163,7 +20163,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 234d45b92f35de84882dbfc749981576, type: 3}
       propertyPath: m_Name
-      value: Lampada_Cafeteria
+      value: CafeteriaLamp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20309,7 +20309,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5f32e5c1ac8e3994fb890a23bbd76121, type: 3}
       propertyPath: m_Name
-      value: PrateleiraHorizontalCafeteria
+      value: CafeteriaShelf_Horizontal
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20545,7 +20545,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4e78f46c5bf1d3c4b897ecf3e5c9c065, type: 3}
       propertyPath: m_Name
-      value: Mesa_Cafeteria
+      value: CafeteriaTable
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20597,7 +20597,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2506152489139483897, guid: 09b7bb2e88cc5a54db8725635149295a, type: 3}
       propertyPath: m_Name
-      value: Curtain_rod
+      value: CurtainRod
       objectReference: {fileID: 0}
     - target: {fileID: 2993896244951051843, guid: 09b7bb2e88cc5a54db8725635149295a, type: 3}
       propertyPath: m_LocalScale.x
@@ -20680,7 +20680,7 @@ GameObject:
   - component: {fileID: 1374337365}
   - component: {fileID: 1374337364}
   m_Layer: 0
-  m_Name: SouthWall_Left
+  m_Name: Wall_South_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21290,7 +21290,7 @@ GameObject:
   - component: {fileID: 1402318069}
   - component: {fileID: 1402318068}
   m_Layer: 0
-  m_Name: InnerLight_3
+  m_Name: Light_Inner_03
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21638,7 +21638,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: fbdb501c8bea3b74d9a6c552e1098704, type: 3}
       propertyPath: m_Name
-      value: PrateleiraVerticalMenorCafeteria
+      value: CafeteriaShelf_VerticalSmall
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -21762,7 +21762,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5992877970787089910, guid: 11fd6a1de14cb7a4084e01d5622bac99, type: 3}
       propertyPath: m_Name
-      value: Poste_2
+      value: StreetLight_02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -21924,7 +21924,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5f32e5c1ac8e3994fb890a23bbd76121, type: 3}
       propertyPath: m_Name
-      value: PrateleiraHorizontalCafeteria
+      value: CafeteriaShelf_Horizontal
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22177,7 +22177,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7437569597727868586, guid: 4ddd5b9d6470ed74eb58f89fd22bd593, type: 3}
       propertyPath: m_Name
-      value: Poste_1
+      value: StreetLight_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22348,7 +22348,7 @@ GameObject:
   - component: {fileID: 1648114755}
   - component: {fileID: 1648114754}
   m_Layer: 0
-  m_Name: InnerLight_1
+  m_Name: Light_Inner_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22518,7 +22518,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7437569597727868586, guid: 4ddd5b9d6470ed74eb58f89fd22bd593, type: 3}
       propertyPath: m_Name
-      value: Poste_1
+      value: StreetLight_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22611,7 +22611,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 9c45394a9e1a9f44b8df8fc054bd3fba, type: 3}
       propertyPath: m_Name
-      value: BancadaCafeteria
+      value: CafeteriaCounter
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22861,7 +22861,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4e78f46c5bf1d3c4b897ecf3e5c9c065, type: 3}
       propertyPath: m_Name
-      value: Mesa_Cafeteria
+      value: CafeteriaTable
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22947,7 +22947,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1729482940}
   m_Layer: 0
-  m_Name: SpawnPoint_Player
+  m_Name: PlayerSpawnPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -23055,7 +23055,7 @@ GameObject:
   - component: {fileID: 1786616108}
   - component: {fileID: 1786616107}
   m_Layer: 0
-  m_Name: SouthWall
+  m_Name: Wall_South
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -23419,7 +23419,7 @@ GameObject:
   - component: {fileID: 1811192223}
   - component: {fileID: 1811192222}
   m_Layer: 0
-  m_Name: FumacaCafe
+  m_Name: CoffeeSteam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28333,7 +28333,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -28442,7 +28442,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -28635,7 +28635,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4433062694735862296, guid: 11741e0c08606534ab0f96073642910d, type: 3}
       propertyPath: m_Name
-      value: Tv_Glow
+      value: TV_Glow
       objectReference: {fileID: 0}
     - target: {fileID: 5602279727954644111, guid: 11741e0c08606534ab0f96073642910d, type: 3}
       propertyPath: m_Intensity
@@ -28948,7 +28948,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1917766680779079263, guid: 911d45b6209a0ff44b5a92b4a34d281f, type: 3}
       propertyPath: m_Name
-      value: BBW30_Tune(Sample)
+      value: BBW30_TuneSample
       objectReference: {fileID: 0}
     - target: {fileID: 8225347807816647306, guid: 911d45b6209a0ff44b5a92b4a34d281f, type: 3}
       propertyPath: m_LocalScale.x
@@ -29087,7 +29087,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1948697545}
   m_Layer: 0
-  m_Name: Sit_5
+  m_Name: Sit_05
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29595,7 +29595,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -29699,7 +29699,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -29805,7 +29805,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4e78f46c5bf1d3c4b897ecf3e5c9c065, type: 3}
       propertyPath: m_Name
-      value: Mesa_Cafeteria
+      value: CafeteriaTable
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -29909,7 +29909,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0de7cb49a85522a4d813625801f0025c, type: 3}
       propertyPath: m_Name
-      value: Cafeteria_cadeira
+      value: CafeteriaChair
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -30070,7 +30070,7 @@ GameObject:
   - component: {fileID: 2074623106}
   - component: {fileID: 2074623105}
   m_Layer: 0
-  m_Name: WestWall
+  m_Name: Wall_West
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -6,7 +6,7 @@ namespace TheDelivery.Narrative
 {
     /// <summary>
     /// Helpers SEM ESTADO compartilhados pelos diretores de ato
-    /// (<see cref="Act1Director"/> … <see cref="PesadeloDirector"/>).
+    /// (<see cref="Act1Director"/> … <see cref="NightmareDirector"/>).
     ///
     /// Antes cada diretor carregava a própria cópia destes métodos — idênticas, com
     /// comentários do tipo "espelha o do Act2Director". Uma correção feita num ato não

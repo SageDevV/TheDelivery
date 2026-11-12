@@ -37,7 +37,7 @@ namespace TheDelivery.EditorTools
             {
                 EditorUtility.DisplayDialog("Medir passada",
                     "Não achei um Animator com controller neste NPC.\n\nGere o controller primeiro " +
-                    "(Tools ▸ The Delivery ▸ Build Looping Clip Controller).", "OK");
+                    "(Tools ▸ The Delivery ▸ Anim - Montar controller de clipe em loop).", "OK");
                 return;
             }
 

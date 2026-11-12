@@ -60,7 +60,7 @@ namespace TheDelivery.EditorTools
 
         private static bool Fit(GameObject target)
         {
-            // Bounds de renderer em objeto desativado não valem nada — e o CreatureAtk vive
+            // Bounds de renderer em objeto desativado não valem nada — e o CreatureAttack vive
             // desativado. Liga, mede, devolve o estado.
             bool wasActive = target.activeSelf;
             if (!wasActive)

@@ -24,10 +24,10 @@ namespace TheDelivery.EditorTools
         private string input = Placeholder;
         private Vector2 scroll;
 
-        [MenuItem("Tools/The Delivery/Batch Rename From Map")]
+        [MenuItem("Tools/The Delivery/Cena - Renomear em lote (mapa)")]
         private static void Open()
         {
-            var window = GetWindow<BatchRenameWindow>("Batch Rename");
+            var window = GetWindow<BatchRenameWindow>("Renomear em lote");
             window.minSize = new Vector2(360, 280);
         }
 
@@ -54,19 +54,19 @@ namespace TheDelivery.EditorTools
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || !scene.isLoaded)
             {
-                EditorUtility.DisplayDialog("Batch Rename", "Nenhuma cena ativa válida.", "OK");
+                EditorUtility.DisplayDialog("Renomear em lote", "Nenhuma cena ativa válida.", "OK");
                 return;
             }
 
             Dictionary<string, string> map = ParseMap(input);
             if (map.Count == 0)
             {
-                EditorUtility.DisplayDialog("Batch Rename", "Nenhum par válido (use 'Atual = Novo').", "OK");
+                EditorUtility.DisplayDialog("Renomear em lote", "Nenhum par válido (use 'Atual = Novo').", "OK");
                 return;
             }
 
             int undoGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName("Batch Rename From Map");
+            Undo.SetCurrentGroupName("Cena - Renomear em lote (mapa)");
 
             int renamed = 0;
             var pending = new HashSet<string>(map.Keys);
@@ -93,7 +93,7 @@ namespace TheDelivery.EditorTools
             EditorSceneManager.MarkSceneDirty(scene);
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"[BatchRename] Cena \"{scene.name}\": {renamed} objeto(s) renomeado(s) de {map.Count} regra(s).");
+            sb.AppendLine($"[BatchRenameWindow] Cena \"{scene.name}\": {renamed} objeto(s) renomeado(s) de {map.Count} regra(s).");
             if (pending.Count > 0)
                 sb.AppendLine($"  Sem correspondência na cena: {string.Join(", ", pending.OrderBy(s => s))}");
             Debug.Log(sb.ToString().TrimEnd());

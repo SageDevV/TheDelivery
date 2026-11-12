@@ -5,11 +5,11 @@ namespace TheDelivery.FX
 {
     /// <summary>
     /// ANOITECER cronometrado: comprime o fim de tarde numa janela curta
-    /// (<see cref="duration"/>, ~10 s) para a caminhada do Percurso sair da
+    /// (<see cref="duration"/>, ~10 s) para a caminhada do Journey sair da
     /// cafeteria no dourado e chegar ao prédio no azul da noite. Componente
     /// INDEPENDENTE e reutilizável, no espírito do <see cref="AmbientMusic"/>:
     /// não conhece ato nem beat, só expõe <see cref="Play"/> para quem orquestra
-    /// a cena (o <c>PercursoDirector</c>) disparar na hora certa.
+    /// a cena (o <c>JourneyDirector</c>) disparar na hora certa.
     ///
     /// O truque para o anoitecer ficar SUTIL é não depender de uma peça só. Um
     /// skybox trocando de cor sozinho denuncia o efeito; o que vende a passagem do
@@ -60,7 +60,7 @@ namespace TheDelivery.FX
                  "Ligado, o primeiro frame do anoitecer é IDÊNTICO à cena parada — sem o degrau que faz a transição parecer brusca. " +
                  "Desligue só se quiser que os gradientes mandem sozinhos, ignorando a luz autorada.")]
         [SerializeField] private bool startFromScene = true;
-        [Tooltip("Começa a anoitecer sozinho no Start. No Percurso deixe FALSE — quem dispara é o PercursoDirector, depois de checar que é a vez do ato.")]
+        [Tooltip("Começa a anoitecer sozinho no Start. No Journey deixe FALSE — quem dispara é o JourneyDirector, depois de checar que é a vez do ato.")]
         [SerializeField] private bool playOnStart = false;
 
         [Header("1. Sol (Directional Light)")]
@@ -454,7 +454,7 @@ namespace TheDelivery.FX
             if (nightSkyboxHandoff <= 0f)
                 Debug.LogWarning("[NightfallController] Night Skybox Handoff está em 0: a troca do céu vai passar pelo " +
                                  "PRETO, e é esse vazio que faz o Cold Night entrar com cara de corte. Rode " +
-                                 "Tools > The Delivery > Estrada - Céu da noite (Cold Night) para gravar o valor " +
+                                 "Tools > The Delivery > Road - Céu da noite (Cold Night) para gravar o valor " +
                                  "padrão na cena, ou ajuste à mão em \"3c. Céu da noite fechada\".", this);
 
             outgoingSkyFade = 1f;

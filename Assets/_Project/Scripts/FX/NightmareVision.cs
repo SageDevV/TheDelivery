@@ -6,13 +6,13 @@ using UnityEngine.Rendering.Universal;
 namespace TheDelivery.FX
 {
     /// <summary>
-    /// VISÃO TURVA CONSTANTE do Pesadelo. Mantém, o ato inteiro, o mesmo tratamento que o
+    /// VISÃO TURVA CONSTANTE do Nightmare. Mantém, o ato inteiro, o mesmo tratamento que o
     /// <c>Act4Director</c> aplica por alguns segundos depois da porrada — desfoque (Depth of
     /// Field), vinheta fechando as bordas, aberração cromática, grão e dessaturação — só que
     /// aqui ele é o ESTADO NORMAL da cena, não um evento.
     ///
     /// A DIFERENÇA DE INTENÇÃO EM RELAÇÃO À PORRADA: no Ato 4 a visão turva é uma perda de
-    /// consciência, e por isso ela SOBE e termina em preto. No Pesadelo ela não vai a lugar
+    /// consciência, e por isso ela SOBE e termina em preto. No Nightmare ela não vai a lugar
     /// nenhum — é como a Clear enxerga dentro do sonho, do primeiro passo no corredor até o
     /// impacto. Por isso este é um COMPONENTE de cena (vive no Volume, junto do resto da
     /// cenografia onírica) e não mais uma coroutine no diretor: o diretor não precisa saber
@@ -28,7 +28,7 @@ namespace TheDelivery.FX
     /// NÃO SUJA O ASSET: escreve em <c>volume.profile</c> (a instância de runtime), como faz o
     /// <c>Act4Director</c>. O asset em disco continua com os valores autorados.
     ///
-    /// LIGA/DESLIGA: quem acende e apaga é o <c>PesadeloDirector</c>, pelo campo
+    /// LIGA/DESLIGA: quem acende e apaga é o <c>NightmareDirector</c>, pelo campo
     /// <c>dreamVolume</c> — este GameObject. No corte final ele desativa o Volume e a visão
     /// volta ao normal junto com o resto do sonho.
     /// </summary>
@@ -218,7 +218,7 @@ namespace TheDelivery.FX
             if (volume.sharedProfile == null && !volume.HasInstantiatedProfile())
             {
                 Debug.LogError("[NightmareVision] O Volume não tem Profile; sem ele não há o que borrar. " +
-                               "Rode Tools > The Delivery > FX - Visao Turva do Pesadelo para montar o Volume completo.", this);
+                               "Rode Tools > The Delivery > Nightmare - Visão Turva para montar o Volume completo.", this);
                 return false;
             }
 

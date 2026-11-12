@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.InputSystem;
 using TheDelivery.Characters;
 using TheDelivery.Core;
@@ -22,7 +23,7 @@ namespace TheDelivery.Narrative
         MarinaArrives,  // Beat 3: Marina caminha até a mesa e senta
         Conversation,   // Beat 4: conversa (ambas sentadas)
         MarinaLeaves,   // Beat 5: Marina vai embora e some
-        ClearLeaves     // Beat 6: Clear levanta e sai -> transição p/ o Percurso (a rua)
+        ClearLeaves     // Beat 6: Clear levanta e sai -> transição p/ o Journey (a rua)
     }
 
     /// <summary>
@@ -46,7 +47,7 @@ namespace TheDelivery.Narrative
         [SerializeField] private Marina marina;
         [Tooltip("Cadeira em que a Clear senta (expõe IsSeated).")]
         [SerializeField] private SittableChair clearChair;
-        [Tooltip("SpawnPoint_Player: onde a Clear começa SENTADA na cadeira. O corpo é " +
+        [Tooltip("PlayerSpawnPoint: onde a Clear começa SENTADA na cadeira. O corpo é " +
                  "teleportado para cá no Awakening. Posicione ao nível do CHÃO/pés (origem " +
                  "do Player é nos pés), na cadeira, com o yaw olhando para a mesa/Marina.")]
         [SerializeField] private Transform spawnPoint;
@@ -125,10 +126,12 @@ namespace TheDelivery.Narrative
         [Tooltip("Pensamento da Clear ao se levantar para ir embora (ex.: \"Vamos embora...\"). " +
                  "Não bloqueia: aparece enquanto ela caminha até a porta. Opcional.")]
         [SerializeField] private ThoughtData leaveThought;
-        [Tooltip("Ponto da porta que dispara a transição para o Percurso (a rua até o prédio).")]
-        [SerializeField] private Transform saidaZone;
+        [Tooltip("Ponto da porta que dispara a transição para o Journey (a rua até o prédio).")]
+        [FormerlySerializedAs("saidaZone")]
+        [SerializeField] private Transform exitZone;
         [Tooltip("Raio (m) em torno do ponto de saída que conta como \"chegou\".")]
-        [SerializeField] private float saidaRadius = 1.5f;
+        [FormerlySerializedAs("saidaRadius")]
+        [SerializeField] private float exitRadius = 1.5f;
 
         [Header("Debug")]
         [Tooltip("Beat inicial. Use para pular beats ao testar.")]
@@ -292,7 +295,7 @@ namespace TheDelivery.Narrative
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
-            // Começa SENTADA na cadeira: teleporta o corpo para o SpawnPoint_Player
+            // Começa SENTADA na cadeira: teleporta o corpo para o PlayerSpawnPoint
             // com o CharacterController desabilitado (senão a física resiste ao
             // teleporte). Mantido desabilitado durante toda a espera sentada — assim
             // a gravidade não atua e o corpo fica perfeitamente imóvel na cadeira.
@@ -623,8 +626,8 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// A Clear levanta (se sentada) e vai até a porta. Ao entrar na zona de
-        /// saída, marca o avanço para o <see cref="GameAct.ActPercurso"/> (a rua até
-        /// o prédio, ver <see cref="PercursoDirector"/>) e delega a transição de cena
+        /// saída, marca o avanço para o <see cref="GameAct.ActJourney"/> (a rua até
+        /// o prédio, ver <see cref="JourneyDirector"/>) e delega a transição de cena
         /// ao GameManager (persistente) — a coroutine roda NELE para sobreviver ao
         /// unload desta cena.
         /// </summary>
@@ -644,22 +647,22 @@ namespace TheDelivery.Narrative
             // até a porta enquanto o pensamento aparece.
             ShowThought(leaveThought);
 
-            if (saidaZone != null)
-                yield return new WaitUntil(() => PlayerInZone(saidaZone, saidaRadius));
+            if (exitZone != null)
+                yield return new WaitUntil(() => PlayerInZone(exitZone, exitRadius));
             else
-                Debug.LogWarning("[Act1Director] saidaZone não atribuída; transição não será disparada.", this);
+                Debug.LogWarning("[Act1Director] exitZone não atribuída; transição não será disparada.", this);
 
             // Avança o ato e troca de cena via GameManager persistente. O Ato 1 NÃO
             // vai direto para a Recepção: entre eles há o PERCURSO (a caminhada pela
-            // rua até o prédio), conduzido pelo PercursoDirector — é ELE quem marca
+            // rua até o prédio), conduzido pelo JourneyDirector — é ELE quem marca
             // o Act2 e carrega a Recepção ao chegar no destino.
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.GoToAct(GameAct.ActPercurso, GameScene.Estrada);
+                GameManager.Instance.GoToAct(GameAct.ActJourney, GameScene.Road);
             }
             else
             {
-                Debug.LogError("[Act1Director] GameManager.Instance nulo; impossível transicionar para o Percurso.", this);
+                Debug.LogError("[Act1Director] GameManager.Instance nulo; impossível transicionar para o Journey.", this);
             }
 
             beatRoutine = null;
@@ -722,8 +725,8 @@ namespace TheDelivery.Narrative
                 Gizmos.DrawWireSphere(marinaSitPoint.position, 0.3f);
 
             Gizmos.color = Color.cyan;
-            if (saidaZone != null)
-                Gizmos.DrawWireSphere(saidaZone.position, saidaRadius);
+            if (exitZone != null)
+                Gizmos.DrawWireSphere(exitZone.position, exitRadius);
         }
 #endif
     }

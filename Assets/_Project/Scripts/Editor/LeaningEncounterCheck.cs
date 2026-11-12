@@ -27,19 +27,19 @@ namespace TheDelivery.EditorTools
     public static class LeaningEncounterCheck
     {
         /// <summary>Severidade de uma linha do relatório. A ordem importa: define o veredito final.</summary>
-        private enum Level { Ok, Info, Aviso, Erro }
+        private enum Level { Ok, Info, Warning, Error }
 
-        [MenuItem("Tools/The Delivery/Estrada - Checar encontro do Leaning")]
+        [MenuItem("Tools/The Delivery/Road - Checar encontro do Leaning")]
         private static void Run()
         {
             Scene scene = LeaningEncounterSetup.EnsureSceneOpen();
             if (!scene.IsValid())
                 return;
 
-            PercursoDirector director = LeaningEncounterSetup.FindInScene<PercursoDirector>(scene);
+            JourneyDirector director = LeaningEncounterSetup.FindInScene<JourneyDirector>(scene);
             if (director == null)
             {
-                Show("PercursoDirector não encontrado na cena Estrada — é nele que o beat mora.", null);
+                Show("JourneyDirector não encontrado na cena Road — é nele que o beat mora.", null);
                 return;
             }
 
@@ -67,7 +67,7 @@ namespace TheDelivery.EditorTools
             float pauseBefore = so.FindProperty("leaningPauseBeforeDialogue").floatValue;
             float approachTimeout = so.FindProperty("leaningApproachTimeout").floatValue;
 
-            var startBeat = (PercursoBeat)so.FindProperty("startBeat").enumValueIndex;
+            var startBeat = (JourneyBeat)so.FindProperty("startBeat").enumValueIndex;
             bool debugMode = so.FindProperty("debugMode").boolValue;
 
             // --- Os campos zerados ------------------------------------------
@@ -78,11 +78,11 @@ namespace TheDelivery.EditorTools
             string zeroed = FindZeroedFields(so);
             if (zeroed != null)
             {
-                lines.Add((Level.Erro, $"CAMPOS ZERADOS no encontro: {zeroed}.\n" +
+                lines.Add((Level.Error, $"CAMPOS ZERADOS no encontro: {zeroed}.\n" +
                                        "     O Unity não aplica os valores padrão do C# em campos NOVOS de um " +
                                        "componente que já estava salvo na cena — eles entram como zero. Com o Trigger " +
                                        "Radius em 0 a abordagem nunca dispara.\n" +
-                                       "     Conserto: rode Tools > The Delivery > Estrada - Encontro do Leaning."));
+                                       "     Conserto: rode Tools > The Delivery > Road - Encontro do Leaning."));
                 blame ??= director.gameObject;
             }
 
@@ -90,7 +90,7 @@ namespace TheDelivery.EditorTools
 
             if (actor == null)
             {
-                lines.Add((Level.Erro, "Leaning Actor VAZIO no PercursoDirector — o encontro nunca acontece."));
+                lines.Add((Level.Error, "Leaning Actor VAZIO no JourneyDirector — o encontro nunca acontece."));
                 blame ??= director.gameObject;
             }
             else
@@ -98,14 +98,14 @@ namespace TheDelivery.EditorTools
                 lines.Add((Level.Ok, $"Ator: \"{actor.name}\""));
                 if (!actor.gameObject.activeInHierarchy)
                 {
-                    lines.Add((Level.Erro, $"O ator \"{actor.name}\" está DESATIVADO na cena."));
+                    lines.Add((Level.Error, $"O ator \"{actor.name}\" está DESATIVADO na cena."));
                     blame ??= actor.gameObject;
                 }
             }
 
             if (triggerPoint == null)
             {
-                lines.Add((Level.Erro, "Leaning Trigger Point VAZIO — não há onde a abordagem começar."));
+                lines.Add((Level.Error, "Leaning Trigger Point VAZIO — não há onde a abordagem começar."));
                 blame ??= director.gameObject;
             }
             else
@@ -116,7 +116,7 @@ namespace TheDelivery.EditorTools
                 // para o director (que vigia por raio) e confuso para quem abrir a cena.
                 if (triggerPoint.GetComponent<Collider>() != null)
                 {
-                    lines.Add((Level.Aviso, $"\"{triggerPoint.name}\" ainda tem um Collider da versão antiga do beat. " +
+                    lines.Add((Level.Warning, $"\"{triggerPoint.name}\" ainda tem um Collider da versão antiga do beat. " +
                                             "Ele não faz nada agora — rode o comando de montagem para removê-lo."));
                 }
             }
@@ -125,11 +125,11 @@ namespace TheDelivery.EditorTools
 
             if (noticePoint == null)
             {
-                lines.Add((Level.Aviso, "Leaning Notice Point VAZIO — o gatilho do assovio está acumulando os dois " +
+                lines.Add((Level.Warning, "Leaning Notice Point VAZIO — o gatilho do assovio está acumulando os dois " +
                                         "papéis (o chamado e o giro no mesmo lugar), que é o comportamento antigo.\n" +
                                         "     Com ele, o assovio em loop não tem trecho para insistir: o beat 2 " +
                                         "começa e o desce no mesmo quadro em que ele nasce.\n" +
-                                        "     Conserto: rode Tools > The Delivery > Estrada - Encontro do Leaning."));
+                                        "     Conserto: rode Tools > The Delivery > Road - Encontro do Leaning."));
                 blame ??= director.gameObject;
             }
             else
@@ -142,7 +142,7 @@ namespace TheDelivery.EditorTools
 
                 if (box != null && !box.isTrigger)
                 {
-                    lines.Add((Level.Erro, $"O BoxCollider de \"{noticePoint.name}\" NÃO está marcado como Is Trigger: " +
+                    lines.Add((Level.Error, $"O BoxCollider de \"{noticePoint.name}\" NÃO está marcado como Is Trigger: " +
                                            "ele virou uma parede no meio da rua e a Clear esbarra nele antes de " +
                                            "cruzá-lo."));
                     blame ??= noticePoint.gameObject;
@@ -151,7 +151,7 @@ namespace TheDelivery.EditorTools
                 if (triggerPoint != null)
                 {
                     float gap = Vector3.Distance(triggerPoint.position, noticePoint.position);
-                    lines.Add((gap < 2f ? Level.Aviso : Level.Ok,
+                    lines.Add((gap < 2f ? Level.Warning : Level.Ok,
                         $"Trecho livre entre os dois pontos: {gap:0.0} m" +
                         (gap < 2f
                             ? " — CURTO DEMAIS. É o pedaço em que ela anda ouvindo o chamado e ainda pode ignorá-lo; " +
@@ -162,12 +162,12 @@ namespace TheDelivery.EditorTools
 
             if (player == null)
             {
-                lines.Add((Level.Erro, "Player Controller VAZIO no PercursoDirector."));
+                lines.Add((Level.Error, "Player Controller VAZIO no JourneyDirector."));
                 blame ??= director.gameObject;
             }
 
             if (dialogue == null)
-                lines.Add((Level.Aviso, "Leaning Dialogue VAZIO — ele aborda a Clear e fica calado."));
+                lines.Add((Level.Warning, "Leaning Dialogue VAZIO — ele aborda a Clear e fica calado."));
 
             CheckWhistle(so, actor, triggerPoint, triggerRadius, lines);
 
@@ -181,7 +181,7 @@ namespace TheDelivery.EditorTools
 
             if (spawn == null || destination == null)
             {
-                lines.Add((Level.Aviso, "O PercursoDirector está sem Spawn ou sem Destino: a rota é desconhecida, " +
+                lines.Add((Level.Warning, "O JourneyDirector está sem Spawn ou sem Destino: a rota é desconhecida, " +
                                         "então a posição do gatilho não foi conferida."));
             }
             else if (actor != null && triggerPoint != null)
@@ -199,7 +199,7 @@ namespace TheDelivery.EditorTools
                 // do estranho, e ela só é abordada quando já passou por ele.
                 if (alongTrigger >= alongActor)
                 {
-                    lines.Add((Level.Erro, $"O gatilho está DEPOIS do estranho na rota (a {alongTrigger - alongActor:0.0} m " +
+                    lines.Add((Level.Error, $"O gatilho está DEPOIS do estranho na rota (a {alongTrigger - alongActor:0.0} m " +
                                            "além dele): quando o beat disparar, ela já terá passado por ele e vai voltar " +
                                            "andando pelo caminho. Arraste o gatilho para trás."));
                     blame ??= triggerPoint.gameObject;
@@ -211,12 +211,12 @@ namespace TheDelivery.EditorTools
 
                     if (walkDistance < 3f)
                     {
-                        lines.Add((Level.Aviso, "Menos de 3 m de caminhada: ela já está praticamente em cima dele " +
+                        lines.Add((Level.Warning, "Menos de 3 m de caminhada: ela já está praticamente em cima dele " +
                                                 "quando o nota, e o beat perde a aproximação inteira."));
                     }
                     else if (walkDistance > 25f)
                     {
-                        lines.Add((Level.Aviso, $"{walkDistance:0.0} m de caminhada dirigida é muito tempo sem controle " +
+                        lines.Add((Level.Warning, $"{walkDistance:0.0} m de caminhada dirigida é muito tempo sem controle " +
                                                 "só andando. Considere aproximar o gatilho."));
                     }
                 }
@@ -226,13 +226,13 @@ namespace TheDelivery.EditorTools
                 float perpendicular = Perpendicular(triggerPoint.position, from, dir);
                 if (perpendicular > triggerRadius)
                 {
-                    lines.Add((Level.Erro, $"O raio do gatilho NÃO alcança a rota: o ponto está a {perpendicular:0.0} m " +
+                    lines.Add((Level.Error, $"O raio do gatilho NÃO alcança a rota: o ponto está a {perpendicular:0.0} m " +
                                            $"da linha Spawn->Destino e o raio é {triggerRadius:0.0} m. Ela passa ao lado."));
                     blame ??= triggerPoint.gameObject;
                 }
                 else if (perpendicular > triggerRadius * 0.6f)
                 {
-                    lines.Add((Level.Aviso, $"O gatilho pega a rota pela borda ({perpendicular:0.0} m de " +
+                    lines.Add((Level.Warning, $"O gatilho pega a rota pela borda ({perpendicular:0.0} m de " +
                                             $"{triggerRadius:0.0} m de raio): quem andar um pouco fora da linha pode " +
                                             "não disparar o beat. Aumente o raio ou centralize o ponto."));
                 }
@@ -243,7 +243,7 @@ namespace TheDelivery.EditorTools
 
                 if (alongTrigger > routeLength)
                 {
-                    lines.Add((Level.Erro, "O gatilho está ALÉM do Destino: a cena troca para a Recepção antes de a " +
+                    lines.Add((Level.Error, "O gatilho está ALÉM do Destino: a cena troca para a Recepção antes de a " +
                                            "Clear chegar nele."));
                     blame ??= triggerPoint.gameObject;
                 }
@@ -255,7 +255,7 @@ namespace TheDelivery.EditorTools
                 float margin = Flat(stop - destination.position) - (approachPoint != null ? 0f : stopDistance) - destinationRadius;
                 if (margin < 0f)
                 {
-                    lines.Add((Level.Aviso, $"Ela termina a conversa JÁ DENTRO do raio de chegada do Destino " +
+                    lines.Add((Level.Warning, $"Ela termina a conversa JÁ DENTRO do raio de chegada do Destino " +
                                             $"(faltam {-margin:0.0} m): o controle volta e a cena troca no passo " +
                                             "seguinte, sem respiro entre o estranho e o prédio."));
                 }
@@ -277,7 +277,7 @@ namespace TheDelivery.EditorTools
 
                     if (approachTimeout < walkTime * 1.5f)
                     {
-                        lines.Add((Level.Aviso, $"Approach Timeout ({approachTimeout:0.0} s) tem pouca folga para uma " +
+                        lines.Add((Level.Warning, $"Approach Timeout ({approachTimeout:0.0} s) tem pouca folga para uma " +
                                                 $"caminhada de {walkTime:0.0} s. Suba para pelo menos {walkTime * 2f:0} s."));
                     }
                 }
@@ -297,7 +297,7 @@ namespace TheDelivery.EditorTools
             lines.Add((Level.Info, $"TEMPO TOTAL SEM CONTROLE: ~{total:0} s"));
             if (total > 90f)
             {
-                lines.Add((Level.Aviso, $"~{total:0} s é muito tempo com o jogador sem poder fazer nada. " +
+                lines.Add((Level.Warning, $"~{total:0} s é muito tempo com o jogador sem poder fazer nada. " +
                                         "Corte falas no asset do diálogo ou aproxime o gatilho do estranho."));
             }
 
@@ -308,7 +308,7 @@ namespace TheDelivery.EditorTools
 
             if (LeaningEncounterSetup.FindInScene<DialogueSystem>(scene) == null)
             {
-                lines.Add((Level.Erro, "Nenhum DialogueSystem na cena (ele vive dentro do prefab do Player): " +
+                lines.Add((Level.Error, "Nenhum DialogueSystem na cena (ele vive dentro do prefab do Player): " +
                                        "a conversa não vai aparecer na tela."));
             }
 
@@ -317,9 +317,9 @@ namespace TheDelivery.EditorTools
             // O jeito mais fácil de "quebrar" o ato sem quebrar nada: deixar o Start
             // Beat num beat de teste depois de debugar. Ele não gera erro nenhum — só
             // começa a cena no lugar errado, e parece um bug no director.
-            if (startBeat != PercursoBeat.Walk)
+            if (startBeat != JourneyBeat.Walk)
             {
-                lines.Add((Level.Aviso, $"Start Beat está em \"{startBeat}\", não em \"Walk\": a Clear vai nascer no " +
+                lines.Add((Level.Warning, $"Start Beat está em \"{startBeat}\", não em \"Walk\": a Clear vai nascer no " +
                                         "meio da coreografia (e em outro ponto da rua), e sem assovio — ele é efeito " +
                                         "de cruzar o gatilho. Volte para Walk quando terminar de debugar."));
                 blame ??= director.gameObject;
@@ -327,7 +327,7 @@ namespace TheDelivery.EditorTools
 
             lines.Add((Level.Info, debugMode
                 ? "Debug Mode LIGADO: teclas 1-6 pulam entre os beats no Play e cada troca vai para o Console."
-                : "Debug Mode desligado. Ligue-o no PercursoDirector para usar as teclas 1-6 durante o Play."));
+                : "Debug Mode desligado. Ligue-o no JourneyDirector para usar as teclas 1-6 durante o Play."));
 
             Report(lines, blame);
         }
@@ -349,7 +349,7 @@ namespace TheDelivery.EditorTools
 
             if (clip == null)
             {
-                lines.Add((Level.Aviso, "Leaning Whistle VAZIO: ela vira a cabeça em silêncio, para um homem parado " +
+                lines.Add((Level.Warning, "Leaning Whistle VAZIO: ela vira a cabeça em silêncio, para um homem parado " +
                                         "que não fez nada. O giro acontece, mas parece bug de câmera."));
                 return;
             }
@@ -365,7 +365,7 @@ namespace TheDelivery.EditorTools
 
             if (call == null)
             {
-                lines.Add((Level.Aviso, "Leaning Call VAZIO: no ponto do giro o estranho não diz nada, e ela vira só " +
+                lines.Add((Level.Warning, "Leaning Call VAZIO: no ponto do giro o estranho não diz nada, e ela vira só " +
                                         "com o assovio morrendo. O giro acontece porque o jogador pisou num lugar, " +
                                         "não porque alguém falou com ela."));
             }
@@ -376,31 +376,31 @@ namespace TheDelivery.EditorTools
 
                 if (callVolume <= 0f)
                 {
-                    lines.Add((Level.Erro, "Leaning Call Volume em ZERO: o chamado TOCA e toca mudo — o Console fica " +
+                    lines.Add((Level.Error, "Leaning Call Volume em ZERO: o chamado TOCA e toca mudo — o Console fica " +
                                            "limpo e o defeito é indistinguível de um clipe errado.\n" +
-                                           "     Conserto: rode Tools > The Delivery > Estrada - Encontro do Leaning."));
+                                           "     Conserto: rode Tools > The Delivery > Road - Encontro do Leaning."));
                 }
 
                 if (lead > call.length)
                 {
-                    lines.Add((Level.Aviso, $"O respiro ({lead:0.0} s) é MAIOR que o chamado ({call.length:0.0} s): ele " +
+                    lines.Add((Level.Warning, $"O respiro ({lead:0.0} s) é MAIOR que o chamado ({call.length:0.0} s): ele " +
                                             "termina de falar e ela fica parada olhando para a frente antes de virar. " +
                                             "A resposta chega tarde demais para parecer resposta."));
                 }
 
                 if (callSource != null && callSource == source)
                 {
-                    lines.Add((Level.Erro, "Leaning Call Source e Leaning Whistle Source são o MESMO AudioSource. O " +
+                    lines.Add((Level.Error, "Leaning Call Source e Leaning Whistle Source são o MESMO AudioSource. O " +
                                            "chamado sai enquanto o assovio está em fade out, e o volume do source é a " +
                                            "alça desse fade: o chamado vai sumir junto e o Stop() do fim do fade o " +
                                            "corta no meio.\n" +
-                                           "     Conserto: rode Tools > The Delivery > Estrada - Assovio do Leaning."));
+                                           "     Conserto: rode Tools > The Delivery > Road - Assovio do Leaning."));
                 }
             }
 
             if (fadeOut <= 0.05f)
             {
-                lines.Add((Level.Aviso, "Fade Out do assovio em 0: o som é cortado SECO quando ela termina de virar, e " +
+                lines.Add((Level.Warning, "Fade Out do assovio em 0: o som é cortado SECO quando ela termina de virar, e " +
                                         "o estalo do corte no meio da onda é mais audível que o próprio assovio."));
             }
 
@@ -420,14 +420,14 @@ namespace TheDelivery.EditorTools
             // director desliga isso em runtime, mas o certo é sair da cena assim.
             if (source.playOnAwake)
             {
-                lines.Add((Level.Aviso, $"O AudioSource \"{source.name}\" está com Play On Awake: o assovio tocaria ao " +
+                lines.Add((Level.Warning, $"O AudioSource \"{source.name}\" está com Play On Awake: o assovio tocaria ao " +
                                         "carregar a cena, antes de a Clear dar o primeiro passo. O director desliga " +
                                         "isso ao assumir, mas desmarque a caixinha no Inspector."));
             }
 
             if (source.spatialBlend < 0.5f)
             {
-                lines.Add((Level.Aviso, $"O AudioSource \"{source.name}\" está quase 2D (Spatial Blend " +
+                lines.Add((Level.Warning, $"O AudioSource \"{source.name}\" está quase 2D (Spatial Blend " +
                                         $"{source.spatialBlend:0.00}): o assovio sai de dentro da cabeça da Clear e não " +
                                         "aponta direção nenhuma. Ponha em 1, ou limpe o campo para o director criar um."));
             }
@@ -437,7 +437,7 @@ namespace TheDelivery.EditorTools
                 float distance = Vector3.Distance(actor.position, triggerPoint.position) + triggerRadius;
                 if (source.maxDistance < distance)
                 {
-                    lines.Add((Level.Erro, $"O alcance do assovio ({source.maxDistance:0.0} m) é menor que a distância " +
+                    lines.Add((Level.Error, $"O alcance do assovio ({source.maxDistance:0.0} m) é menor que a distância " +
                                            $"do gatilho até o ator ({distance:0.0} m): o som TOCA, inaudível — o que é " +
                                            "indistinguível de não tocar. Suba o Max Distance do AudioSource."));
                 }
@@ -470,7 +470,7 @@ namespace TheDelivery.EditorTools
             }
 
             SerializedProperty startBeat = so.FindProperty("startBeat");
-            if (startBeat != null && startBeat.enumValueIndex == (int)PercursoBeat.None)
+            if (startBeat != null && startBeat.enumValueIndex == (int)JourneyBeat.None)
                 zeroed.Add("Start Beat (None)");
 
             return zeroed.Count > 0 ? string.Join(", ", zeroed) : null;
@@ -550,7 +550,7 @@ namespace TheDelivery.EditorTools
                     bool between = Flat(p - triggerPos) + Flat(p - actorPos) <= Flat(actorPos - triggerPos) + 6f;
                     if (between)
                     {
-                        lines.Add((Level.Aviso, $"\"{t.name}\" fica no meio do trecho da abordagem: o pensamento dele " +
+                        lines.Add((Level.Warning, $"\"{t.name}\" fica no meio do trecho da abordagem: o pensamento dele " +
                                                 "vai ser interrompido quando o estranho começar a falar."));
                     }
                 }
@@ -571,8 +571,8 @@ namespace TheDelivery.EditorTools
 
                 string mark = level switch
                 {
-                    Level.Erro => "[X]",
-                    Level.Aviso => "[!]",
+                    Level.Error => "[X]",
+                    Level.Warning => "[!]",
                     Level.Info => "[ ]",
                     _ => "[ok]",
                 };
@@ -581,16 +581,16 @@ namespace TheDelivery.EditorTools
 
             string verdict = worst switch
             {
-                Level.Erro => "O BEAT NÃO VAI FUNCIONAR",
-                Level.Aviso => "O beat funciona, mas com ressalvas",
+                Level.Error => "O BEAT NÃO VAI FUNCIONAR",
+                Level.Warning => "O beat funciona, mas com ressalvas",
                 _ => "Tudo certo — o beat deve funcionar",
             };
 
             string report = $"{verdict}\n\n{sb}";
 
-            if (worst == Level.Erro)
+            if (worst == Level.Error)
                 Debug.LogError($"[LeaningEncounterCheck] {report}", blame);
-            else if (worst == Level.Aviso)
+            else if (worst == Level.Warning)
                 Debug.LogWarning($"[LeaningEncounterCheck] {report}", blame);
             else
                 Debug.Log($"[LeaningEncounterCheck] {report}", blame);

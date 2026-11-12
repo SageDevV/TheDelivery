@@ -28,18 +28,18 @@ namespace TheDelivery.EditorTools
     {
         /// <summary>
         /// A CRONOLOGIA, em cenas: Boot sobe o GameManager, que abre o cold open; daí cada
-        /// diretor entrega ao próximo (PesadeloDirector -> Act1Director -> PercursoDirector
+        /// diretor entrega ao próximo (NightmareDirector -> Act1Director -> JourneyDirector
         /// -> Act2Director -> Act3Director, e o Ato 4 acontece na mesma cena do 3; o
         /// Act4Director entrega à Escape depois do sequestro).
         /// </summary>
         private static readonly GameScene[] Flow =
         {
             GameScene.Boot,        // índice 0 — a cena que sobe no Play
-            GameScene.Pesadelo,    // ActPesadelo (cold open)
+            GameScene.Nightmare,   // ActNightmare (cold open)
             GameScene.Cafeteria,   // Act1
-            GameScene.Estrada,     // ActPercurso
-            GameScene.Recepcao,    // Act2
-            GameScene.Apartamento, // Act3 e Act4
+            GameScene.Road,        // ActJourney
+            GameScene.Reception,   // Act2
+            GameScene.Apartment,   // Act3 e Act4
             GameScene.Escape       // ActEscape
         };
 
@@ -47,7 +47,7 @@ namespace TheDelivery.EditorTools
         private static void Run()
         {
             var scenes = new List<EditorBuildSettingsScene>(Flow.Length);
-            var faltando = new List<string>();
+            var missing = new List<string>();
             var report = new StringBuilder();
 
             foreach (GameScene scene in Flow)
@@ -55,7 +55,7 @@ namespace TheDelivery.EditorTools
                 string path = FindScenePath(scene);
                 if (path == null)
                 {
-                    faltando.Add($"{scene}.unity");
+                    missing.Add($"{scene}.unity");
                     continue;
                 }
 
@@ -66,17 +66,17 @@ namespace TheDelivery.EditorTools
             // Uma cena do enum sem arquivo no disco é erro de nome, e não algo a contornar:
             // o GameManager carrega pelo ToString() do enum, então o .unity TEM que se
             // chamar igual. Escrever a lista sem ela só empurraria a falha para o runtime.
-            if (faltando.Count > 0)
+            if (missing.Count > 0)
             {
-                string aviso = "Não achei estes arquivos de cena:\n\n" + string.Join("\n", faltando) +
+                string warning = "Não achei estes arquivos de cena:\n\n" + string.Join("\n", missing) +
                                "\n\nO nome do arquivo tem que bater com o valor em GameScene — é por ele que o " +
                                "GameManager carrega. Nada foi alterado.";
-                Debug.LogError("[BootSceneListSetup] " + aviso.Replace("\n\n", " ").Replace("\n", ", "));
-                EditorUtility.DisplayDialog("Cenas do fluxo", aviso, "Ok");
+                Debug.LogError("[BootSceneListSetup] " + warning.Replace("\n\n", " ").Replace("\n", ", "));
+                EditorUtility.DisplayDialog("Cenas do fluxo", warning, "Ok");
                 return;
             }
 
-            if (JaEstaCerto(scenes))
+            if (IsAlreadyCorrect(scenes))
             {
                 Debug.Log("[BootSceneListSetup] A lista do Build Settings já está na ordem do fluxo, tudo habilitado. " +
                           "Nada a fazer.");
@@ -118,15 +118,15 @@ namespace TheDelivery.EditorTools
         /// habilitadas? Comparar antes de escrever é o que deixa o comando repetível sem
         /// sujar o EditorBuildSettings.asset (e o diff do git) à toa.
         /// </summary>
-        private static bool JaEstaCerto(List<EditorBuildSettingsScene> desejada)
+        private static bool IsAlreadyCorrect(List<EditorBuildSettingsScene> desired)
         {
-            EditorBuildSettingsScene[] atual = EditorBuildSettings.scenes;
-            if (atual == null || atual.Length != desejada.Count)
+            EditorBuildSettingsScene[] current = EditorBuildSettings.scenes;
+            if (current == null || current.Length != desired.Count)
                 return false;
 
-            for (int i = 0; i < atual.Length; i++)
+            for (int i = 0; i < current.Length; i++)
             {
-                if (!atual[i].enabled || atual[i].path != desejada[i].path)
+                if (!current[i].enabled || current[i].path != desired[i].path)
                     return false;
             }
 

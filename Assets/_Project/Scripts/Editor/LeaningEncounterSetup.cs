@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace TheDelivery.EditorTools
 {
     /// <summary>
-    /// MONTA O ENCONTRO COM O LEANING no <see cref="PercursoDirector"/>: cria a conversa
+    /// MONTA O ENCONTRO COM O LEANING no <see cref="JourneyDirector"/>: cria a conversa
     /// e os pensamentos, cria o ponto vazio que dispara a abordagem na rua e liga tudo
     /// nos campos do director de uma vez.
     ///
@@ -37,14 +37,14 @@ namespace TheDelivery.EditorTools
     /// </summary>
     public static class LeaningEncounterSetup
     {
-        private const string ScenePath = "Assets/Scenes/Estrada.unity";
-        private const string DialoguePath = "Assets/_Project/ScriptableObjects/Dialogues/Dialogue_ActPer-1.asset";
-        private const string NoticeThoughtPath = "Assets/_Project/ScriptableObjects/Thoughts/Thought_ActPer-8.asset";
-        private const string AfterThoughtPath = "Assets/_Project/ScriptableObjects/Thoughts/Thought_ActPer-9.asset";
+        private const string ScenePath = "Assets/Scenes/Road.unity";
+        private const string DialoguePath = "Assets/_Project/ScriptableObjects/Dialogues/Dialogue_ActJourney-1.asset";
+        private const string NoticeThoughtPath = "Assets/_Project/ScriptableObjects/Thoughts/Thought_ActJourney-8.asset";
+        private const string AfterThoughtPath = "Assets/_Project/ScriptableObjects/Thoughts/Thought_ActJourney-9.asset";
 
         /// <summary>
         /// Candidatos a ASSOVIO, na ordem de preferência. O primeiro que existir é
-        /// ligado — assim, no dia em que você largar um <c>whistle.mp3</c> de verdade na
+        /// ligado — assim, no dia em que você largar um <c>Whistle.mp3</c> de verdade na
         /// pasta, rodar o comando de novo troca o placeholder por ele sem mais nada.
         ///
         /// O último da lista é um placeholder de conveniência: um homem cantarolando não
@@ -54,16 +54,16 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static readonly string[] WhistleCandidates =
         {
-            "Assets/_Project/SoundEffects/whistle.mp3",
-            "Assets/_Project/SoundEffects/whistle.wav",
-            "Assets/_Project/SoundEffects/whistle_placeholder.mp3",
-            "Assets/_Project/SoundEffects/whistle_placeholder.wav",
-            "Assets/_Project/SoundEffects/man_humming_placeholder.mp3",
+            "Assets/_Project/SoundEffects/Whistle.mp3",
+            "Assets/_Project/SoundEffects/Whistle.wav",
+            "Assets/_Project/SoundEffects/Whistle_Placeholder.mp3",
+            "Assets/_Project/SoundEffects/Whistle_Placeholder.wav",
+            "Assets/_Project/SoundEffects/ManHumming_Placeholder.mp3",
         };
 
         private const string ActorName = "Leaning";
-        private const string TriggerName = "Trigger_Leaning";
-        private const string NoticeName = "LeaningNotice";
+        private const string TriggerName = "LeaningTriggerPoint";
+        private const string NoticeName = "LeaningNoticePoint";
         private const string MarkersName = "_Markers";
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private const float NoticeBackOff = 5f;
 
-        [MenuItem("Tools/The Delivery/Estrada - Encontro do Leaning")]
+        [MenuItem("Tools/The Delivery/Road - Encontro do Leaning")]
         private static void Run()
         {
             Scene scene = EnsureSceneOpen();
@@ -92,15 +92,15 @@ namespace TheDelivery.EditorTools
             GameObject actor = FindByName(scene, ActorName);
             if (actor == null)
             {
-                Fail($"Não achei nenhum objeto chamado \"{ActorName}\" na cena Estrada.\n\n" +
+                Fail($"Não achei nenhum objeto chamado \"{ActorName}\" na cena Road.\n\n" +
                      "Ele é o ator que aborda a Clear. Confira o nome no Hierarchy (a busca é exata).");
                 return;
             }
 
-            PercursoDirector director = FindInScene<PercursoDirector>(scene);
+            JourneyDirector director = FindInScene<JourneyDirector>(scene);
             if (director == null)
             {
-                Fail("PercursoDirector não encontrado na cena Estrada — é nele que o beat mora.");
+                Fail("JourneyDirector não encontrado na cena Road — é nele que o beat mora.");
                 return;
             }
 
@@ -133,7 +133,7 @@ namespace TheDelivery.EditorTools
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(director);
 
-            // O assovio tem comando próprio (Estrada - Assovio do Leaning), mas a
+            // O assovio tem comando próprio (Road - Assovio do Leaning), mas a
             // montagem geral também o deixa de pé — em force:false, que cria e configura
             // um source ausente sem desfazer o rolloff de um que alguém já afinou.
             LeaningWhistleSetup.Configure(director, force: false, out AudioSource whistleSource);
@@ -173,9 +173,9 @@ namespace TheDelivery.EditorTools
             // O Start Beat em None é o mesmo caso: o dropdown mostra a primeira entrada
             // do enum, de aparência inocente, e o ato inteiro fica sem rotina nenhuma.
             SerializedProperty startBeat = so.FindProperty("startBeat");
-            if (startBeat != null && startBeat.enumValueIndex == (int)PercursoBeat.None)
+            if (startBeat != null && startBeat.enumValueIndex == (int)JourneyBeat.None)
             {
-                startBeat.enumValueIndex = (int)PercursoBeat.Walk;
+                startBeat.enumValueIndex = (int)JourneyBeat.Walk;
                 written++;
             }
 
@@ -443,22 +443,22 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static (string, string, float)[] DialogueScript()
         {
-            const string ele = "Estranho";
-            const string ela = "Você";
+            const string strangerName = "Estranho";
+            const string playerName = "Você";
 
             return new (string, string, float)[]
             {
-                (ele, "Você não devia estar na rua hoje.", 1f),
-                (ela, "...desculpa? Eu te conheço?", 0f),
-                (ele, "Não. Mas eu já vi isso acontecer antes.", 2f),
-                (ela, "Viu o quê?", 0f),
-                (ele, "Sempre começa igual. Um dia comum. Alguém indo pra casa.", 2f),
-                (ele, "Se eu falasse com todas as letras, você ia me achar louco. Assim, você só me acha estranho.", 1f),
-                (ela, "Você tá me assustando.", 0f),
-                (ele, "Bom. Vai ter uma hora hoje em que você vai poder escolher. Não vai parecer importante na hora.", 3f),
-                (ela, "Escolher o quê?", 0f),
-                (ele, "Pode ir. Ele não gosta que eu demore.", 4f),
-                (ela, "...ele quem?", 2f),
+                (strangerName, "Você não devia estar na rua hoje.", 1f),
+                (playerName, "...desculpa? Eu te conheço?", 0f),
+                (strangerName, "Não. Mas eu já vi isso acontecer antes.", 2f),
+                (playerName, "Viu o quê?", 0f),
+                (strangerName, "Sempre começa igual. Um dia comum. Alguém indo pra casa.", 2f),
+                (strangerName, "Se eu falasse com todas as letras, você ia me achar louco. Assim, você só me acha estranho.", 1f),
+                (playerName, "Você tá me assustando.", 0f),
+                (strangerName, "Bom. Vai ter uma hora hoje em que você vai poder escolher. Não vai parecer importante na hora.", 3f),
+                (playerName, "Escolher o quê?", 0f),
+                (strangerName, "Pode ir. Ele não gosta que eu demore.", 4f),
+                (playerName, "...ele quem?", 2f),
             };
         }
 
@@ -509,13 +509,13 @@ namespace TheDelivery.EditorTools
 
         // --- Utilitários ------------------------------------------------------
 
-        private static void Report(PercursoDirector director, GameObject actor, GameObject trigger,
+        private static void Report(JourneyDirector director, GameObject actor, GameObject trigger,
                                    bool triggerCreated, GameObject noticePoint, bool noticeCreated,
                                    int cleaned, int defaults, AudioClip whistle,
                                    Transform spawn, Transform destination)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("O encontro está montado no PercursoDirector e a cena Estrada foi salva.");
+            sb.AppendLine("O encontro está montado no JourneyDirector e a cena Road foi salva.");
             sb.AppendLine();
             sb.AppendLine($"• Ator: \"{actor.name}\"");
             sb.AppendLine(triggerCreated
@@ -551,27 +551,27 @@ namespace TheDelivery.EditorTools
 
             if (triggerCreated && (spawn == null || destination == null))
             {
-                sb.AppendLine("ATENÇÃO: o PercursoDirector está sem Spawn ou sem Destino, então o gatilho não pôde ser " +
+                sb.AppendLine("ATENÇÃO: o JourneyDirector está sem Spawn ou sem Destino, então o gatilho não pôde ser " +
                               "posto sobre a rota — ele nasceu na frente do ator. Arraste-o.");
                 sb.AppendLine();
             }
 
             sb.AppendLine("AGORA É COM VOCÊ, e é a parte que só dá para fazer olhando a rua:");
             sb.AppendLine($"1. Arraste o \"{TriggerName}\" até onde o estranho deve COMEÇAR A ASSOVIAR, e o " +
-                          $"\"{NoticeName}\" até onde a abordagem deve TOMAR A RUA. Selecione o PercursoDirector " +
+                          $"\"{NoticeName}\" até onde a abordagem deve TOMAR A RUA. Selecione o JourneyDirector " +
                           "para ver o raio do primeiro (esfera laranja). A distância entre os dois é o beat.");
-            sb.AppendLine("2. Para testar só o encontro: no PercursoDirector, Debug > Start Beat = LeaningNotice. " +
+            sb.AppendLine("2. Para testar só o encontro: no JourneyDirector, Debug > Start Beat = LeaningNotice. " +
                           "A Clear nasce no gatilho em vez do começo da rua.");
             sb.AppendLine("3. Ligue o Debug Mode para pular entre beats com as teclas 1-6 durante o Play.");
             sb.AppendLine("4. O texto se edita no asset do diálogo — a conversa leva perto de um minuto com o " +
                           "jogador parado; corte falas se for demais.");
 
-            if (whistle != null && whistle.name.Contains("humming"))
+            if (whistle != null && whistle.name.Contains("Humming"))
             {
                 sb.AppendLine();
                 sb.AppendLine("SOBRE O ASSOVIO: o projeto ainda não tem um, então entrou o \"" + whistle.name +
                               "\" como placeholder — serve para afinar o timing, mas não é o som certo. Largue um " +
-                              "assovio em Assets/_Project/SoundEffects/whistle.mp3 e limpe o campo Leaning Whistle " +
+                              "assovio em Assets/_Project/SoundEffects/Whistle.mp3 e limpe o campo Leaning Whistle " +
                               "no director; rodar este comando de novo pega o novo arquivo.");
             }
 

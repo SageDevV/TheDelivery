@@ -11,12 +11,12 @@ namespace TheDelivery.FX
     ///
     /// Uso normal: NÃO adicione na mão. Rode
     /// <c>Tools ▸ The Delivery ▸ FX - Fumaça do Café (Xícaras Selecionadas)</c>, que cria o
-    /// filho "FumacaCafe" já posicionado na boca da xícara, com material e textura prontos.
+    /// filho "CoffeeSteam" já posicionado na boca da xícara, com material e textura prontos.
     ///
     /// DECISÕES QUE IMPORTAM (e por que):
     /// - <b>Simulation Space = World</b>: a fumaça fica pra trás quando a xícara se move, em
     ///   vez de andar grudada nela como um bloco sólido.
-    /// - <b>Scaling Mode = Local</b>: a Xicara.fbx está na cena com escala ~137 (o FBX é
+    /// - <b>Scaling Mode = Local</b>: a CoffeeCup.fbx está na cena com escala ~137 (o FBX é
     ///   minúsculo). Em modo Hierarchy as partículas herdariam esse 137 e virariam nuvens do
     ///   tamanho da sala. Em Local só a escala DESTE objeto conta — os valores abaixo são,
     ///   portanto, em METROS de mundo.
@@ -280,7 +280,7 @@ namespace TheDelivery.FX
         /// <summary>
         /// Devolve TODOS os campos de tunning ao preset de vapor de café, descartando ajustes
         /// manuais. Existe porque valores serializados sobrevivem à mudança do default no
-        /// código: sem isso, um "FumacaCafe" criado ontem continuaria com os números antigos
+        /// código: sem isso, um "CoffeeSteam" criado ontem continuaria com os números antigos
         /// pra sempre, mesmo depois do preset melhorar. O comando de menu chama isto.
         /// </summary>
         public void ResetToPreset()

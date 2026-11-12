@@ -47,7 +47,7 @@ namespace TheDelivery.EditorTools
         /// mão, ele não é sobrescrito quando o FBX muda.</summary>
         private string suggestedPath = "";
 
-        [MenuItem("Tools/The Delivery/Build Looping Clip Controller")]
+        [MenuItem("Tools/The Delivery/Anim - Montar controller de clipe em loop")]
         private static void Open()
         {
             var window = GetWindow<LoopingClipControllerWindow>("Looping Clip");
@@ -165,7 +165,7 @@ namespace TheDelivery.EditorTools
                 AssignToTarget(controller, fbxPath);
 
             EditorGUIUtility.PingObject(controller);
-            Debug.Log($"[LoopingClipController] Controller gerado em \"{outputPath}\" " +
+            Debug.Log($"[LoopingClipControllerWindow] Controller gerado em \"{outputPath}\" " +
                       $"tocando \"{clip.name}\" em loop.", controller);
         }
 
@@ -286,7 +286,7 @@ namespace TheDelivery.EditorTools
             // não tem cena válida — nesse caso o SetDirty acima já basta).
             if (assignTarget.scene.IsValid())
                 EditorSceneManager.MarkSceneDirty(assignTarget.scene);
-            Debug.Log($"[LoopingClipController] Controller atribuído ao Animator de \"{assignTarget.name}\"" +
+            Debug.Log($"[LoopingClipControllerWindow] Controller atribuído ao Animator de \"{assignTarget.name}\"" +
                       (avatar != null ? $" com Avatar \"{avatar.name}\"." : " (sem Avatar encontrado no FBX)."),
                       assignTarget);
         }

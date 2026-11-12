@@ -37,7 +37,7 @@ namespace TheDelivery.AI
     /// Transform em vez de pelo input, e tocado em 3D.
     ///
     /// POR QUE MEDE O PRÓPRIO MOVIMENTO. A criatura do pesadelo não anda por
-    /// CharacterController nem por NavMesh: o PesadeloDirector escreve a posição dela no
+    /// CharacterController nem por NavMesh: o NightmareDirector escreve a posição dela no
     /// LateUpdate, quadro a quadro. Não existe "está andando" para ler em lugar nenhum —
     /// então este componente deriva isso do único lugar onde a verdade está garantida, que
     /// é a distância percorrida entre dois quadros. O efeito colateral bom é que ele não
@@ -119,7 +119,7 @@ namespace TheDelivery.AI
         [Tooltip("MODO AnimationCycle: EM QUE PONTO DO CICLO cada pé encosta no chão, de 0 (primeiro quadro do clipe) a " +
                  "1 (último). Uma caminhada normal tem DOIS valores — um pé e o outro —, tipicamente perto de 0 e de " +
                  "0,5.\n\n" +
-                 "Não chute: rode Tools ▸ The Delivery ▸ Pesadelo - Passos da Criatura: medir a cadência. Ele varre o " +
+                 "Não chute: rode Tools ▸ The Delivery ▸ Nightmare - Passos da Criatura: medir a cadência. Ele varre o " +
                  "clipe, acha o instante em que cada pé chega ao ponto mais baixo e escreve os números aqui. Meio " +
                  "ciclo de erro é o som saindo com o pé NO AR, que é pior do que passo nenhum.")]
         [SerializeField] private float[] stepPhases = { 0f, 0.5f };
@@ -279,7 +279,7 @@ namespace TheDelivery.AI
         }
 
         /// <summary>
-        /// NO UPDATE, e não no LateUpdate: quem move a criatura (o PesadeloDirector) escreve
+        /// NO UPDATE, e não no LateUpdate: quem move a criatura (o NightmareDirector) escreve
         /// a posição dela DEPOIS, no LateUpdate. Medindo aqui, o delta é sempre o quadro
         /// inteiro anterior, inteiro e uma vez só — no LateUpdate o resultado dependeria da
         /// ordem de execução entre dois componentes, que é exatamente o tipo de coisa que

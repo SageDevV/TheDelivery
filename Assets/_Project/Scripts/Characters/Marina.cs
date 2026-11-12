@@ -34,7 +34,7 @@ namespace TheDelivery.Characters
         [SerializeField] private string sittingParameter = "Sitting";
         [Tooltip("Velocidade PRÓPRIA do clipe de caminhada (m/s): o deslocamento embutido nele " +
                  "dividido pela duração. É medida e preenchida pelo menu Tools > The Delivery > " +
-                 "Setup Marina. Em 0 não há correção e o clipe toca na velocidade original.")]
+                 "Cafeteria - Montar a Marina. Em 0 não há correção e o clipe toca na velocidade original.")]
         [SerializeField] private float clipStrideSpeed;
 
         /// <summary>

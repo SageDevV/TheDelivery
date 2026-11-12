@@ -8,11 +8,11 @@ namespace TheDelivery.EditorTools
 {
     /// <summary>
     /// Liga a trilha de ambiente da Cafeteria (Ato 1): põe um GameObject com
-    /// <see cref="AmbientMusic"/> na cena, aponta para o <c>cafeteria_ambient</c> e ajusta o
+    /// <see cref="AmbientMusic"/> na cena, aponta para o <c>CafeteriaAmbient</c> e ajusta o
     /// import do clipe.
     ///
     /// O AJUSTE DE IMPORT É O MOTIVO DESTE MENU EXISTIR — o resto é arrastar um componente. O
-    /// <c>cafeteria_ambient.mp3</c> tem 8,5 MB e vinha como <b>Decompress On Load</b>, que
+    /// <c>CafeteriaAmbient.mp3</c> tem 8,5 MB e vinha como <b>Decompress On Load</b>, que
     /// descomprime a música INTEIRA para PCM na memória ao carregar a cena (dezenas de MB de
     /// RAM, e um engasgo no load). Para um leito de ambiente que toca do começo ao fim o certo é
     /// <b>Streaming</b>: lê do disco conforme toca, com pegada de memória constante.
@@ -22,10 +22,10 @@ namespace TheDelivery.EditorTools
     public static class AmbientMusicSetup
     {
         private const string ScenePath = "Assets/Scenes/Cafeteria.unity";
-        private const string ClipPath = "Assets/_Project/SoundEffects/cafeteria_ambient.mp3";
+        private const string ClipPath = "Assets/_Project/SoundEffects/CafeteriaAmbient.mp3";
         private const string HostName = "AmbientMusic";
 
-        [MenuItem("Tools/The Delivery/Setup Ambient Music (Cafeteria)")]
+        [MenuItem("Tools/The Delivery/Cafeteria - Música ambiente")]
         private static void Run()
         {
             var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(ClipPath);
@@ -127,7 +127,7 @@ namespace TheDelivery.EditorTools
         private static void Fail(string message)
         {
             Debug.LogError($"[AmbientMusicSetup] {message}");
-            EditorUtility.DisplayDialog("Setup Ambient Music", message, "OK");
+            EditorUtility.DisplayDialog("Música ambiente", message, "OK");
         }
     }
 }

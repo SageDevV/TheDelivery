@@ -11,7 +11,7 @@ namespace TheDelivery.EditorTools
     /// <summary>
     /// Monta a FUMAÇA DO CAFÉ nas xícaras da cena. Cria (uma vez só, e reaproveita depois):
     /// a textura de fiapo de vapor, o material URP de partícula, e — dentro de cada xícara —
-    /// um filho "FumacaCafe" com o <see cref="CoffeeSteam"/> já medido pela malha da xícara.
+    /// um filho "CoffeeSteam" com o <see cref="CoffeeSteam"/> já medido pela malha da xícara.
     ///
     /// Uso: selecione a(s) xícara(s) na Hierarchy e rode
     /// <c>Tools ▸ The Delivery ▸ FX - Fumaça do Café (Xícaras Selecionadas)</c>. Se você só
@@ -20,13 +20,13 @@ namespace TheDelivery.EditorTools
     /// IDEMPOTENTE: rodar de novo numa xícara que já fumega remede e reconfigura o filho
     /// existente — não empilha um segundo emissor. Mas é "reconfigurar do ZERO": o comando
     /// devolve o preset padrão e descarta o tunning manual que estiver no Inspector. Faça o
-    /// ajuste fino DEPOIS de rodar, no Inspector do "FumacaCafe" (comece por
+    /// ajuste fino DEPOIS de rodar, no Inspector do "CoffeeSteam" (comece por
     /// <c>Intensity</c>). A textura e o material também são regerados a cada execução.
     /// </summary>
     public static class CoffeeSteamSetup
     {
         /// <summary>Nome do filho criado dentro da xícara. Também é a chave da idempotência.</summary>
-        private const string SteamChildName = "FumacaCafe";
+        private const string SteamChildName = "CoffeeSteam";
 
         private const string TextureFolder = "Assets/_Project/Textures/FX";
         private const string MaterialFolder = "Assets/_Project/Materials/FX";
@@ -34,11 +34,12 @@ namespace TheDelivery.EditorTools
         private const string MaterialPath = MaterialFolder + "/CoffeeSteam.mat";
 
         /// <summary>
-        /// Pedaços de nome que denunciam uma xícara. De propósito NÃO inclui "cafe": a cena
-        /// está cheia de "Mesa_Cafeteria", "BancadaCafeteria", "Lampada_Cafeteria" — todas
-        /// iam ganhar fumaça saindo do meio.
+        /// Pedaços de nome que denunciam uma xícara. De propósito NÃO inclui "coffee" nem
+        /// "cafe": a cena está cheia de "CafeteriaTable", "CafeteriaCounter", "CafeteriaLamp"
+        /// — todas iam ganhar fumaça saindo do meio — e o próprio filho da fumaça se chama
+        /// "CoffeeSteam".
         /// </summary>
-        private static readonly string[] CupNameHints = { "xicara", "xícara", "caneca", "mug", "teacup" };
+        private static readonly string[] CupNameHints = { "cup", "mug" };
 
         [MenuItem("Tools/The Delivery/FX - Fumaça do Café (Xícaras Selecionadas)")]
         public static void SetupSelectedCups()
@@ -47,7 +48,7 @@ namespace TheDelivery.EditorTools
 
             if (selection.Length == 0)
             {
-                Debug.LogWarning("[CoffeeSteam] Selecione a(s) xícara(s) na Hierarchy antes de rodar o comando " +
+                Debug.LogWarning("[CoffeeSteamSetup] Selecione a(s) xícara(s) na Hierarchy antes de rodar o comando " +
                                  "(ou use 'FX - Fumaça do Café (Todas as Xícaras da Cena)').");
                 return;
             }
@@ -71,7 +72,7 @@ namespace TheDelivery.EditorTools
 
             if (cups.Count == 0)
             {
-                Debug.LogWarning("[CoffeeSteam] Nenhum objeto com nome de xícara (xicara/caneca/mug) na cena aberta. " +
+                Debug.LogWarning("[CoffeeSteamSetup] Nenhum objeto com nome de xícara (cup/mug) na cena aberta. " +
                                  "Selecione a xícara na Hierarchy e use o comando 'Xícaras Selecionadas'.");
                 return;
             }
@@ -97,7 +98,7 @@ namespace TheDelivery.EditorTools
 
                 if (!TryGetCupBounds(cup, out Bounds bounds))
                 {
-                    Debug.LogWarning($"[CoffeeSteam] '{cup.name}' não tem malha visível — sem bounds pra medir a boca " +
+                    Debug.LogWarning($"[CoffeeSteamSetup] '{cup.name}' não tem malha visível — sem bounds pra medir a boca " +
                                      "da xícara. Selecione o objeto que tem o MeshRenderer.", cup);
                     skipped++;
                     continue;
@@ -140,7 +141,7 @@ namespace TheDelivery.EditorTools
             if (created + updated > 0)
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
-            Debug.Log($"[CoffeeSteam] {created} xícara(s) fumegando pela primeira vez, {updated} reconfigurada(s), " +
+            Debug.Log($"[CoffeeSteamSetup] {created} xícara(s) fumegando pela primeira vez, {updated} reconfigurada(s), " +
                       $"{skipped} sem malha. Ajuste fino no Inspector do filho '{SteamChildName}' — " +
                       "comece pelo Intensity; o gizmo branco mostra o disco de onde o vapor sai.");
         }
@@ -198,7 +199,7 @@ namespace TheDelivery.EditorTools
             Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             if (shader == null)
             {
-                Debug.LogError("[CoffeeSteam] Shader 'Universal Render Pipeline/Particles/Unlit' não encontrado. " +
+                Debug.LogError("[CoffeeSteamSetup] Shader 'Universal Render Pipeline/Particles/Unlit' não encontrado. " +
                                "O projeto está em URP? Sem ele não dá pra criar o material da fumaça.");
                 return null;
             }

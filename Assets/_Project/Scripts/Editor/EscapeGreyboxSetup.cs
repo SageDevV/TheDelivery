@@ -35,7 +35,7 @@ namespace TheDelivery.EditorTools
     public static class EscapeGreyboxSetup
     {
         private const string ScenePath = "Assets/Scenes/Escape.unity";
-        private const string PlayerPrefabPath = "Assets/_Project/Models/Player.prefab";
+        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
         private const string MaterialFolder = "Assets/_Project/Materials/Greybox";
         private const string NavMeshFolder = "Assets/Scenes/Escape";
         private const string NavMeshAssetPath = NavMeshFolder + "/NavMesh-Escape.asset";
@@ -104,8 +104,8 @@ namespace TheDelivery.EditorTools
             string navReport = BakeNavMesh(root);
             // A reconstrução recriou os marcadores: a patrulha do sequestrador (se houver)
             // apontaria para os antigos, destruídos.
-            if (EscapeKillerSetup.RelinkIfPresent(scene))
-                navReport += " Patrulha do sequestrador religada à nova Rota_Inimigo.";
+            if (EscapeKidnapperSetup.RelinkIfPresent(scene))
+                navReport += " Patrulha do sequestrador religada à nova EnemyRoute.";
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -116,7 +116,7 @@ namespace TheDelivery.EditorTools
                 "Porão montado e cena Escape salva.\n\n" +
                 $"• {playerReport}\n" +
                 $"• {navReport}\n\n" +
-                "Cada peça tem o nome do elemento da planta (Container_*, Esconderijo_*, Disjuntor_D1…). " +
+                "Cada peça tem o nome do elemento da planta (Container_*, HideSpot_*, Breaker_D1…). " +
                 "Para trocar por asset oficial, ponha o modelo como irmão da peça e desligue/apague o primitivo.",
                 "Ok");
         }
@@ -125,11 +125,11 @@ namespace TheDelivery.EditorTools
 
         private static void BuildHold(Transform root, Mats m)
         {
-            Transform group = Group(root, "Porao");
+            Transform group = Group(root, "Hold");
 
             // Piso (topo em y=0) e teto (base em y=HoldHeight).
-            Box(group, "Piso", 50, 80, 900, 620, -0.2f, 0.2f, m.Floor);
-            GameObject ceiling = Box(group, "Teto", 50, 80, 900, 620, HoldHeight, 0.2f, m.Wall);
+            Box(group, "Floor", 50, 80, 900, 620, -0.2f, 0.2f, m.Floor);
+            GameObject ceiling = Box(group, "Ceiling", 50, 80, 900, 620, HoldHeight, 0.2f, m.Wall);
             ceiling.layer = LayerCeiling;
             // O teto não é chão: sem isto o bake do NavMesh cria uma ilha em cima dele.
             ceiling.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
@@ -137,13 +137,13 @@ namespace TheDelivery.EditorTools
             float t = WallThickness / S;
 
             // Parede norte em três partes: o vão do meio é a escotilha (BuildHatch).
-            Box(group, "Parede_Norte_Oeste", 50, 80 - t / 2, 350, t, 0, HoldHeight, m.Wall);
-            Box(group, "Parede_Norte_Leste", 600, 80 - t / 2, 350, t, 0, HoldHeight, m.Wall);
-            Box(group, "Parede_Norte_SobreEscotilha", 400, 80 - t / 2, 200, t, HatchHeight, HoldHeight - HatchHeight, m.Wall);
+            Box(group, "Wall_North_West", 50, 80 - t / 2, 350, t, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_North_East", 600, 80 - t / 2, 350, t, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_North_AboveHatch", 400, 80 - t / 2, 200, t, HatchHeight, HoldHeight - HatchHeight, m.Wall);
 
-            Box(group, "Parede_Sul", 50, 700 - t / 2, 900, t, 0, HoldHeight, m.Wall);
-            Box(group, "Parede_Oeste", 50 - t / 2, 80, t, 620, 0, HoldHeight, m.Wall);
-            Box(group, "Parede_Leste", 950 - t / 2, 80, t, 620, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_South", 50, 700 - t / 2, 900, t, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_West", 50 - t / 2, 80, t, 620, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_East", 950 - t / 2, 80, t, 620, 0, HoldHeight, m.Wall);
         }
 
         /// <summary>
@@ -153,19 +153,19 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static void BuildBallastTank(Transform root, Mats m)
         {
-            Transform group = Group(root, "TanqueDeLastro");
+            Transform group = Group(root, "BallastTank");
             float t = WallThickness / S;
 
-            Box(group, "Piso_Tanque", 50, 550, 220, 150, -0.19f, 0.2f, m.TankFloor);
+            Box(group, "Floor_Tank", 50, 550, 220, 150, -0.19f, 0.2f, m.TankFloor);
 
             // Parede norte com o vão do duto (x 120-180, até DuctHeight).
-            Box(group, "Parede_Norte_Oeste", 50, 550 - t / 2, 70, t, 0, HoldHeight, m.Wall);
-            Box(group, "Parede_Norte_Leste", 180, 550 - t / 2, 90, t, 0, HoldHeight, m.Wall);
-            Box(group, "Parede_Norte_SobreDuto", 120, 550 - t / 2, 60, t, DuctHeight, HoldHeight - DuctHeight, m.Wall);
+            Box(group, "Wall_North_West", 50, 550 - t / 2, 70, t, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_North_East", 180, 550 - t / 2, 90, t, 0, HoldHeight, m.Wall);
+            Box(group, "Wall_North_AboveDuct", 120, 550 - t / 2, 60, t, DuctHeight, HoldHeight - DuctHeight, m.Wall);
 
             // Parede leste = Portão de Carga embaixo + parede acima dele.
-            Box(group, "PortaoDeCarga", 270 - t, 550, t * 1.5f, 150, 0, GateHeight, m.Gate);
-            Box(group, "Parede_Leste_SobrePortao", 270 - t / 2, 550, t, 150, GateHeight, HoldHeight - GateHeight, m.Wall);
+            Box(group, "CargoGate", 270 - t, 550, t * 1.5f, 150, 0, GateHeight, m.Gate);
+            Box(group, "Wall_East_AboveGate", 270 - t / 2, 550, t, 150, GateHeight, HoldHeight - GateHeight, m.Wall);
         }
 
         /// <summary>
@@ -174,12 +174,12 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static void BuildDuct(Transform root, Mats m)
         {
-            Transform group = Group(root, "Duto");
+            Transform group = Group(root, "Duct");
             const float shell = 2f; // 0.1 m em unidades do SVG
 
-            Box(group, "Duto_Lateral_Oeste", 120 - shell, 470, shell, 80, 0, DuctHeight, m.Duct);
-            Box(group, "Duto_Lateral_Leste", 180, 470, shell, 80, 0, DuctHeight, m.Duct);
-            Box(group, "Duto_Teto", 120 - shell, 470, 60 + shell * 2, 80, DuctHeight, 0.1f, m.Duct);
+            Box(group, "Duct_Side_West", 120 - shell, 470, shell, 80, 0, DuctHeight, m.Duct);
+            Box(group, "Duct_Side_East", 180, 470, shell, 80, 0, DuctHeight, m.Duct);
+            Box(group, "Duct_Ceiling", 120 - shell, 470, 60 + shell * 2, 80, DuctHeight, 0.1f, m.Duct);
         }
 
         /// <summary>
@@ -189,9 +189,9 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static void BuildWater(Transform root, Mats m)
         {
-            Transform group = Group(root, "AguaProfunda");
-            Water(group, "Agua_Norte", 350, 100, 400, 120, m.Water);
-            Water(group, "Agua_Centro", 350, 260, 150, 150, m.Water);
+            Transform group = Group(root, "DeepWater");
+            Water(group, "Water_North", 350, 100, 400, 120, m.Water);
+            Water(group, "Water_Center", 350, 260, 150, 150, m.Water);
         }
 
         private static void Water(Transform parent, string name, float x, float y, float w, float h, Material mat)
@@ -202,7 +202,7 @@ namespace TheDelivery.EditorTools
             surface.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
 
             // Irmão (e não filho) da lâmina: a lâmina é escalada, e o trigger herdaria a escala.
-            var trigger = new GameObject($"{name}_TriggerRuido");
+            var trigger = new GameObject($"{name}_NoiseTrigger");
             trigger.layer = LayerWater;
             trigger.transform.SetParent(parent, false);
             trigger.transform.localPosition = SvgCenter(x, y, w, h, WaterTriggerHeight / 2f);
@@ -213,12 +213,12 @@ namespace TheDelivery.EditorTools
 
         private static void BuildContainers(Transform root, Mats m)
         {
-            Transform group = Group(root, "Conteineres_Fechados");
-            Box(group, "Container_Oeste", 100, 280, 80, 160, 0, ContainerHeight, m.Container);
-            Box(group, "Container_Sul_A", 350, 500, 120, 60, 0, ContainerHeight, m.Container);
-            Box(group, "Container_Sul_B", 350, 580, 120, 60, 0, ContainerHeight, m.Container);
-            Box(group, "Container_Leste_Norte", 750, 250, 160, 80, 0, ContainerHeight, m.Container);
-            Box(group, "Container_Leste_Sul", 750, 450, 80, 180, 0, ContainerHeight, m.Container);
+            Transform group = Group(root, "ClosedContainers");
+            Box(group, "Container_West", 100, 280, 80, 160, 0, ContainerHeight, m.Container);
+            Box(group, "Container_South_A", 350, 500, 120, 60, 0, ContainerHeight, m.Container);
+            Box(group, "Container_South_B", 350, 580, 120, 60, 0, ContainerHeight, m.Container);
+            Box(group, "Container_East_North", 750, 250, 160, 80, 0, ContainerHeight, m.Container);
+            Box(group, "Container_East_South", 750, 450, 80, 180, 0, ContainerHeight, m.Container);
         }
 
         /// <summary>
@@ -229,9 +229,9 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static void BuildHideSpots(Transform root, Mats m)
         {
-            Transform group = Group(root, "Esconderijos");
-            HideContainer(group, "Esconderijo_Norte", 550, 250, 120, 60, m.HideContainer);
-            HideContainer(group, "Esconderijo_Sul", 550, 500, 120, 60, m.HideContainer);
+            Transform group = Group(root, "HideSpots");
+            HideContainer(group, "HideSpot_North", 550, 250, 120, 60, m.HideContainer);
+            HideContainer(group, "HideSpot_South", 550, 500, 120, 60, m.HideContainer);
         }
 
         private static void HideContainer(Transform parent, string name, float x, float y, float w, float h, Material mat)
@@ -239,10 +239,10 @@ namespace TheDelivery.EditorTools
             Transform shell = Group(parent, name);
             float s = ContainerShell / S;
 
-            Box(shell, "Chapa_Norte", x, y, w, s, 0, ContainerHeight, mat);
-            Box(shell, "Chapa_Sul", x, y + h - s, w, s, 0, ContainerHeight, mat);
-            Box(shell, "Chapa_Fundo_Leste", x + w - s, y + s, s, h - 2 * s, 0, ContainerHeight, mat);
-            Box(shell, "Chapa_Teto", x, y, w, h, ContainerHeight, ContainerShell, mat);
+            Box(shell, "Plate_North", x, y, w, s, 0, ContainerHeight, mat);
+            Box(shell, "Plate_South", x, y + h - s, w, s, 0, ContainerHeight, mat);
+            Box(shell, "Plate_Back_East", x + w - s, y + s, s, h - 2 * s, 0, ContainerHeight, mat);
+            Box(shell, "Plate_Ceiling", x, y, w, h, ContainerHeight, ContainerShell, mat);
 
             // O HideSpot olha para o OESTE (-X): é para onde a câmera aponta escondida.
             var spotGo = new GameObject("HideSpot");
@@ -269,10 +269,10 @@ namespace TheDelivery.EditorTools
         /// <summary>Disjuntores D1-D3: armários elétricos em pé, na posição exata da planta.</summary>
         private static void BuildBreakers(Transform root, Mats m)
         {
-            Transform group = Group(root, "Disjuntores");
-            Breaker(group, "Disjuntor_D1", 90, 120, m.Breaker);
-            Breaker(group, "Disjuntor_D2", 900, 120, m.Breaker);
-            Breaker(group, "Disjuntor_D3", 90, 220, m.Breaker);
+            Transform group = Group(root, "Breakers");
+            Breaker(group, "Breaker_D1", 90, 120, m.Breaker);
+            Breaker(group, "Breaker_D2", 900, 120, m.Breaker);
+            Breaker(group, "Breaker_D3", 90, 220, m.Breaker);
         }
 
         private static void Breaker(Transform parent, string name, float cx, float cy, Material mat)
@@ -289,8 +289,8 @@ namespace TheDelivery.EditorTools
         /// <summary>A Escotilha de Fuga (saída): preenche o vão no meio da parede norte.</summary>
         private static void BuildHatch(Transform root, Mats m)
         {
-            Transform group = Group(root, "EscotilhaDeFuga");
-            Box(group, "Escotilha", 400, 60, 200, 20, 0, HatchHeight, m.Hatch);
+            Transform group = Group(root, "EscapeHatch");
+            Box(group, "Hatch", 400, 60, 200, 20, 0, HatchHeight, m.Hatch);
         }
 
         /// <summary>
@@ -300,15 +300,15 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static void BuildLights(Transform root)
         {
-            Transform group = Group(root, "Luzes_Provisorias");
+            Transform group = Group(root, "TemporaryLights");
             float[] xs = { 200, 500, 800 };
             float[] ys = { 200, 450 };
             int i = 0;
             foreach (float y in ys)
                 foreach (float x in xs)
-                    PointLight(group, $"Luz_{++i}", x, y, 14f, 1.2f);
+                    PointLight(group, $"Light_{++i:00}", x, y, 14f, 1.2f);
 
-            PointLight(group, "Luz_Tanque", 160, 625, 8f, 0.8f);
+            PointLight(group, "Light_Tank", 160, 625, 8f, 0.8f);
         }
 
         private static void PointLight(Transform parent, string name, float x, float y, float range, float intensity)
@@ -333,19 +333,19 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static Transform BuildMarkers(Transform root)
         {
-            Transform group = Group(root, "Marcadores");
+            Transform group = Group(root, "Markers");
 
             // Spawn no meio do tanque, olhando para o norte (o duto).
-            Transform spawn = Marker(group, "PlayerSpawn", 160, 640, 3);
+            Transform spawn = Marker(group, "PlayerSpawnPoint", 160, 640, 3);
 
-            Transform safe = Group(group, "Rota_Segura");
-            Marker(safe, "Ponto_1", 150, 450, 4);
-            Marker(safe, "Ponto_2", 150, 170, 4);
-            Marker(safe, "Ponto_3", 320, 170, 4);
+            Transform safe = Group(group, "SafeRoute");
+            Marker(safe, "Point_01", 150, 450, 4);
+            Marker(safe, "Point_02", 150, 170, 4);
+            Marker(safe, "Point_03", 320, 170, 4);
 
             // M 300 450 Q 550 450 650 350 T 800 400. O "T" reflete o controle anterior em
             // torno de (650,350): segundo controle = (750,250).
-            Transform enemy = Group(group, "Rota_Inimigo");
+            Transform enemy = Group(group, "EnemyRoute");
             var p0 = new Vector2(300, 450);
             var c0 = new Vector2(550, 450);
             var p1 = new Vector2(650, 350);
@@ -356,12 +356,12 @@ namespace TheDelivery.EditorTools
             for (int i = 0; i <= perSegment; i++)
             {
                 Vector2 q = Quad(p0, c0, p1, i / (float)perSegment);
-                Marker(enemy, $"Ponto_{++n}", q.x, q.y, 6);
+                Marker(enemy, $"Point_{++n:00}", q.x, q.y, 6);
             }
             for (int i = 1; i <= perSegment; i++)
             {
                 Vector2 q = Quad(p1, c1, p2, i / (float)perSegment);
-                Marker(enemy, $"Ponto_{++n}", q.x, q.y, 6);
+                Marker(enemy, $"Point_{++n:00}", q.x, q.y, 6);
             }
 
             return spawn;
@@ -404,7 +404,7 @@ namespace TheDelivery.EditorTools
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             if (prefab == null)
-                return $"Player.prefab não encontrado em {PlayerPrefabPath}; coloque o player à mão no PlayerSpawn.";
+                return $"Player.prefab não encontrado em {PlayerPrefabPath}; coloque o player à mão no PlayerSpawnPoint.";
 
             var player = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
             Undo.RegisterCreatedObjectUndo(player, "Escape Player");
@@ -419,7 +419,7 @@ namespace TheDelivery.EditorTools
                 r.SetActive(false);
             }
 
-            return "Player colocado no PlayerSpawn (dentro do Tanque de Lastro); a Main Camera padrão da cena foi desligada.";
+            return "Player colocado no PlayerSpawnPoint (dentro do Tanque de Lastro); a Main Camera padrão da cena foi desligada.";
         }
 
         /// <summary>
@@ -488,16 +488,16 @@ namespace TheDelivery.EditorTools
         /// <summary>Paleta da própria planta (as cores do SVG), em URP/Lit.</summary>
         private sealed class Mats
         {
-            public readonly Material Floor = Get("GB_Piso", "#34495e");
-            public readonly Material TankFloor = Get("GB_TanqueLastro", "#1a252f");
-            public readonly Material Wall = Get("GB_Parede", "#bdc3c7");
-            public readonly Material Duct = Get("GB_Duto", "#7f8c8d");
-            public readonly Material Gate = Get("GB_PortaoCarga", "#e74c3c");
+            public readonly Material Floor = Get("GB_Floor", "#34495e");
+            public readonly Material TankFloor = Get("GB_BallastTank", "#1a252f");
+            public readonly Material Wall = Get("GB_Wall", "#bdc3c7");
+            public readonly Material Duct = Get("GB_Duct", "#7f8c8d");
+            public readonly Material Gate = Get("GB_CargoGate", "#e74c3c");
             public readonly Material Container = Get("GB_Container", "#3e2723");
-            public readonly Material HideContainer = Get("GB_Esconderijo", "#f39c12");
-            public readonly Material Breaker = Get("GB_Disjuntor", "#e74c3c");
-            public readonly Material Hatch = Get("GB_Escotilha", "#f1c40f");
-            public readonly Material Water = Get("GB_Agua", "#2980b9", alpha: 0.45f);
+            public readonly Material HideContainer = Get("GB_HideSpot", "#f39c12");
+            public readonly Material Breaker = Get("GB_Breaker", "#e74c3c");
+            public readonly Material Hatch = Get("GB_Hatch", "#f1c40f");
+            public readonly Material Water = Get("GB_Water", "#2980b9", alpha: 0.45f);
         }
 
         private static Material Get(string name, string hex, float alpha = 1f)

@@ -6,8 +6,8 @@ namespace TheDelivery.FX
     /// <summary>
     /// Leito de MÚSICA/AMBIENTE de uma cena: um clipe 2D em loop, com fade de entrada e de
     /// saída. Componente INDEPENDENTE e reutilizável — cada cena põe um GameObject com este
-    /// script e escolhe o clipe dela (a Cafeteria usa o <c>cafeteria_ambient</c>; o Ato 2 tem o
-    /// <c>act2ambient_placeholder</c>, e assim por diante).
+    /// script e escolhe o clipe dela (a Cafeteria usa o <c>CafeteriaAmbient</c>; o Ato 2 tem o
+    /// <c>Act2Ambient_Placeholder</c>, e assim por diante).
     ///
     /// Não conhece beat nenhum: começa a tocar sozinho no <see cref="Start"/> quando
     /// <see cref="playOnStart"/> está ligado, e expõe <see cref="Play"/>/<see cref="FadeOut"/>
@@ -26,7 +26,7 @@ namespace TheDelivery.FX
     public sealed class AmbientMusic : MonoBehaviour
     {
         [Header("Trilha")]
-        [Tooltip("Clipe do ambiente da cena. Na Cafeteria: cafeteria_ambient.")]
+        [Tooltip("Clipe do ambiente da cena. Na Cafeteria: CafeteriaAmbient.")]
         [SerializeField] private AudioClip clip;
         [Tooltip("Volume final da trilha, DEPOIS do fade de entrada. Ambiente costuma ficar bem baixo (0.15-0.35) para não competir com o diálogo.")]
         [Range(0f, 1f)]

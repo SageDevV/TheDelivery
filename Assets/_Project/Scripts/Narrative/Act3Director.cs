@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using TheDelivery.AI;
@@ -71,37 +72,52 @@ namespace TheDelivery.Narrative
 
         [Header("Beat 1 - Corredor")]
         [Tooltip("Ponto de saída do elevador (vinda do Ato 2). O player é posicionado aqui ao iniciar o Ato 3.")]
-        [SerializeField] private Transform elevadorSaidaPoint;
+        [FormerlySerializedAs("elevadorSaidaPoint")]
+        [SerializeField] private Transform elevatorExitPoint;
         [Tooltip("Pensamento de REAÇÃO ao entregador (\"Esse cara... eu nunca vi por aqui\"), disparado DEPOIS do encontro no corredor — não no spawn, pois a Clear ainda não o teria visto. Opcional.")]
         [SerializeField] private ThoughtData corridorMeetingThought;
         [Tooltip("Zona no corredor onde o entregador cruza com a Clear. Ao entrar, dispara a aparição.")]
-        [SerializeField] private Transform entregadorCruzaPoint;
+        [FormerlySerializedAs("entregadorCruzaPoint")]
+        [SerializeField] private Transform deliverymanCrossPoint;
         [Tooltip("Raio (m) da zona do encontro no corredor.")]
-        [SerializeField] private float entregadorCruzaRadius = 2f;
+        [FormerlySerializedAs("entregadorCruzaRadius")]
+        [SerializeField] private float deliverymanCrossRadius = 2f;
         [Tooltip("Modelo do antagonista (o \"entregador\"). Começa INATIVO; é ativado/posicionado no encontro.")]
-        [SerializeField] private GameObject entregador;
-        [Tooltip("Onde o entregador aparece para o encontro do corredor. Se vazio, usa o entregadorCruzaPoint.")]
-        [SerializeField] private Transform entregadorCruzaSpawn;
-        [Tooltip("Ponto para onde o entregador caminha e some após o \"boa noite\" (cruza o corredor). FALLBACK: só é usado se o entregadorExitPath estiver vazio. Em corredor em L, prefira o path (este ponto sozinho faz linha reta e atravessa parede). Opcional.")]
-        [SerializeField] private Transform entregadorExitPoint;
-        [Tooltip("Caminho de SAÍDA do entregador: waypoints percorridos EM ORDEM, andando naturalmente pelo corredor (contornando as paredes) até sumir perto do elevador. Coloque um ponto em cada \"quina\" do L. Se vazio, cai no entregadorExitPoint (linha reta).")]
-        [SerializeField] private Transform[] entregadorExitPath;
+        [FormerlySerializedAs("entregador")]
+        [SerializeField] private GameObject deliveryman;
+        [Tooltip("Onde o entregador aparece para o encontro do corredor. Se vazio, usa o deliverymanCrossPoint.")]
+        [FormerlySerializedAs("entregadorCruzaSpawn")]
+        [SerializeField] private Transform deliverymanCrossSpawn;
+        [Tooltip("Ponto para onde o entregador caminha e some após o \"boa noite\" (cruza o corredor). FALLBACK: só é usado se o deliverymanExitPath estiver vazio. Em corredor em L, prefira o path (este ponto sozinho faz linha reta e atravessa parede). Opcional.")]
+        [FormerlySerializedAs("entregadorExitPoint")]
+        [SerializeField] private Transform deliverymanExitPoint;
+        [Tooltip("Caminho de SAÍDA do entregador: waypoints percorridos EM ORDEM, andando naturalmente pelo corredor (contornando as paredes) até sumir perto do elevador. Coloque um ponto em cada \"quina\" do L. Se vazio, cai no deliverymanExitPoint (linha reta).")]
+        [FormerlySerializedAs("entregadorExitPath")]
+        [SerializeField] private Transform[] deliverymanExitPath;
         [Tooltip("Velocidade (m/s) da caminhada scriptada do entregador (sem NavMesh).")]
-        [SerializeField] private float entregadorWalkSpeed = 1.4f;
+        [FormerlySerializedAs("entregadorWalkSpeed")]
+        [SerializeField] private float deliverymanWalkSpeed = 1.4f;
         [Tooltip("Nome do parâmetro FLOAT de velocidade no Animator do entregador — dispara a animação Walking durante a travessia scriptada (a FSM fica desligada no Ato 3, então o Director seta este param à mão). Deve casar com o controller do Antagonist (normalmente \"Speed\").")]
-        [SerializeField] private string entregadorSpeedParam = "Speed";
+        [FormerlySerializedAs("entregadorSpeedParam")]
+        [SerializeField] private string deliverymanSpeedParam = "Speed";
         [Tooltip("Nome do parâmetro BOOL de perseguição no Animator do entregador. Fica FALSE no Ato 3 — o entregador só CAMINHA, nunca persegue.")]
-        [SerializeField] private string entregadorChasingParam = "IsChasing";
+        [FormerlySerializedAs("entregadorChasingParam")]
+        [SerializeField] private string deliverymanChasingParam = "IsChasing";
         [Tooltip("Animator que TOCA a animação do entregador. IMPORTANTE: o entregador é um objeto COMPOSTO — a raiz é um modelo e o Animator que anima o corpo está num FILHO. Atribua AQUI exatamente o MESMO Animator usado no Ato 4 (campo shadowAnimator do Act4Director). Se ficar vazio, tenta achar sozinho (GetComponentInChildren), mas pode pegar o Animator errado da raiz.")]
-        [SerializeField] private Animator entregadorAnimator;
+        [FormerlySerializedAs("entregadorAnimator")]
+        [SerializeField] private Animator deliverymanAnimator;
         [Tooltip("Som (sting) tocado no INSTANTE em que a câmera VIRA para travar no entregador — o susto/baque do encontro. Opcional.")]
-        [SerializeField] private AudioClip entregadorRevealSound;
+        [FormerlySerializedAs("entregadorRevealSound")]
+        [SerializeField] private AudioClip deliverymanRevealSound;
         [Tooltip("Som sinistro do \"boa noite\" (placeholder/sting). Opcional se o diálogo já tiver áudio.")]
-        [SerializeField] private AudioClip boaNoiteSound;
+        [FormerlySerializedAs("boaNoiteSound")]
+        [SerializeField] private AudioClip goodNightSound;
         [Tooltip("Diálogo do \"boa noite\" sinistro do entregador.")]
-        [SerializeField] private DialogueData boaNoiteSinistroDialogue;
+        [FormerlySerializedAs("boaNoiteSinistroDialogue")]
+        [SerializeField] private DialogueData sinisterGoodNightDialogue;
         [Tooltip("Foco de câmera: altura (m) acima da base do entregador que a câmera encara (mira no tronco/cabeça). ~1.5.")]
-        [SerializeField] private float entregadorLookHeight = 1.5f;
+        [FormerlySerializedAs("entregadorLookHeight")]
+        [SerializeField] private float deliverymanLookHeight = 1.5f;
         [Tooltip("Foco de câmera: velocidade (graus/s) com que a câmera gira para travar no entregador e segui-lo. Maior = vira mais rápido/seco; menor = mais lento/inquietante.")]
         [SerializeField] private float cameraFocusTurnSpeed = 270f;
         [Tooltip("Ponto (coordenada) para onde a Clear caminha após o diálogo, saindo da frente do entregador. Calibre a posição na cena. Se vazio, ela não se desloca.")]
@@ -139,17 +155,23 @@ namespace TheDelivery.Narrative
 
         [Header("Beat 4 - Entrega")]
         [Tooltip("Som da campainha/batida anunciando a entrega (tocado quando o entregador CHEGA à porta).")]
-        [SerializeField] private AudioClip campainhaSound;
-        [Tooltip("Onde o entregador APARECE para a entrega (saindo do elevador). Se vazio, usa o elevadorSaidaPoint.")]
-        [SerializeField] private Transform entregadorDeliverySpawn;
-        [Tooltip("Caminho que o entregador percorre do elevador ATÉ a porta (waypoints em ordem, atravessando o corredor naturalmente). Coloque um ponto em cada quina. O ponto FINAL na porta é o entregadorDoorPoint.")]
-        [SerializeField] private Transform[] entregadorDeliveryPath;
+        [FormerlySerializedAs("campainhaSound")]
+        [SerializeField] private AudioClip doorbellSound;
+        [Tooltip("Onde o entregador APARECE para a entrega (saindo do elevador). Se vazio, usa o elevatorExitPoint.")]
+        [FormerlySerializedAs("entregadorDeliverySpawn")]
+        [SerializeField] private Transform deliverymanDeliverySpawn;
+        [Tooltip("Caminho que o entregador percorre do elevador ATÉ a porta (waypoints em ordem, atravessando o corredor naturalmente). Coloque um ponto em cada quina. O ponto FINAL na porta é o deliverymanDoorPoint.")]
+        [FormerlySerializedAs("entregadorDeliveryPath")]
+        [SerializeField] private Transform[] deliverymanDeliveryPath;
         [Tooltip("Onde o entregador para, na porta, para entregar o lanche (fim do trajeto). Se vazio, usa o apartmentDoorZone.")]
-        [SerializeField] private Transform entregadorDoorPoint;
+        [FormerlySerializedAs("entregadorDoorPoint")]
+        [SerializeField] private Transform deliverymanDoorPoint;
         [Tooltip("Velocidade (graus/s) com que o entregador gira no próprio eixo (dar meia-volta) antes de ir embora pelo mesmo caminho. ~180.")]
-        [SerializeField] private float entregadorTurnSpeed = 180f;
+        [FormerlySerializedAs("entregadorTurnSpeed")]
+        [SerializeField] private float deliverymanTurnSpeed = 180f;
         [Tooltip("Diálogo curto do entregador na entrega (algo ainda errado nele).")]
-        [SerializeField] private DialogueData entregadorDialogue;
+        [FormerlySerializedAs("entregadorDialogue")]
+        [SerializeField] private DialogueData deliverymanDialogue;
         [Tooltip("A sacolinha de comida que o entregador ENTREGA ao protagonista ao fim do diálogo (vai pro PlayerInventory). Crie via Assets > Create > The Delivery > Item. Se vazio, a entrega não dá comida (warning).")]
         [SerializeField] private ItemData deliveryFoodItem;
         [Tooltip("Pensamento que manda a Clear levar a comida pra cozinha (após receber a entrega). Opcional.")]
@@ -171,13 +193,16 @@ namespace TheDelivery.Narrative
         [Tooltip("Tempo de EXPLORAÇÃO livre (s) entre a entrega (Beat 4) e o início da escalada. A Clear anda livre pelo apartamento por este tempo antes do 1º fenômeno. Ex.: 180 = 3 minutos.")]
         [SerializeField] private float explorationDelay = 180f;
         [Tooltip("1. Campainha tocando repetido; Clear atende e não há ninguém.")]
-        [SerializeField] private AudioClip campainhaRepetidaSound;
+        [FormerlySerializedAs("campainhaRepetidaSound")]
+        [SerializeField] private AudioClip repeatedDoorbellSound;
         [Tooltip("Pensamento ao atender e não ver ninguém. Opcional.")]
         [SerializeField] private ThoughtData ringNobodyThought;
         [Tooltip("2. Batidas insistentes na porta.")]
-        [SerializeField] private AudioClip batidasSound;
+        [FormerlySerializedAs("batidasSound")]
+        [SerializeField] private AudioClip knockingSound;
         [Tooltip("3. Toque do telefone, em LOOP, até a Clear atender. Ao atender, silêncio/respiração.")]
-        [SerializeField] private AudioClip telefoneSound;
+        [FormerlySerializedAs("telefoneSound")]
+        [SerializeField] private AudioClip phoneRingSound;
         [Tooltip("Telefone fixo que TOCA na ligação muda (precisa do componente Landline — o MESMO objeto que o Ato 4 usa). A Clear precisa ir até ele e ATENDER (F) para a escalada seguir. Se vazio, a ligação muda só toca o som uma vez e dispara o pensamento, sem exigir atender (fallback). É um telefone DIFERENTE do celular do Beat 3.")]
         [SerializeField] private GameObject ringingPhoneObject;
         [Tooltip("Pensamento da ligação muda (Thought_Act3-6, \"Alô? ...tem alguém aí?\"). SÓ dispara DEPOIS de a Clear atender o telefone. Opcional.")]
@@ -193,32 +218,44 @@ namespace TheDelivery.Narrative
         [Tooltip("Som do baque ao piscar/reacender. Opcional.")]
         [SerializeField] private AudioClip flickerSound;
         [Tooltip("5. Voz grossa do vizinho ao abrir a porta (isolamento). Opcional se usar diálogo.")]
-        [SerializeField] private AudioClip vizinhoVozSound;
+        [FormerlySerializedAs("vizinhoVozSound")]
+        [SerializeField] private AudioClip neighborVoiceSound;
         [Tooltip("Diálogo do vizinho grosso (na porta aberta). Opcional se usar só o áudio.")]
-        [SerializeField] private DialogueData vizinhoDialogue;
-        [Tooltip("Zona da porta do vizinho (PortaVizinho2) no corredor. Clear precisa chegar aqui.")]
-        [SerializeField] private Transform vizinhoPortaZone;
+        [FormerlySerializedAs("vizinhoDialogue")]
+        [SerializeField] private DialogueData neighborDialogue;
+        [Tooltip("Zona da porta do vizinho (NeighborDoor_01) no corredor. Clear precisa chegar aqui.")]
+        [FormerlySerializedAs("vizinhoPortaZone")]
+        [SerializeField] private Transform neighborDoorZone;
         [Tooltip("Raio (m) da zona da porta do vizinho.")]
-        [SerializeField] private float vizinhoRadius = 2f;
+        [FormerlySerializedAs("vizinhoRadius")]
+        [SerializeField] private float neighborRadius = 2f;
         [Tooltip("Porta do vizinho (componente Door, com Player Can Open = FALSE). O jogador só BATE (F) — ele NÃO abre. Após a batida, o roteiro a ABRE (o vizinho) e, ao fim do diálogo, a FECHA. Se vazia, o encontro roda só com voz + diálogo (sem porta).")]
-        [SerializeField] private Door vizinhoDoor;
+        [FormerlySerializedAs("vizinhoDoor")]
+        [SerializeField] private Door neighborDoor;
         [Tooltip("Tempo (s) entre o jogador BATER e o vizinho ABRIR a porta.")]
         [SerializeField] private float knockToAnswerDelay = 1f;
         [Tooltip("Modelo do vizinho. Começa INATIVO; é ativado quando a porta abre e desativado quando ele se retira. Se vazio, o encontro é só voz + porta (sem mostrar ninguém). Opcional.")]
-        [SerializeField] private GameObject vizinho;
+        [FormerlySerializedAs("vizinho")]
+        [SerializeField] private GameObject neighbor;
         [Tooltip("Onde o vizinho aparece ao abrir a porta (no vão). Se vazio, usa a posição atual do modelo na cena. Opcional.")]
-        [SerializeField] private Transform vizinhoSpawn;
-        [Tooltip("Animator do vizinho (o do próprio 'vizinho' ou de um filho dele). Ao FIM do diálogo, recebe o trigger 'Closing' para o vizinho fazer a animação de encerrar/fechar. Se vazio, tenta achar no próprio vizinho (GetComponentInChildren). Opcional.")]
-        [SerializeField] private Animator vizinhoAnimator;
-        [Tooltip("Nome do parâmetro TRIGGER no Animator do vizinho que dispara a animação 'Closing' quando o diálogo acaba. Deve casar com o Vizinho.controller.")]
-        [SerializeField] private string vizinhoClosingTrigger = "Closing";
-        [Tooltip("Nome do ESTADO 'Closing' no Animator do vizinho. O roteiro usa este nome para AGUARDAR a animação terminar antes de fechar a porta (espera automática pela duração real do clipe, quando vizinhoClosingDuration = 0). Deve casar com o estado no Vizinho.controller.")]
-        [SerializeField] private string vizinhoClosingState = "Closing";
-        [Tooltip("Tempo (s) que o roteiro AGUARDA a animação 'Closing' do vizinho tocar antes de fechar a porta. 0 (recomendado) = espera AUTOMÁTICA pela state vizinhoClosingState até a fração vizinhoClosingDoorCue. >0 = espera fixa este tempo (override manual).")]
-        [SerializeField] private float vizinhoClosingDuration = 0f;
-        [Tooltip("Fração (0..1) da animação 'Closing' em que a PORTA COMEÇA a fechar — a porta deve começar a fechar UM POUCO ANTES do fim da animação, para o fechamento sobrepor o gesto. Ex.: 0.8 = a porta começa aos 80% da animação. Só vale na espera automática (vizinhoClosingDuration = 0).")]
+        [FormerlySerializedAs("vizinhoSpawn")]
+        [SerializeField] private Transform neighborSpawn;
+        [Tooltip("Animator do vizinho (o do próprio 'neighbor' ou de um filho dele). Ao FIM do diálogo, recebe o trigger 'Closing' para o vizinho fazer a animação de encerrar/fechar. Se vazio, tenta achar no próprio vizinho (GetComponentInChildren). Opcional.")]
+        [FormerlySerializedAs("vizinhoAnimator")]
+        [SerializeField] private Animator neighborAnimator;
+        [Tooltip("Nome do parâmetro TRIGGER no Animator do vizinho que dispara a animação 'Closing' quando o diálogo acaba. Deve casar com o Neighbor.controller.")]
+        [FormerlySerializedAs("vizinhoClosingTrigger")]
+        [SerializeField] private string neighborClosingTrigger = "Closing";
+        [Tooltip("Nome do ESTADO 'Closing' no Animator do vizinho. O roteiro usa este nome para AGUARDAR a animação terminar antes de fechar a porta (espera automática pela duração real do clipe, quando neighborClosingDuration = 0). Deve casar com o estado no Neighbor.controller.")]
+        [FormerlySerializedAs("vizinhoClosingState")]
+        [SerializeField] private string neighborClosingState = "Closing";
+        [Tooltip("Tempo (s) que o roteiro AGUARDA a animação 'Closing' do vizinho tocar antes de fechar a porta. 0 (recomendado) = espera AUTOMÁTICA pela state neighborClosingState até a fração neighborClosingDoorCue. >0 = espera fixa este tempo (override manual).")]
+        [FormerlySerializedAs("vizinhoClosingDuration")]
+        [SerializeField] private float neighborClosingDuration = 0f;
+        [Tooltip("Fração (0..1) da animação 'Closing' em que a PORTA COMEÇA a fechar — a porta deve começar a fechar UM POUCO ANTES do fim da animação, para o fechamento sobrepor o gesto. Ex.: 0.8 = a porta começa aos 80% da animação. Só vale na espera automática (neighborClosingDuration = 0).")]
         [Range(0f, 1f)]
-        [SerializeField] private float vizinhoClosingDoorCue = 0.8f;
+        [FormerlySerializedAs("vizinhoClosingDoorCue")]
+        [SerializeField] private float neighborClosingDoorCue = 0.8f;
         [Tooltip("Pensamento que direciona Clear ao vizinho. Opcional.")]
         [SerializeField] private ThoughtData goToNeighborThought;
         [Tooltip("Pensamento de isolamento após a resposta grossa do vizinho. Opcional.")]
@@ -240,25 +277,34 @@ namespace TheDelivery.Narrative
         [Tooltip("Pensamento ao comer no sofá (sentada, vendo TV), exausta/perturbada. Opcional.")]
         [SerializeField] private ThoughtData eatThought;
         [Tooltip("Onde o ENTREGADOR aparece, de longe, encarando a Clear enquanto ela come na sacada. Posicione bem visível da sacada, à distância. Se vazio, o susto da sacada é pulado (só o pensamento).")]
-        [SerializeField] private Transform entregadorBalconyPoint;
-        [Tooltip("Zona de REVELAÇÃO (objeto vazio 'AntagonistaFarVision') no caminho para a sacada, UM POUCO ANTES dela. Ao a Clear entrar aqui, o entregador JÁ é posicionado no entregadorBalconyPoint e ativado — assim ele já ESTÁ lá, parado encarando, quando ela chega e olha (não 'pipoca' no momento). Se vazia, revela ao entrar num raio maior da própria sacada (fallback).")]
-        [SerializeField] private Transform entregadorBalconyRevealZone;
+        [FormerlySerializedAs("entregadorBalconyPoint")]
+        [SerializeField] private Transform deliverymanBalconyPoint;
+        [Tooltip("Zona de REVELAÇÃO (objeto vazio 'DeliverymanBalconyRevealZone') no caminho para a sacada, UM POUCO ANTES dela. Ao a Clear entrar aqui, o entregador JÁ é posicionado no deliverymanBalconyPoint e ativado — assim ele já ESTÁ lá, parado encarando, quando ela chega e olha (não 'pipoca' no momento). Se vazia, revela ao entrar num raio maior da própria sacada (fallback).")]
+        [FormerlySerializedAs("entregadorBalconyRevealZone")]
+        [SerializeField] private Transform deliverymanBalconyRevealZone;
         [Tooltip("Raio (m) da zona de revelação do entregador da sacada.")]
-        [SerializeField] private float entregadorBalconyRevealRadius = 2f;
-        [Tooltip("Caminho de SAÍDA do entregador da sacada: ao FIM do foco, ele CAMINHA (Walking) por estes waypoints EM ORDEM e SÓ ENTÃO some — em vez de simplesmente apagar. Coloque um ponto em cada quina até um lugar fora de vista. Se vazio, cai no entregadorBalconyExitPoint.")]
-        [SerializeField] private Transform[] entregadorBalconyExitPath;
-        [Tooltip("Ponto único de SAÍDA do entregador da sacada (FALLBACK do entregadorBalconyExitPath). Ao fim do foco, ele caminha até aqui em linha reta e some. Se ambos vazios, ele some sem caminhar (comportamento antigo, com warning).")]
-        [SerializeField] private Transform entregadorBalconyExitPoint;
+        [FormerlySerializedAs("entregadorBalconyRevealRadius")]
+        [SerializeField] private float deliverymanBalconyRevealRadius = 2f;
+        [Tooltip("Caminho de SAÍDA do entregador da sacada: ao FIM do foco, ele CAMINHA (Walking) por estes waypoints EM ORDEM e SÓ ENTÃO some — em vez de simplesmente apagar. Coloque um ponto em cada quina até um lugar fora de vista. Se vazio, cai no deliverymanBalconyExitPoint.")]
+        [FormerlySerializedAs("entregadorBalconyExitPath")]
+        [SerializeField] private Transform[] deliverymanBalconyExitPath;
+        [Tooltip("Ponto único de SAÍDA do entregador da sacada (FALLBACK do deliverymanBalconyExitPath). Ao fim do foco, ele caminha até aqui em linha reta e some. Se ambos vazios, ele some sem caminhar (comportamento antigo, com warning).")]
+        [FormerlySerializedAs("entregadorBalconyExitPoint")]
+        [SerializeField] private Transform deliverymanBalconyExitPoint;
         [Tooltip("Luminária da CALÇADA em cima do entregador (visto da sacada). Depois que ele encara a Clear (fim do pensamento), esta luz PISCA até APAGAR por completo; só então ele sai andando. Usa os mesmos flickerCount/flickerMinInterval/flickerMaxInterval/flickerSound do Beat 5. Se vazia, o passo do flicker é pulado. Opcional.")]
         [SerializeField] private Light balconyLampLight;
         [Tooltip("Som (sting) no instante em que a câmera trava no entregador visto da sacada. Opcional.")]
-        [SerializeField] private AudioClip balconyEntregadorSound;
+        [FormerlySerializedAs("balconyEntregadorSound")]
+        [SerializeField] private AudioClip balconyDeliverymanSound;
         [Tooltip("Pensamento ao ver o entregador encarando de longe (susto da sacada). Opcional.")]
-        [SerializeField] private ThoughtData balconyEntregadorThought;
+        [FormerlySerializedAs("balconyEntregadorThought")]
+        [SerializeField] private ThoughtData balconyDeliverymanThought;
         [Tooltip("Voz do antagonista CHAMANDO a Clear ('Clear... Clear...') — toca em LOOP a partir de quando ela pega a comida na bancada, para GUIÁ-LA até a sacada, e PARA quando ela chega e encara o entregador. Opcional.")]
-        [SerializeField] private AudioClip entregadorCallingClip;
+        [FormerlySerializedAs("entregadorCallingClip")]
+        [SerializeField] private AudioClip deliverymanCallingClip;
         [Tooltip("AudioSource DEDICADO (marque Loop opcional; ideal 3D/Spatial Blend=1, posicionado NA SACADA/fora) para a voz do antagonista chamando — assim o som vem da direção da sacada e guia o jogador. Se vazio, usa o audioSource 2D compartilhado (sem direção). Opcional.")]
-        [SerializeField] private AudioSource entregadorCallingSource;
+        [FormerlySerializedAs("entregadorCallingSource")]
+        [SerializeField] private AudioSource deliverymanCallingSource;
 
         [Header("Beat 6 - Sofá e TV (comer)")]
         [Tooltip("O SOFÁ (SittableChair, modo exploração livre) onde a Clear senta pra comer vendo TV, DEPOIS do susto da sacada. Ao sentar (F) a TV liga sozinha e o jogador pode COMER apertando F. Se vazio, come sem sentar (fallback).")]
@@ -363,12 +409,12 @@ namespace TheDelivery.Narrative
                 standUpPrompt.SetActive(false);
 
             // O entregador começa fora de cena; é ativado nos beats que o usam.
-            if (entregador != null)
-                entregador.SetActive(false);
+            if (deliveryman != null)
+                deliveryman.SetActive(false);
 
             // O vizinho só aparece quando abre a porta (fenômeno 5); começa inativo.
-            if (vizinho != null)
-                vizinho.SetActive(false);
+            if (neighbor != null)
+                neighbor.SetActive(false);
 
             // COEXISTÊNCIA: só roda se for a vez do Ato 3 (ou em teste isolado). Senão
             // fica inerte — o Act4Director (mesma cena) cuida do Ato 4 quando for a vez.
@@ -499,13 +545,13 @@ namespace TheDelivery.Narrative
 
             // Se a voz do antagonista chamando (Beat 6) estava tocando, para — para não
             // vazar num salto de beat/debug.
-            StopEntregadorCalling();
+            StopDeliverymanCalling();
 
             // Se estávamos aguardando a batida na porta do vizinho (Beat 5), cancela a
             // inscrição no evento (sem isso, um salto de debug deixaria o handler preso).
             // O -= é no-op se não estávamos inscritos.
-            if (vizinhoDoor != null)
-                vizinhoDoor.Knocked -= OnNeighborKnocked;
+            if (neighborDoor != null)
+                neighborDoor.Knocked -= OnNeighborKnocked;
 
             // Idem para o passo lateral em andamento (não deixar o player deslizando).
             if (stepAsideRoutine != null)
@@ -547,8 +593,8 @@ namespace TheDelivery.Narrative
         // --- BEAT 1: CorridorMeeting --------------------------------------
 
         /// <summary>
-        /// Corredor: a Clear surge no <see cref="elevadorSaidaPoint"/> (vinda do Ato 2)
-        /// e anda livre rumo ao apartamento. Ao entrar na <see cref="entregadorCruzaPoint"/>,
+        /// Corredor: a Clear surge no <see cref="elevatorExitPoint"/> (vinda do Ato 2)
+        /// e anda livre rumo ao apartamento. Ao entrar na <see cref="deliverymanCrossPoint"/>,
         /// o ENTREGADOR (modelo do antagonista) aparece scriptado e cruza com ela, dando
         /// um "boa noite" sinistro. Após o encontro, segue para a porta (Beat 2).
         /// </summary>
@@ -557,21 +603,21 @@ namespace TheDelivery.Narrative
             EnsurePlayerFree();
 
             // Garante o ponto de partida (importante no início real e ao pular pra cá).
-            if (elevadorSaidaPoint != null)
-                PlacePlayerAt(elevadorSaidaPoint);
+            if (elevatorExitPoint != null)
+                PlacePlayerAt(elevatorExitPoint);
 
-            if (entregador != null)
-                entregador.SetActive(false);
+            if (deliveryman != null)
+                deliveryman.SetActive(false);
 
             // Anda livre até a zona do encontro.
-            if (entregadorCruzaPoint != null)
-                yield return new WaitUntil(() => PlayerInZone(entregadorCruzaPoint, entregadorCruzaRadius));
+            if (deliverymanCrossPoint != null)
+                yield return new WaitUntil(() => PlayerInZone(deliverymanCrossPoint, deliverymanCrossRadius));
             else
-                Debug.LogWarning("[Act3Director] entregadorCruzaPoint não atribuído; pulando o encontro do corredor.", this);
+                Debug.LogWarning("[Act3Director] deliverymanCrossPoint não atribuído; pulando o encontro do corredor.", this);
 
             // Aparição scriptada do entregador (sem NavMesh): aparece, encara a Clear,
             // dá o "boa noite" sinistro e cruza/some.
-            yield return EntregadorEncounterRoutine();
+            yield return DeliverymanEncounterRoutine();
 
             // SÓ AGORA o pensamento: ele REAGE ao entregador ("Esse cara... eu nunca vi
             // por aqui"), então tem de vir DEPOIS do encontro — no spawn não faria sentido,
@@ -585,19 +631,19 @@ namespace TheDelivery.Narrative
         /// O encontro scriptado do corredor: posiciona e ativa o entregador e TRAVA a
         /// câmera da Clear nele (foco forçado, <see cref="StartCameraFocus"/>) — sem olhar
         /// livre. Toca o "boa noite", roda o diálogo e, ao fim, o entregador percorre o
-        /// caminho de saída (<see cref="WalkEntregadorExit"/>) com a câmera SEGUINDO-O até
+        /// caminho de saída (<see cref="WalkDeliverymanExit"/>) com a câmera SEGUINDO-O até
         /// ele sumir. Só então o foco é encerrado e o controle livre devolvido.
         /// </summary>
-        private IEnumerator EntregadorEncounterRoutine()
+        private IEnumerator DeliverymanEncounterRoutine()
         {
-            if (entregador == null)
+            if (deliveryman == null)
             {
                 Debug.LogWarning("[Act3Director] entregador não atribuído; pulando a aparição do corredor.", this);
                 yield break;
             }
 
-            Transform spawn = entregadorCruzaSpawn != null ? entregadorCruzaSpawn : entregadorCruzaPoint;
-            ActivateEntregadorAt(spawn);
+            Transform spawn = deliverymanCrossSpawn != null ? deliverymanCrossSpawn : deliverymanCrossPoint;
+            ActivateDeliverymanAt(spawn);
 
             // Foco forçado: a câmera trava no entregador e o SEGUE da aparição até a saída.
             // StartCameraFocus já trava movimento E olhar do player (o PlayerController solta
@@ -606,12 +652,12 @@ namespace TheDelivery.Narrative
                 playerInteraction.InteractionEnabled = false;
 
             // Sting no INSTANTE em que a câmera vira para travar no entregador (o susto).
-            PlaySound(entregadorRevealSound);
-            StartCameraFocus(entregador.transform);
+            PlaySound(deliverymanRevealSound);
+            StartCameraFocus(deliveryman.transform);
 
-            PlaySound(boaNoiteSound);
+            PlaySound(goodNightSound);
 
-            yield return ShowDialogueAndWait(boaNoiteSinistroDialogue);
+            yield return ShowDialogueAndWait(sinisterGoodNightDialogue);
 
             // Ao começar a ida do entregador, a Clear SAI DA FRENTE: caminha até o
             // playerStepAsidePoint (coordenada calibrada na cena). Depois fica lá — o
@@ -625,7 +671,7 @@ namespace TheDelivery.Narrative
             // Cruza o corredor e some: segue o caminho de saída (waypoints), andando
             // naturalmente pelo corredor até o elevador e contornando as paredes. A câmera
             // continua acompanhando o entregador durante todo o trajeto.
-            yield return WalkEntregadorExit();
+            yield return WalkDeliverymanExit();
 
             if (stepAsideRoutine != null)
             {
@@ -635,7 +681,7 @@ namespace TheDelivery.Narrative
 
             // Encerra o foco (reinjeta o estado da câmera, sem snap) e some com o entregador.
             StopCameraFocus();
-            DeactivateEntregador();
+            DeactivateDeliveryman();
 
             // Devolve o controle livre.
             EnsurePlayerFree();
@@ -784,8 +830,8 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// A entrega: o ENTREGADOR VEM DO ELEVADOR e atravessa o corredor (não aparece do
-        /// nada na porta) — surge no <see cref="entregadorDeliverySpawn"/> e caminha pelo
-        /// <see cref="entregadorDeliveryPath"/> até a porta (<see cref="entregadorDoorPoint"/>).
+        /// nada na porta) — surge no <see cref="deliverymanDeliverySpawn"/> e caminha pelo
+        /// <see cref="deliverymanDeliveryPath"/> até a porta (<see cref="deliverymanDoorPoint"/>).
         /// Lá toca a campainha; a Clear atende; ele entrega o lanche (diálogo curto, algo
         /// ainda errado nele) e some — a Clear "pega o lanche e fecha a porta". Avança para os
         /// fenômenos. O entregador é o mesmo prop scriptado dos demais beats (FSM/agente off).
@@ -796,22 +842,22 @@ namespace TheDelivery.Narrative
 
             // O entregador surge no elevador e atravessa o corredor até a porta, andando
             // naturalmente (sem teleportar para a porta). Encara a direção do movimento.
-            if (entregador != null)
+            if (deliveryman != null)
             {
-                Transform spawn = entregadorDeliverySpawn != null ? entregadorDeliverySpawn : elevadorSaidaPoint;
-                ActivateEntregadorAt(spawn, facePlayer: false);
+                Transform spawn = deliverymanDeliverySpawn != null ? deliverymanDeliverySpawn : elevatorExitPoint;
+                ActivateDeliverymanAt(spawn, facePlayer: false);
 
-                yield return WalkEntregadorThrough(entregadorDeliveryPath);
+                yield return WalkDeliverymanThrough(deliverymanDeliveryPath);
 
                 // Para na porta e encara a Clear.
-                Transform doorPoint = entregadorDoorPoint != null ? entregadorDoorPoint : apartmentDoorZone;
+                Transform doorPoint = deliverymanDoorPoint != null ? deliverymanDoorPoint : apartmentDoorZone;
                 if (doorPoint != null)
-                    yield return WalkEntregadorTo(doorPoint.position);
-                FaceTowards(entregador.transform, playerController.transform.position);
+                    yield return WalkDeliverymanTo(doorPoint.position);
+                FaceTowards(deliveryman.transform, playerController.transform.position);
             }
 
             // Chegou: toca a campainha anunciando a entrega.
-            PlaySound(campainhaSound);
+            PlaySound(doorbellSound);
 
             // Durante a entrega a porta NÃO fecha sozinha: só fecha se o jogador interagir.
             if (apartmentDoor != null)
@@ -836,10 +882,10 @@ namespace TheDelivery.Narrative
             // abrir a porta, a Clear se deslocou — deixando o entregador em diagonal, sem
             // encará-la. Com o player já travado na posição final, re-encara para o diálogo
             // acontecer de frente.
-            if (entregador != null)
-                FaceTowards(entregador.transform, playerController.transform.position);
+            if (deliveryman != null)
+                FaceTowards(deliveryman.transform, playerController.transform.position);
 
-            yield return ShowDialogueAndWait(entregadorDialogue);
+            yield return ShowDialogueAndWait(deliverymanDialogue);
 
             // O entregador ENTREGA a sacolinha de comida na mão do protagonista — vai pro
             // inventário (e aparece na mão, se o item tiver HeldPrefab e houver handAnchor).
@@ -854,8 +900,8 @@ namespace TheDelivery.Narrative
 
             // O entregador gira no próprio eixo (meia-volta) e vai embora pelo MESMO
             // caminho (invertido), de volta ao elevador. Só então some (entra no elevador).
-            yield return EntregadorLeaveDelivery();
-            DeactivateEntregador();
+            yield return DeliverymanLeaveDelivery();
+            DeactivateDeliveryman();
 
             // A Clear leva a comida pra cozinha e a deixa na bancada (interagindo com o
             // ponto vazio). Só depois disso a escalada (Beat 5) começa.
@@ -870,19 +916,19 @@ namespace TheDelivery.Narrative
         /// INVERTIDO — pela porta, pelos waypoints na ordem reversa, até o spawn (elevador).
         /// Não desativa o entregador (quem chama faz isso ao final). Null-safe.
         /// </summary>
-        private IEnumerator EntregadorLeaveDelivery()
+        private IEnumerator DeliverymanLeaveDelivery()
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 yield break;
 
             // Caminho de volta = trajeto de chegada invertido, terminando no spawn (elevador).
             List<Transform> back = new List<Transform>();
-            if (entregadorDeliveryPath != null)
-                for (int i = entregadorDeliveryPath.Length - 1; i >= 0; i--)
-                    if (entregadorDeliveryPath[i] != null)
-                        back.Add(entregadorDeliveryPath[i]);
+            if (deliverymanDeliveryPath != null)
+                for (int i = deliverymanDeliveryPath.Length - 1; i >= 0; i--)
+                    if (deliverymanDeliveryPath[i] != null)
+                        back.Add(deliverymanDeliveryPath[i]);
 
-            Transform spawn = entregadorDeliverySpawn != null ? entregadorDeliverySpawn : elevadorSaidaPoint;
+            Transform spawn = deliverymanDeliverySpawn != null ? deliverymanDeliverySpawn : elevatorExitPoint;
             if (spawn != null)
                 back.Add(spawn);
 
@@ -893,31 +939,31 @@ namespace TheDelivery.Narrative
             }
 
             // Gira no eixo para encarar o primeiro ponto do retorno (dar meia-volta).
-            yield return RotateEntregadorToward(back[0].position);
+            yield return RotateDeliverymanToward(back[0].position);
 
             // Vai embora pelo mesmo caminho, invertido — travessia contínua (Walking
             // ativo do início ao fim do retorno, sem piscar Idle entre os waypoints).
-            yield return WalkEntregadorThrough(back.ToArray());
+            yield return WalkDeliverymanThrough(back.ToArray());
         }
 
         /// <summary>
         /// Gira o entregador no PRÓPRIO EIXO (yaw) até encarar <paramref name="worldTarget"/>,
-        /// suavemente a <see cref="entregadorTurnSpeed"/> graus/s. Diferente do FaceTowards
+        /// suavemente a <see cref="deliverymanTurnSpeed"/> graus/s. Diferente do FaceTowards
         /// (instantâneo) usado dentro de cada trecho de caminhada. Null-safe.
         /// </summary>
-        private IEnumerator RotateEntregadorToward(Vector3 worldTarget)
+        private IEnumerator RotateDeliverymanToward(Vector3 worldTarget)
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 yield break;
 
-            Transform t = entregador.transform;
+            Transform t = deliveryman.transform;
             Vector3 dir = worldTarget - t.position;
             dir.y = 0f;
             if (dir.sqrMagnitude < 1e-6f)
                 yield break;
 
             Quaternion target = Quaternion.LookRotation(dir, Vector3.up);
-            float speed = Mathf.Max(1f, entregadorTurnSpeed);
+            float speed = Mathf.Max(1f, deliverymanTurnSpeed);
             while (Quaternion.Angle(t.rotation, target) > 0.5f)
             {
                 t.rotation = Quaternion.RotateTowards(t.rotation, target, speed * Time.deltaTime);
@@ -1136,7 +1182,7 @@ namespace TheDelivery.Narrative
             // NA porta). Espera a Clear fechar a porta (ela a abriu na campainha).
             if (apartmentDoor != null)
                 yield return new WaitUntil(() => apartmentDoor.IsClosed);
-            PlaySound(batidasSound);
+            PlaySound(knockingSound);
             yield return PhenomenaGap();
 
             // 3. Ligação muda: o telefone TOCA (em loop) e a Clear precisa ATENDER (F)
@@ -1158,10 +1204,10 @@ namespace TheDelivery.Narrative
             // 5. Vizinho grosso: a Clear vai até a porta do vizinho, BATE, ele ABRE, dá uma
             // resposta grossa e, ao fim, se RETIRA e a porta FECHA — selando o isolamento.
             yield return ShowThoughtAndWait(goToNeighborThought);
-            if (vizinhoPortaZone != null)
-                yield return new WaitUntil(() => PlayerInZone(vizinhoPortaZone, vizinhoRadius));
+            if (neighborDoorZone != null)
+                yield return new WaitUntil(() => PlayerInZone(neighborDoorZone, neighborRadius));
             else
-                Debug.LogWarning("[Act3Director] vizinhoPortaZone não atribuída; pulando a ida ao vizinho.", this);
+                Debug.LogWarning("[Act3Director] neighborDoorZone não atribuída; pulando a ida ao vizinho.", this);
 
             yield return NeighborEncounter();
             yield return ShowThoughtAndWait(isolationThought);
@@ -1193,7 +1239,7 @@ namespace TheDelivery.Narrative
             if (apartmentDoor == null)
             {
                 Debug.LogWarning("[Act3Director] apartmentDoor não atribuída; a campainha repetida toca uma vez sem exigir porta fechada/aberta.", this);
-                PlaySound(campainhaRepetidaSound);
+                PlaySound(repeatedDoorbellSound);
                 yield break;
             }
 
@@ -1201,7 +1247,7 @@ namespace TheDelivery.Narrative
             yield return new WaitUntil(() => apartmentDoor.IsClosed);
 
             // Toca em loop (insiste) até a Clear ABRIR a porta.
-            StartLoopingSound(campainhaRepetidaSound);
+            StartLoopingSound(repeatedDoorbellSound);
             yield return new WaitUntil(() => apartmentDoor.IsOpen);
 
             // Abriu: silêncio (não havia ninguém). Para o toque.
@@ -1229,7 +1275,7 @@ namespace TheDelivery.Narrative
             if (phone == null)
             {
                 Debug.LogWarning("[Act3Director] ringingPhoneObject/Landline ausente; a ligação muda toca uma vez sem exigir atender.", this);
-                PlaySound(telefoneSound);
+                PlaySound(phoneRingSound);
                 yield break;
             }
 
@@ -1287,7 +1333,7 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>Inicia o toque do telefone (ligação muda) em loop. Ver <see cref="StartLoopingSound"/>.</summary>
-        private void StartPhoneRinging() => StartLoopingSound(telefoneSound);
+        private void StartPhoneRinging() => StartLoopingSound(phoneRingSound);
 
         /// <summary>
         /// Para o toque do telefone e DESARMA o telefone ativo (some o prompt). Null-safe e
@@ -1307,41 +1353,41 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Inicia a voz do antagonista CHAMANDO a Clear ("Clear... Clear...") em LOOP, para
-        /// guiá-la até a sacada no Beat 6. Usa o <see cref="entregadorCallingSource"/> dedicado
+        /// guiá-la até a sacada no Beat 6. Usa o <see cref="deliverymanCallingSource"/> dedicado
         /// (3D, na direção da sacada) se atribuído — o som vem de fora e guia; senão cai no
         /// <see cref="StartLoopingSound"/> (audioSource 2D compartilhado). Null-safe: sem clip,
         /// no-op.
         /// </summary>
-        private void StartEntregadorCalling()
+        private void StartDeliverymanCalling()
         {
-            if (entregadorCallingSource != null)
+            if (deliverymanCallingSource != null)
             {
-                // O clip pode vir do Director (entregadorCallingClip) OU já estar configurado
+                // O clip pode vir do Director (deliverymanCallingClip) OU já estar configurado
                 // na própria AudioSource do poste — assim dá pra deixar o clip só no componente.
-                if (entregadorCallingClip != null)
-                    entregadorCallingSource.clip = entregadorCallingClip;
-                if (entregadorCallingSource.clip == null)
+                if (deliverymanCallingClip != null)
+                    deliverymanCallingSource.clip = deliverymanCallingClip;
+                if (deliverymanCallingSource.clip == null)
                     return;
 
-                entregadorCallingSource.loop = true;
-                entregadorCallingSource.Play();
+                deliverymanCallingSource.loop = true;
+                deliverymanCallingSource.Play();
                 return;
             }
 
             // Sem fonte dedicada: fallback no audioSource 2D compartilhado (exige o clip).
-            if (entregadorCallingClip == null)
+            if (deliverymanCallingClip == null)
                 return;
-            StartLoopingSound(entregadorCallingClip);
+            StartLoopingSound(deliverymanCallingClip);
         }
 
         /// <summary>
         /// Para a voz do antagonista chamando. Null-safe e idempotente — chamado ao chegar na
         /// sacada E em toda troca de beat (anti-vazamento em salto de debug).
         /// </summary>
-        private void StopEntregadorCalling()
+        private void StopDeliverymanCalling()
         {
-            if (entregadorCallingSource != null)
-                entregadorCallingSource.Stop();
+            if (deliverymanCallingSource != null)
+                deliverymanCallingSource.Stop();
             else
                 StopLoopingSound();
         }
@@ -1389,13 +1435,13 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Fenômeno 5 (o vizinho grosso): a Clear, já na porta do vizinho, BATE — o JOGADOR
-        /// interage (F) com a <see cref="vizinhoDoor"/>, que está em modo "só bater"
+        /// interage (F) com a <see cref="neighborDoor"/>, que está em modo "só bater"
         /// (Door.playerCanOpen=false): ela NÃO abre, só toca a batida e dispara Knocked.
-        /// Após <see cref="knockToAnswerDelay"/>s o <see cref="vizinho"/> é posicionado
+        /// Após <see cref="knockToAnswerDelay"/>s o <see cref="neighbor"/> é posicionado
         /// ATRÁS da porta (ainda fechada) e ativado — para o jogador nunca o ver "spawnar" —
         /// e só então o VIZINHO abre a porta (por roteiro, Door.Open()), revelando-o no vão.
-        /// Só com a porta ABERTA vem a resposta grossa (<see cref="vizinhoVozSound"/> +
-        /// <see cref="vizinhoDialogue"/>). Ao fim, o vizinho FECHA a porta e, só com ela
+        /// Só com a porta ABERTA vem a resposta grossa (<see cref="neighborVoiceSound"/> +
+        /// <see cref="neighborDialogue"/>). Ao fim, o vizinho FECHA a porta e, só com ela
         /// COMPLETAMENTE fechada (já o escondendo), é desativado — o isolamento. Tudo
         /// null-safe: sem porta/modelo, faz só o diálogo (fallback no estilo do resto do ato).
         /// </summary>
@@ -1404,16 +1450,16 @@ namespace TheDelivery.Narrative
             // A Clear precisa BATER na porta (interação F = bater; ela NÃO abre — só o
             // vizinho abre). Espera o evento Knocked da Door (disparado quando o jogador
             // interage com ela em modo "só bater", playerCanOpen=false).
-            if (vizinhoDoor != null)
+            if (neighborDoor != null)
             {
                 neighborKnocked = false;
-                vizinhoDoor.Knocked += OnNeighborKnocked;
+                neighborDoor.Knocked += OnNeighborKnocked;
                 yield return new WaitUntil(() => neighborKnocked);
-                vizinhoDoor.Knocked -= OnNeighborKnocked;
+                neighborDoor.Knocked -= OnNeighborKnocked;
             }
             else
             {
-                Debug.LogWarning("[Act3Director] vizinhoDoor não atribuída; sem porta para o jogador bater nem para o vizinho abrir.", this);
+                Debug.LogWarning("[Act3Director] neighborDoor não atribuída; sem porta para o jogador bater nem para o vizinho abrir.", this);
             }
 
             // Bateu: aguarda um instante antes de o vizinho atender.
@@ -1421,19 +1467,19 @@ namespace TheDelivery.Narrative
 
             // O vizinho já está ATRÁS da porta (fechada) ANTES de ela abrir — assim o
             // jogador nunca o vê "spawnar"; quando a porta abre, ele já está lá.
-            if (vizinho != null)
+            if (neighbor != null)
             {
-                if (vizinhoSpawn != null)
-                    vizinho.transform.position = vizinhoSpawn.position;
-                vizinho.SetActive(true);
-                FaceTowards(vizinho.transform, playerController.transform.position);
+                if (neighborSpawn != null)
+                    neighbor.transform.position = neighborSpawn.position;
+                neighbor.SetActive(true);
+                FaceTowards(neighbor.transform, playerController.transform.position);
             }
 
             // Só então o VIZINHO abre a porta (por roteiro), revelando-o no vão.
-            if (vizinhoDoor != null)
+            if (neighborDoor != null)
             {
-                vizinhoDoor.Open();
-                yield return new WaitUntil(() => vizinhoDoor.IsOpen);
+                neighborDoor.Open();
+                yield return new WaitUntil(() => neighborDoor.IsOpen);
             }
 
             // Trava a movimentação para a Clear ENCARAR o vizinho durante a fala (o olhar
@@ -1444,8 +1490,8 @@ namespace TheDelivery.Narrative
                 playerInteraction.InteractionEnabled = false;
 
             // A resposta grossa — SÓ depois de a porta abrir.
-            PlaySound(vizinhoVozSound);
-            yield return ShowDialogueAndWait(vizinhoDialogue);
+            PlaySound(neighborVoiceSound);
+            yield return ShowDialogueAndWait(neighborDialogue);
 
             // Diálogo encerrado: devolve o controle livre.
             EnsurePlayerFree();
@@ -1453,19 +1499,19 @@ namespace TheDelivery.Narrative
             // O vizinho dispara a animação "Closing" (encerra a interação e se retira) e o
             // roteiro AGUARDA a animação tocar por completo ANTES de fechar a porta — senão a
             // porta fecharia no meio do gesto (era o bug: a folha fechava antes do fim).
-            yield return PlayVizinhoClosing();
+            yield return PlayNeighborClosing();
 
             // O vizinho FECHA a porta e a deixa fechar COMPLETAMENTE antes de sumir — assim
             // a folha fechada já o esconde quando ele é desativado e o jogador não o vê
             // "desaparecer" (espelha o spawn atrás da porta). Selando o isolamento.
-            if (vizinhoDoor != null)
+            if (neighborDoor != null)
             {
-                vizinhoDoor.Close();
-                yield return new WaitUntil(() => vizinhoDoor.IsClosed);
+                neighborDoor.Close();
+                yield return new WaitUntil(() => neighborDoor.IsClosed);
             }
 
-            if (vizinho != null)
-                vizinho.SetActive(false);
+            if (neighbor != null)
+                neighbor.SetActive(false);
         }
 
         /// <summary>
@@ -1479,56 +1525,56 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Dispara a animação "Closing" do vizinho ao fim do diálogo — o trigger
-        /// <see cref="vizinhoClosingTrigger"/> no Animator do vizinho (campo
-        /// <see cref="vizinhoAnimator"/>, ou o primeiro Animator achado no próprio
-        /// <see cref="vizinho"/>) — e AGUARDA a animação tocar por completo, para a porta só
+        /// <see cref="neighborClosingTrigger"/> no Animator do vizinho (campo
+        /// <see cref="neighborAnimator"/>, ou o primeiro Animator achado no próprio
+        /// <see cref="neighbor"/>) — e AGUARDA a animação tocar por completo, para a porta só
         /// fechar depois do gesto. A espera é AUTOMÁTICA (segue a state
-        /// <see cref="vizinhoClosingState"/> até o fim) quando <see cref="vizinhoClosingDuration"/>
+        /// <see cref="neighborClosingState"/> até o fim) quando <see cref="neighborClosingDuration"/>
         /// é 0; caso contrário espera esse tempo fixo. Null-safe: sem Animator/trigger, apenas
         /// avisa e segue, sem travar o encontro.
         /// </summary>
-        private IEnumerator PlayVizinhoClosing()
+        private IEnumerator PlayNeighborClosing()
         {
-            if (string.IsNullOrEmpty(vizinhoClosingTrigger))
+            if (string.IsNullOrEmpty(neighborClosingTrigger))
                 yield break;
 
-            Animator anim = vizinhoAnimator;
-            if (anim == null && vizinho != null)
-                anim = vizinho.GetComponentInChildren<Animator>();
+            Animator anim = neighborAnimator;
+            if (anim == null && neighbor != null)
+                anim = neighbor.GetComponentInChildren<Animator>();
 
             if (anim == null)
             {
-                Debug.LogWarning("[Act3Director] vizinhoAnimator ausente (e nenhum Animator no vizinho); sem animação 'Closing'.", this);
+                Debug.LogWarning("[Act3Director] neighborAnimator ausente (e nenhum Animator no vizinho); sem animação 'Closing'.", this);
                 yield break;
             }
 
-            anim.SetTrigger(vizinhoClosingTrigger);
+            anim.SetTrigger(neighborClosingTrigger);
 
             // Override manual: espera fixa.
-            if (vizinhoClosingDuration > 0f)
+            if (neighborClosingDuration > 0f)
             {
-                yield return new WaitForSeconds(vizinhoClosingDuration);
+                yield return new WaitForSeconds(neighborClosingDuration);
                 yield break;
             }
 
             // Espera AUTOMÁTICA: acompanha a state Closing até ela tocar por completo.
-            if (string.IsNullOrEmpty(vizinhoClosingState))
+            if (string.IsNullOrEmpty(neighborClosingState))
                 yield break;
 
             // 1) Espera o Animator ENTRAR na state Closing (transição do trigger), com um
             //    timeout de segurança para nunca travar o ato se o nome não casar.
             float enterTimeout = 1.5f;
-            while (enterTimeout > 0f && !anim.GetCurrentAnimatorStateInfo(0).IsName(vizinhoClosingState))
+            while (enterTimeout > 0f && !anim.GetCurrentAnimatorStateInfo(0).IsName(neighborClosingState))
             {
                 enterTimeout -= Time.deltaTime;
                 yield return null;
             }
 
-            // 2) Deixa a state tocar até vizinhoClosingDoorCue (fração do clipe) — a porta
+            // 2) Deixa a state tocar até neighborClosingDoorCue (fração do clipe) — a porta
             //    COMEÇA a fechar um pouco ANTES do fim, sobrepondo o gesto (não espera 100%).
             //    Sai também se, por algum motivo, sair da state.
-            float cue = Mathf.Clamp01(vizinhoClosingDoorCue);
-            while (anim.GetCurrentAnimatorStateInfo(0).IsName(vizinhoClosingState)
+            float cue = Mathf.Clamp01(neighborClosingDoorCue);
+            while (anim.GetCurrentAnimatorStateInfo(0).IsName(neighborClosingState)
                    && anim.GetCurrentAnimatorStateInfo(0).normalizedTime < cue)
             {
                 yield return null;
@@ -1556,12 +1602,12 @@ namespace TheDelivery.Narrative
             // Com a comida em mãos, a voz do antagonista começa a CHAMAR de fora
             // ("Clear... Clear...") — em LOOP, para GUIAR a Clear até a sacada. Insiste até
             // ela chegar e encará-lo.
-            StartEntregadorCalling();
+            StartDeliverymanCalling();
 
             // 2. A caminho da sacada: UM POUCO ANTES de chegar, o entregador JÁ é revelado
             // (posicionado no ponto de longe, parado encarando) — assim ele já ESTÁ lá quando
             // a Clear chega e olha, em vez de "pipocar" no momento do foco.
-            yield return RevealBalconyEntregador();
+            yield return RevealBalconyDeliveryman();
 
             // Vai até a SACADA (ainda com a comida em mãos) para VER o entregador de longe.
             if (balconyPoint != null)
@@ -1570,11 +1616,11 @@ namespace TheDelivery.Narrative
                 Debug.LogWarning("[Act3Director] balconyPoint não atribuído; seguindo sem esperar a sacada.", this);
 
             // Chegou à sacada e vai encará-lo: a voz PARA.
-            StopEntregadorCalling();
+            StopDeliverymanCalling();
 
             // 3. Susto da sacada: o entregador aparece de longe encarando a Clear; a câmera
             // TRAVA nele, com som e pensamento. (Ela ainda NÃO comeu — só VIU o vulto.)
-            yield return BalconyEntregadorSighting();
+            yield return BalconyDeliverymanSighting();
 
             // 4. Depois do susto, ela vai ao SOFÁ comer vendo TV (para se distrair). É SÓ aqui
             // que a comida é consumida — ver EatOnSofaWatchingTV.
@@ -1770,66 +1816,66 @@ namespace TheDelivery.Narrative
 
         /// <summary>
         /// Revela o entregador da sacada ANTES de a Clear chegar: espera ela entrar na
-        /// <see cref="entregadorBalconyRevealZone"/> (um pouco antes da sacada) e então o
-        /// posiciona no <see cref="entregadorBalconyPoint"/>, ativado e encarando — parado,
+        /// <see cref="deliverymanBalconyRevealZone"/> (um pouco antes da sacada) e então o
+        /// posiciona no <see cref="deliverymanBalconyPoint"/>, ativado e encarando — parado,
         /// esperando. Assim ele já ESTÁ lá quando ela olha, sem "pipocar" no momento do foco.
         /// FALLBACK sem zona: revela ao entrar num raio maior da própria sacada. Null-safe:
         /// sem entregador/ponto, não faz nada (o sighting cai no fallback só-pensamento).
         /// </summary>
-        private IEnumerator RevealBalconyEntregador()
+        private IEnumerator RevealBalconyDeliveryman()
         {
-            if (entregador == null || entregadorBalconyPoint == null)
+            if (deliveryman == null || deliverymanBalconyPoint == null)
                 yield break;
 
             // Zona de gatilho: a de revelação, ou (fallback) um raio maior da sacada, para
             // ainda revelar "um pouco antes" de a Clear entrar na zona apertada de comer.
-            Transform zone = entregadorBalconyRevealZone != null ? entregadorBalconyRevealZone : balconyPoint;
-            float radius = entregadorBalconyRevealZone != null ? entregadorBalconyRevealRadius : balconyRadius * 2.5f;
+            Transform zone = deliverymanBalconyRevealZone != null ? deliverymanBalconyRevealZone : balconyPoint;
+            float radius = deliverymanBalconyRevealZone != null ? deliverymanBalconyRevealRadius : balconyRadius * 2.5f;
 
             if (zone != null)
                 yield return new WaitUntil(() => PlayerInZone(zone, radius));
 
             // Posiciona e ativa de longe, encarando a Clear — parado, esperando ser visto.
-            ActivateEntregadorAt(entregadorBalconyPoint);
+            ActivateDeliverymanAt(deliverymanBalconyPoint);
         }
 
         /// <summary>
         /// O susto da sacada (Beat 6): o ENTREGADOR já foi revelado de longe
-        /// (<see cref="RevealBalconyEntregador"/>) e está parado no
-        /// <see cref="entregadorBalconyPoint"/> encarando a Clear. A câmera TRAVA nele
+        /// (<see cref="RevealBalconyDeliveryman"/>) e está parado no
+        /// <see cref="deliverymanBalconyPoint"/> encarando a Clear. A câmera TRAVA nele
         /// (<see cref="StartCameraFocus"/> — trava movimento e olhar, o Director dirige a
-        /// câmera), toca o <see cref="balconyEntregadorSound"/> e dispara o
-        /// <see cref="balconyEntregadorThought"/>. Ao FIM do foco, em vez de simplesmente
+        /// câmera), toca o <see cref="balconyDeliverymanSound"/> e dispara o
+        /// <see cref="balconyDeliverymanThought"/>. Ao FIM do foco, em vez de simplesmente
         /// sumir, ele CAMINHA (Walking) até o ponto de saída
-        /// (<see cref="WalkEntregadorBalconyExit"/>, câmera seguindo-o) e SÓ ENTÃO some.
+        /// (<see cref="WalkDeliverymanBalconyExit"/>, câmera seguindo-o) e SÓ ENTÃO some.
         /// FALLBACK: sem entregador/ponto, mostra só o pensamento (sem trava de câmera).
         /// </summary>
-        private IEnumerator BalconyEntregadorSighting()
+        private IEnumerator BalconyDeliverymanSighting()
         {
-            if (entregador == null || entregadorBalconyPoint == null)
+            if (deliveryman == null || deliverymanBalconyPoint == null)
             {
-                Debug.LogWarning("[Act3Director] entregador/entregadorBalconyPoint ausente; susto da sacada sem trava de câmera.", this);
-                yield return ShowThoughtAndWait(balconyEntregadorThought);
+                Debug.LogWarning("[Act3Director] entregador/deliverymanBalconyPoint ausente; susto da sacada sem trava de câmera.", this);
+                yield return ShowThoughtAndWait(balconyDeliverymanThought);
                 yield break;
             }
 
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
-            // O entregador já foi revelado (RevealBalconyEntregador) e está de longe
+            // O entregador já foi revelado (RevealBalconyDeliveryman) e está de longe
             // encarando. Se, por algum motivo (salto de debug / sem zona), ele não estiver
             // ativo, ativa agora como fallback; senão só o re-encara antes do foco.
-            if (!entregador.activeSelf)
-                ActivateEntregadorAt(entregadorBalconyPoint);
+            if (!deliveryman.activeSelf)
+                ActivateDeliverymanAt(deliverymanBalconyPoint);
             else
-                FaceTowards(entregador.transform, playerController.transform.position);
+                FaceTowards(deliveryman.transform, playerController.transform.position);
 
             // Sting no instante em que a câmera trava nele, e foco forçado seguindo-o.
-            PlaySound(balconyEntregadorSound);
-            StartCameraFocus(entregador.transform);
+            PlaySound(balconyDeliverymanSound);
+            StartCameraFocus(deliveryman.transform);
 
             // Pensamento enquanto a câmera está travada no entregador.
-            yield return ShowThoughtAndWait(balconyEntregadorThought);
+            yield return ShowThoughtAndWait(balconyDeliverymanThought);
 
             // A luminária da calçada em cima dele PISCA até APAGAR de vez — ele fica no
             // escuro. Só depois disso ele sai andando.
@@ -1837,44 +1883,44 @@ namespace TheDelivery.Narrative
 
             // Fim do momento: em vez de apagar, ele dá meia-volta e CAMINHA para longe (a
             // câmera continua seguindo-o) até o ponto de saída, e SÓ ENTÃO some.
-            yield return WalkEntregadorBalconyExit();
+            yield return WalkDeliverymanBalconyExit();
 
             // Solta a câmera (sem snap), some com o entregador e devolve o controle livre.
             StopCameraFocus();
-            DeactivateEntregador();
+            DeactivateDeliveryman();
             EnsurePlayerFree();
         }
 
         /// <summary>
         /// Saída do entregador da sacada: ao fim do foco, ele gira no próprio eixo para
-        /// encarar a saída e CAMINHA (Walking) pelo <see cref="entregadorBalconyExitPath"/>
-        /// (waypoints em ordem) — ou pelo <see cref="entregadorBalconyExitPoint"/> em linha
+        /// encarar a saída e CAMINHA (Walking) pelo <see cref="deliverymanBalconyExitPath"/>
+        /// (waypoints em ordem) — ou pelo <see cref="deliverymanBalconyExitPoint"/> em linha
         /// reta (fallback) — até um lugar fora de vista, onde é escondido/desativado por quem
         /// chama. A câmera (foco ainda ativo) o segue durante o trajeto. Sem path nem ponto,
         /// ele apenas some (comportamento antigo), com aviso.
         /// </summary>
-        private IEnumerator WalkEntregadorBalconyExit()
+        private IEnumerator WalkDeliverymanBalconyExit()
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 yield break;
 
             List<Transform> path = new List<Transform>();
-            if (entregadorBalconyExitPath != null)
-                foreach (Transform wp in entregadorBalconyExitPath)
+            if (deliverymanBalconyExitPath != null)
+                foreach (Transform wp in deliverymanBalconyExitPath)
                     if (wp != null)
                         path.Add(wp);
-            if (path.Count == 0 && entregadorBalconyExitPoint != null)
-                path.Add(entregadorBalconyExitPoint);
+            if (path.Count == 0 && deliverymanBalconyExitPoint != null)
+                path.Add(deliverymanBalconyExitPoint);
 
             if (path.Count == 0)
             {
-                Debug.LogWarning("[Act3Director] sem entregadorBalconyExitPath/Point; o entregador some sem caminhar na sacada.", this);
+                Debug.LogWarning("[Act3Director] sem deliverymanBalconyExitPath/Point; o entregador some sem caminhar na sacada.", this);
                 yield break;
             }
 
             // Meia-volta suave para encarar a saída e caminhada contínua até sumir.
-            yield return RotateEntregadorToward(path[0].position);
-            yield return WalkEntregadorThrough(path.ToArray());
+            yield return RotateDeliverymanToward(path[0].position);
+            yield return WalkDeliverymanThrough(path.ToArray());
         }
 
         /// <summary>
@@ -1939,11 +1985,11 @@ namespace TheDelivery.Narrative
         /// Caminha o entregador em linha reta (sem NavMesh) até um alvo no plano,
         /// encarando a direção do movimento. Para quando chega perto do alvo.
         /// </summary>
-        private IEnumerator WalkEntregadorTo(Vector3 worldTarget)
+        private IEnumerator WalkDeliverymanTo(Vector3 worldTarget)
         {
-            SetEntregadorWalking(true);
-            yield return StepEntregadorTo(worldTarget);
-            SetEntregadorWalking(false);
+            SetDeliverymanWalking(true);
+            yield return StepDeliverymanTo(worldTarget);
+            SetDeliverymanWalking(false);
         }
 
         /// <summary>
@@ -1952,16 +1998,16 @@ namespace TheDelivery.Narrative
         /// (sem piscar Idle nas quinas). Caminha em linha reta até o alvo no plano,
         /// encarando a direção do movimento; para ao chegar perto.
         /// </summary>
-        private IEnumerator StepEntregadorTo(Vector3 worldTarget)
+        private IEnumerator StepDeliverymanTo(Vector3 worldTarget)
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 yield break;
 
-            Transform t = entregador.transform;
+            Transform t = deliveryman.transform;
             Vector3 target = new Vector3(worldTarget.x, t.position.y, worldTarget.z);
             FaceTowards(t, target);
 
-            float speed = Mathf.Max(0.01f, entregadorWalkSpeed);
+            float speed = Mathf.Max(0.01f, deliverymanWalkSpeed);
             while ((t.position - target).sqrMagnitude > 0.05f * 0.05f)
             {
                 t.position = Vector3.MoveTowards(t.position, target, speed * Time.deltaTime);
@@ -1971,55 +2017,55 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// Saída do entregador pelo corredor: percorre <see cref="entregadorExitPath"/> EM
-        /// ORDEM, um trecho reto por waypoint (<see cref="WalkEntregadorTo"/> já encara a
+        /// Saída do entregador pelo corredor: percorre <see cref="deliverymanExitPath"/> EM
+        /// ORDEM, um trecho reto por waypoint (<see cref="WalkDeliverymanTo"/> já encara a
         /// direção a cada trecho, então ele "dobra" a esquina do L naturalmente). Os
         /// waypoints seguem o corredor, evitando que ele atravesse parede — o que acontecia
-        /// com o ponto único em linha reta. Sem path, usa o <see cref="entregadorExitPoint"/>
+        /// com o ponto único em linha reta. Sem path, usa o <see cref="deliverymanExitPoint"/>
         /// (linha reta, fallback); sem nenhum dos dois, ele apenas some.
         /// </summary>
-        private IEnumerator WalkEntregadorExit()
+        private IEnumerator WalkDeliverymanExit()
         {
-            if (entregadorExitPath != null && entregadorExitPath.Length > 0)
+            if (deliverymanExitPath != null && deliverymanExitPath.Length > 0)
             {
-                yield return WalkEntregadorThrough(entregadorExitPath);
+                yield return WalkDeliverymanThrough(deliverymanExitPath);
             }
-            else if (entregadorExitPoint != null)
+            else if (deliverymanExitPoint != null)
             {
-                yield return WalkEntregadorTo(entregadorExitPoint.position);
+                yield return WalkDeliverymanTo(deliverymanExitPoint.position);
             }
             else
             {
-                Debug.LogWarning("[Act3Director] sem entregadorExitPath nem entregadorExitPoint; o entregador some sem caminhar.", this);
+                Debug.LogWarning("[Act3Director] sem deliverymanExitPath nem deliverymanExitPoint; o entregador some sem caminhar.", this);
             }
         }
 
         /// <summary>
         /// Caminha o entregador pelos waypoints de <paramref name="path"/> EM ORDEM, um
-        /// trecho reto por ponto (<see cref="WalkEntregadorTo"/> já o vira para a direção de
+        /// trecho reto por ponto (<see cref="WalkDeliverymanTo"/> já o vira para a direção de
         /// cada trecho). Null-safe; ignora entradas nulas e arrays vazios.
         /// </summary>
-        private IEnumerator WalkEntregadorThrough(Transform[] path)
+        private IEnumerator WalkDeliverymanThrough(Transform[] path)
         {
             if (path == null)
                 yield break;
 
             // Anima uma vez para o trajeto inteiro: Walking fica ativo do 1º ao último
-            // waypoint (StepEntregadorTo não mexe na animação), sem piscar Idle nas quinas.
-            SetEntregadorWalking(true);
+            // waypoint (StepDeliverymanTo não mexe na animação), sem piscar Idle nas quinas.
+            SetDeliverymanWalking(true);
             foreach (Transform wp in path)
             {
                 if (wp != null)
-                    yield return StepEntregadorTo(wp.position);
+                    yield return StepDeliverymanTo(wp.position);
             }
-            SetEntregadorWalking(false);
+            SetDeliverymanWalking(false);
         }
 
         /// <summary>
         /// Liga/desliga a animação de CAMINHAR do entregador durante a travessia scriptada
         /// do Ato 3. No Ato 3 a FSM (<see cref="AntagonistAI"/>) está DESLIGADA — ela é
         /// quem normalmente dirige o Animator (param Speed) —, então o Director seta o
-        /// param à mão: <see cref="entregadorWalkSpeed"/> dispara o estado Walking, 0 volta
+        /// param à mão: <see cref="deliverymanWalkSpeed"/> dispara o estado Walking, 0 volta
         /// para Idle. Mantém o param de perseguição em false (o entregador só caminha).
         ///
         /// NÃO impacta o Ato 4: escreve só os params Speed/IsChasing (que o
@@ -2027,67 +2073,67 @@ namespace TheDelivery.Narrative
         /// Ato 4) e NÃO toca em applyRootMotion nem em qualquer outro estado persistente do
         /// Animator.
         ///
-        /// Usa o <see cref="entregadorAnimator"/> ATRIBUÍDO (o do filho que anima o corpo —
+        /// Usa o <see cref="deliverymanAnimator"/> ATRIBUÍDO (o do filho que anima o corpo —
         /// o MESMO do shadowAnimator do Ato 4). O entregador é um objeto COMPOSTO: a raiz
         /// tem outro Animator (sem o controller de locomoção), então buscar pela raiz pegava
         /// o Animator errado (sintoma: "desliza sem animar"). Sem o campo atribuído, cai num
         /// fallback por <c>GetComponentInChildren</c>; no-op sem Animator.
         /// </summary>
-        private void SetEntregadorWalking(bool walking)
+        private void SetDeliverymanWalking(bool walking)
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 return;
 
             // Preferir o Animator ATRIBUÍDO (o do FILHO que anima o corpo — mesmo do
             // shadowAnimator do Ato 4). Fallback só se vazio: GetComponentInChildren
             // (NÃO GetComponent, que pegaria o Animator da RAIZ, sem o controller certo).
-            if (entregadorAnimator == null)
+            if (deliverymanAnimator == null)
             {
-                entregadorAnimator = entregador.GetComponentInChildren<Animator>();
-                if (entregadorAnimator == null)
+                deliverymanAnimator = deliveryman.GetComponentInChildren<Animator>();
+                if (deliverymanAnimator == null)
                 {
-                    Debug.LogWarning("[Act3Director] Animator do entregador não encontrado; a animação Walking não vai tocar. Atribua 'entregadorAnimator' (o MESMO do shadowAnimator do Ato 4).", this);
+                    Debug.LogWarning("[Act3Director] Animator do entregador não encontrado; a animação Walking não vai tocar. Atribua 'deliverymanAnimator' (o MESMO do shadowAnimator do Ato 4).", this);
                     return;
                 }
             }
 
-            if (walking && entregadorAnimator.runtimeAnimatorController == null)
+            if (walking && deliverymanAnimator.runtimeAnimatorController == null)
                 Debug.LogWarning("[Act3Director] O Animator do entregador está SEM Controller — o param Speed não dispara nenhuma animação. Verifique se é o Animator do FILHO (modelo do antagonista), não o da raiz.", this);
 
-            entregadorAnimator.SetFloat(entregadorSpeedParam, walking ? Mathf.Max(0.01f, entregadorWalkSpeed) : 0f);
-            entregadorAnimator.SetBool(entregadorChasingParam, false);
+            deliverymanAnimator.SetFloat(deliverymanSpeedParam, walking ? Mathf.Max(0.01f, deliverymanWalkSpeed) : 0f);
+            deliverymanAnimator.SetBool(deliverymanChasingParam, false);
         }
 
         /// <summary>
         /// Ativa o entregador como PROP scriptado num ponto, encarando o player. O
         /// entregador é o MESMO objeto do Antagonist do Ato 4 (FSM + NavMeshAgent); aqui
         /// ele é movido só por <c>transform.position</c>, então a FSM e o NavMeshAgent são
-        /// DESLIGADOS antes de ativar (<see cref="SetEntregadorBrainEnabled"/>) — senão eles
+        /// DESLIGADOS antes de ativar (<see cref="SetDeliverymanBrainEnabled"/>) — senão eles
         /// assumiriam o transform e o levariam a patrulhar/caçar, fazendo o entregador
         /// "sumir" do corredor (sintoma de não renderizar onde deveria). Posiciona ANTES de
         /// ativar (com o agente já off, o transform manda) e encara a Clear. Null-safe.
         /// </summary>
-        private void ActivateEntregadorAt(Transform point, bool facePlayer = true)
+        private void ActivateDeliverymanAt(Transform point, bool facePlayer = true)
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 return;
 
-            SetEntregadorBrainEnabled(false);
+            SetDeliverymanBrainEnabled(false);
 
             if (point != null)
-                entregador.transform.position = point.position;
+                deliveryman.transform.position = point.position;
             else
                 Debug.LogWarning("[Act3Director] ponto de aparição do entregador nulo; ativando na posição atual.", this);
 
-            entregador.SetActive(true);
+            deliveryman.SetActive(true);
 
             // Por padrão encara a Clear (aparição parada). Quando vai CAMINHAR em seguida
-            // (ex.: vindo do elevador na entrega), facePlayer=false: o WalkEntregadorTo já
+            // (ex.: vindo do elevador na entrega), facePlayer=false: o WalkDeliverymanTo já
             // o vira para a direção do trajeto a cada trecho.
             if (facePlayer)
-                FaceTowards(entregador.transform, playerController.transform.position);
+                FaceTowards(deliveryman.transform, playerController.transform.position);
 
-            Debug.Log($"[Act3Director] Entregador ativado em {(point != null ? point.name : "posição atual")} (pos={entregador.transform.position}).", this);
+            Debug.Log($"[Act3Director] Entregador ativado em {(point != null ? point.name : "posição atual")} (pos={deliveryman.transform.position}).", this);
         }
 
         /// <summary>
@@ -2096,13 +2142,13 @@ namespace TheDelivery.Narrative
         /// (handoff sem reload), reativando-o como caçador. Sem religar aqui, o Antagonist
         /// chegaria ao Ato 4 com a FSM/agente desligados. Null-safe.
         /// </summary>
-        private void DeactivateEntregador()
+        private void DeactivateDeliveryman()
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 return;
 
-            entregador.SetActive(false);
-            SetEntregadorBrainEnabled(true);
+            deliveryman.SetActive(false);
+            SetDeliverymanBrainEnabled(true);
         }
 
         /// <summary>
@@ -2113,28 +2159,28 @@ namespace TheDelivery.Narrative
         /// Tudo null-safe: se o entregador for um prop simples (sem esses componentes), os
         /// <c>GetComponent</c> retornam null e nada acontece.
         /// </summary>
-        private void SetEntregadorBrainEnabled(bool on)
+        private void SetDeliverymanBrainEnabled(bool on)
         {
-            if (entregador == null)
+            if (deliveryman == null)
                 return;
 
-            NavMeshAgent agent = entregador.GetComponent<NavMeshAgent>();
+            NavMeshAgent agent = deliveryman.GetComponent<NavMeshAgent>();
             if (agent != null)
                 agent.enabled = on;
 
-            AntagonistAI ai = entregador.GetComponent<AntagonistAI>();
+            AntagonistAI ai = deliveryman.GetComponent<AntagonistAI>();
             if (ai != null)
                 ai.enabled = on;
 
-            PatrolBehavior patrol = entregador.GetComponent<PatrolBehavior>();
+            PatrolBehavior patrol = deliveryman.GetComponent<PatrolBehavior>();
             if (patrol != null)
                 patrol.enabled = on;
 
-            AIVision vision = entregador.GetComponent<AIVision>();
+            AIVision vision = deliveryman.GetComponent<AIVision>();
             if (vision != null)
                 vision.enabled = on;
 
-            AIHearing hearing = entregador.GetComponent<AIHearing>();
+            AIHearing hearing = deliveryman.GetComponent<AIHearing>();
             if (hearing != null)
                 hearing.enabled = on;
         }
@@ -2184,7 +2230,7 @@ namespace TheDelivery.Narrative
         /// Mantém a câmera apontada para o alvo a cada frame: gira suavemente até travar
         /// nele (giro inicial) e depois o segue enquanto ele anda. O YAW vai no CORPO e o
         /// PITCH na câmera (mesma convenção do <see cref="PlayerController"/>: pitch &gt; 0
-        /// olha para baixo). A altura encarada é o alvo + <see cref="entregadorLookHeight"/>
+        /// olha para baixo). A altura encarada é o alvo + <see cref="deliverymanLookHeight"/>
         /// (tronco/cabeça). Roda até ser parada por <see cref="StopCameraFocus"/>.
         /// </summary>
         private IEnumerator CameraFocusRoutine(Transform target)
@@ -2196,7 +2242,7 @@ namespace TheDelivery.Narrative
 
             while (true)
             {
-                Vector3 focus = target.position + Vector3.up * entregadorLookHeight;
+                Vector3 focus = target.position + Vector3.up * deliverymanLookHeight;
                 Vector3 dir = focus - cam.position;
                 if (dir.sqrMagnitude > 1e-6f)
                 {
@@ -2350,8 +2396,8 @@ namespace TheDelivery.Narrative
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.cyan;
-            if (entregadorCruzaPoint != null)
-                Gizmos.DrawWireSphere(entregadorCruzaPoint.position, entregadorCruzaRadius);
+            if (deliverymanCrossPoint != null)
+                Gizmos.DrawWireSphere(deliverymanCrossPoint.position, deliverymanCrossRadius);
 
             Gizmos.color = Color.green;
             if (apartmentDoorZone != null)
@@ -2362,26 +2408,26 @@ namespace TheDelivery.Narrative
                 Gizmos.DrawWireSphere(fridgeZone.position, fridgeRadius);
 
             Gizmos.color = Color.magenta;
-            if (vizinhoPortaZone != null)
-                Gizmos.DrawWireSphere(vizinhoPortaZone.position, vizinhoRadius);
+            if (neighborDoorZone != null)
+                Gizmos.DrawWireSphere(neighborDoorZone.position, neighborRadius);
 
             Gizmos.color = Color.yellow;
             if (bedPoint != null)
                 Gizmos.DrawWireSphere(bedPoint.position, bedRadius);
 
-            if (elevadorSaidaPoint != null)
+            if (elevatorExitPoint != null)
             {
                 Gizmos.color = Color.white;
-                Gizmos.DrawWireCube(elevadorSaidaPoint.position, Vector3.one * 0.3f);
+                Gizmos.DrawWireCube(elevatorExitPoint.position, Vector3.one * 0.3f);
             }
             // Caminho de saída do entregador: polilinha laranja partindo do spawn,
             // passando por cada waypoint (esquinas do L). Fallback no ponto único.
             Gizmos.color = new Color(1f, 0.5f, 0f); // laranja
-            Transform exitStart = entregadorCruzaSpawn != null ? entregadorCruzaSpawn : entregadorCruzaPoint;
-            if (entregadorExitPath != null && entregadorExitPath.Length > 0)
+            Transform exitStart = deliverymanCrossSpawn != null ? deliverymanCrossSpawn : deliverymanCrossPoint;
+            if (deliverymanExitPath != null && deliverymanExitPath.Length > 0)
             {
-                Vector3 prev = exitStart != null ? exitStart.position : entregadorExitPath[0].position;
-                foreach (Transform wp in entregadorExitPath)
+                Vector3 prev = exitStart != null ? exitStart.position : deliverymanExitPath[0].position;
+                foreach (Transform wp in deliverymanExitPath)
                 {
                     if (wp == null)
                         continue;
@@ -2390,9 +2436,9 @@ namespace TheDelivery.Narrative
                     prev = wp.position;
                 }
             }
-            else if (entregadorExitPoint != null && exitStart != null)
+            else if (deliverymanExitPoint != null && exitStart != null)
             {
-                Gizmos.DrawLine(exitStart.position, entregadorExitPoint.position);
+                Gizmos.DrawLine(exitStart.position, deliverymanExitPoint.position);
             }
         }
 #endif

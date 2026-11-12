@@ -42,7 +42,7 @@ namespace TheDelivery.EditorTools
 
             if (selection.Length == 0)
             {
-                Debug.LogWarning("[BoneAttachment] Selecione na Hierarchy o objeto que deve seguir a mão " +
+                Debug.LogWarning("[BoneAttachmentSetup] Selecione na Hierarchy o objeto que deve seguir a mão " +
                                  "(ex.: o 'Hand' que segura a xícara).");
                 return;
             }
@@ -57,7 +57,7 @@ namespace TheDelivery.EditorTools
                 Animator animator = target.GetComponentInParent<Animator>();
                 if (animator == null)
                 {
-                    Debug.LogWarning($"[BoneAttachment] '{target.name}' não está dentro de nenhum personagem com " +
+                    Debug.LogWarning($"[BoneAttachmentSetup] '{target.name}' não está dentro de nenhum personagem com " +
                                      "Animator. Ele precisa ser filho (em algum nível) do objeto animado.", target);
                     continue;
                 }
@@ -65,7 +65,7 @@ namespace TheDelivery.EditorTools
                 Transform hand = FindHandBone(animator.transform, target.transform);
                 if (hand == null)
                 {
-                    Debug.LogWarning($"[BoneAttachment] Não achei bone de mão dentro de '{animator.name}'. " +
+                    Debug.LogWarning($"[BoneAttachmentSetup] Não achei bone de mão dentro de '{animator.name}'. " +
                                      "Adicione o BoneAttachment na mão e arraste o bone certo pro campo 'Bone'.", target);
                     continue;
                 }
@@ -86,14 +86,14 @@ namespace TheDelivery.EditorTools
                 EditorUtility.SetDirty(attachment);
                 attached++;
 
-                Debug.Log($"[BoneAttachment] '{target.name}' preso ao bone '{hand.name}' de '{animator.name}'.", target);
+                Debug.Log($"[BoneAttachmentSetup] '{target.name}' preso ao bone '{hand.name}' de '{animator.name}'.", target);
             }
 
             if (attached > 0)
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
             if (attached > 0)
-                Debug.Log($"[BoneAttachment] {attached} objeto(s) preso(s). Dê Play pra conferir o encaixe; " +
+                Debug.Log($"[BoneAttachmentSetup] {attached} objeto(s) preso(s). Dê Play pra conferir o encaixe; " +
                           "pra corrigir a pega, mexa em Position/Rotation Offset no Inspector.");
         }
 

@@ -203,7 +203,7 @@ namespace TheDelivery.Player
         /// <summary>
         /// Velocidade de caminhada (m/s). Setter público para sequências narrativas que
         /// alteram o andar sem trocar de controlador — por exemplo o
-        /// <c>PesadeloDirector</c>, que arrasta a Clear pelo corredor do sonho.
+        /// <c>NightmareDirector</c>, que arrasta a Clear pelo corredor do sonho.
         /// Como o player é instanciado por CENA, mexer aqui não vaza para as outras.
         /// </summary>
         public float WalkSpeed { get => walkSpeed; set => walkSpeed = value; }
@@ -211,7 +211,7 @@ namespace TheDelivery.Player
         /// <summary>
         /// Velocidade de corrida (m/s). Par do <see cref="WalkSpeed"/>, e pelo mesmo
         /// motivo: uma sequência que solta a corrida precisa poder AFINÁ-LA. No
-        /// <c>PesadeloDirector</c> essa relação é o próprio design da perseguição — a
+        /// <c>NightmareDirector</c> essa relação é o próprio design da perseguição — a
         /// criatura anda mais rápido do que a Clear caminha e mais devagar do que ela
         /// corre, então correr é a única saída e o número aqui é metade dessa conta.
         /// </summary>
@@ -509,7 +509,7 @@ namespace TheDelivery.Player
             Vector2 input = CanMove ? moveAction.ReadValue<Vector2>() : ScriptedMove;
 
             // Correr só em pé: agachado e correndo ao mesmo tempo não existe (vulnerabilidade).
-            // CanRun permite a uma cena tirar a corrida de vez (ver PesadeloDirector).
+            // CanRun permite a uma cena tirar a corrida de vez (ver NightmareDirector).
             IsRunning = CanRun && CanMove && !IsCrouching && runAction.IsPressed() && input.y > 0.1f;
 
             float targetSpeed = IsCrouching ? crouchSpeed : (IsRunning ? runSpeed : walkSpeed);

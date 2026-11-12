@@ -27,7 +27,7 @@ namespace TheDelivery.EditorTools
         private const string ThoughtPath = "Assets/_Project/ScriptableObjects/Thoughts/Thought_Act1-0.asset";
         private const string FieldName = "nightmareThought";
 
-        [MenuItem("Tools/The Delivery/Ato 1 - Pensamento ao acordar do pesadelo")]
+        [MenuItem("Tools/The Delivery/Cafeteria - Pensamento ao acordar do pesadelo")]
         private static void Run()
         {
             ThoughtData thought = AssetDatabase.LoadAssetAtPath<ThoughtData>(ThoughtPath);

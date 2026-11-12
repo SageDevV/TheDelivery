@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -179,7 +180,8 @@ namespace TheDelivery.Narrative
         [Tooltip("Distância para considerar que chegou à porta.")]
         [SerializeField] private float doorArrivalThreshold = 0.5f;
         [Tooltip("Pausa de respiro após o antagonista sumir, antes do lembrete do celular.")]
-        [SerializeField] private float respiroDuration = 3f;
+        [FormerlySerializedAs("respiroDuration")]
+        [SerializeField] private float breatherDuration = 3f;
 
         [Header("Beat 5 - Run To Landline")]
         [Tooltip("Pensamento que aponta pro fixo: \"O telefone fixo. Na sala.\"")]
@@ -258,14 +260,15 @@ namespace TheDelivery.Narrative
         [SerializeField] private float sirenFadeOut = 1.5f;
         [Tooltip("Luzes de sirene das VIATURAS (as montadas nos carros). Já vêm ACESAS na aproximação — ligadas quando as viaturas partem, para o giroflex piscar enquanto chegam. Desligadas na emboscada. Dê a cada uma phaseOffset/flashesPerSecond diferentes para dessincronizar. Opcional: vazio.")]
         [SerializeField] private SirenLightEffect[] sirenEffects;
-        [Tooltip("Luzes de sirene que só acendem quando as viaturas ESTACIONAM (ex.: a sirene da JANELA / Batoteira, que varre o apê). Ligadas após WaitPoliceCarsParked, desligadas na emboscada. NÃO inclua aqui as sirenes das viaturas (essas vão em sirenEffects e já vêm acesas na aproximação).")]
+        [Tooltip("Luzes de sirene que só acendem quando as viaturas ESTACIONAM (ex.: a sirene da JANELA / ParkedSiren, que varre o apê). Ligadas após WaitPoliceCarsParked, desligadas na emboscada. NÃO inclua aqui as sirenes das viaturas (essas vão em sirenEffects e já vêm acesas na aproximação).")]
         [SerializeField] private SirenLightEffect[] parkedSirenEffects;
         [Tooltip("Viaturas que PERCORREM um trajeto até a vaga antes de a sirene/luzes ligarem. Elas partem quando o killer some e a sirene + os SirenLightEffect só entram quando TODAS estacionarem. Opcional: vazio = a sirene toca logo após o reliefPause (comportamento antigo, viaturas estáticas).")]
         [SerializeField] private PoliceCarArrival[] policeCars;
         [Tooltip("Timeout (s) de segurança esperando as viaturas estacionarem: se um trajeto emperrar, a sirene entra assim mesmo para não travar o clímax. 0 = espera indefinidamente.")]
         [SerializeField] private float policeCarsParkTimeout = 20f;
         [Tooltip("Pensamento que incentiva o player a sair: \"Ele foi embora?\"")]
-        [SerializeField] private ThoughtData heFoiEmboraThought;
+        [FormerlySerializedAs("heFoiEmboraThought")]
+        [SerializeField] private ThoughtData heLeftThought;
         [Tooltip("Zona no corredor (indo pra sala) que dispara a porrada.")]
         [SerializeField] private Transform ambushZone;
         [Tooltip("Raio da zona de emboscada.")]
@@ -1109,7 +1112,7 @@ namespace TheDelivery.Narrative
         /// o controle direto do NavMeshAgent e leva o antagonista até a porta da frente,
         /// onde ele desaparece (SetActive false — vai voltar no clímax). NÃO usa a FSM
         /// para mover: ela é suspensa antes (<see cref="AntagonistAI.SuspendForDirector"/>)
-        /// para não disputar o agente. Após sumir, segura <see cref="respiroDuration"/>
+        /// para não disputar o agente. Após sumir, segura <see cref="breatherDuration"/>
         /// de silêncio. Não avança o beat — quem chama (o monitor) faz isso ao retornar.
         /// </summary>
         private IEnumerator AntagonistLeaveRoutine()
@@ -1142,7 +1145,7 @@ namespace TheDelivery.Narrative
             Debug.Log("[Act4Director] Antagonista saiu de cena (respiro enganoso)");
 
             // 4. Pausa de respiro (silêncio) antes do lembrete do celular.
-            yield return new WaitForSeconds(Mathf.Max(0f, respiroDuration));
+            yield return new WaitForSeconds(Mathf.Max(0f, breatherDuration));
         }
 
         /// <summary>
@@ -1542,7 +1545,7 @@ namespace TheDelivery.Narrative
         /// se AFASTAM (falso alívio — ele "vai embora"), seguidos de um silêncio. As
         /// sirenes de polícia entram ao fundo (a ajuda do telefonema chegou — esperança)
         /// e PERMANECEM tocando, conectando com o epílogo. Um pensamento
-        /// (<see cref="heFoiEmboraThought"/>) incentiva o player a sair; ele sai do box
+        /// (<see cref="heLeftThought"/>) incentiva o player a sair; ele sai do box
         /// manualmente (F → <see cref="PlayerHiding.ExitHideSpot"/>, que devolve CanMove)
         /// e anda livre rumo à sala. Ao entrar na <see cref="ambushZone"/> do corredor,
         /// a emboscada dispara: uma batida na cabeça (só som, sem gore), tela preta
@@ -1583,7 +1586,7 @@ namespace TheDelivery.Narrative
             StartPoliceCarsDriving();
 
             // As sirenes DAS VIATURAS já vêm ACESAS na aproximação: o giroflex pisca
-            // enquanto elas chegam. A luz da JANELA (Batoteira) NÃO — essa só acende ao
+            // enquanto elas chegam. A luz da JANELA (ParkedSiren) NÃO — essa só acende ao
             // estacionar (passo 3b). Só luzes; o áudio da sirene entra no passo 3.
             StartSirenEffects(sirenEffects);
 
@@ -1600,15 +1603,15 @@ namespace TheDelivery.Narrative
 
             // 3b. Espera as viaturas ESTACIONAREM (com timeout de segurança). As sirenes
             //     das viaturas já estão acesas desde a aproximação; aqui só falta a luz
-            //     da JANELA (Batoteira), que passa a varrer o apê agora que a viatura
+            //     da JANELA (ParkedSiren), que passa a varrer o apê agora que a viatura
             //     chegou lá fora. Sem viaturas atribuídas, retorna na hora.
             yield return WaitPoliceCarsParked();
 
-            // Ao estacionar: acende as luzes de estacionamento (a da janela / Batoteira).
+            // Ao estacionar: acende as luzes de estacionamento (a da janela / ParkedSiren).
             StartSirenEffects(parkedSirenEffects);
 
             // 4. Pensamento incentiva sair.
-            ShowThought(heFoiEmboraThought);
+            ShowThought(heLeftThought);
             yield return null;
             yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
 

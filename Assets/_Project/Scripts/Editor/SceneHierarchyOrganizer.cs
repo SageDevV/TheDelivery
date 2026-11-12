@@ -12,7 +12,7 @@ namespace TheDelivery.EditorTools
     /// Padroniza a hierarquia da CENA ATIVA: cria os grupos-container vazios (com transform
     /// IDENTIDADE — pos 0, rot 0, escala 1, para os filhos não se deslocarem) e reparenta os
     /// objetos da RAIZ por heurística (componentes/nome). Serve a todas as cenas dos atos
-    /// (Cafeteria/Recepcao/Apartamento), dando a MESMA estrutura. Tudo via Undo (Ctrl+Z
+    /// (Cafeteria/Reception/Apartment), dando a MESMA estrutura. Tudo via Undo (Ctrl+Z
     /// desfaz). Só processa objetos da raiz — o que já está dentro de um grupo é preservado.
     ///
     /// Grupos: _Managers (directors, NavMeshSurface, sistemas), _UI (Canvas, EventSystem),
@@ -56,11 +56,10 @@ namespace TheDelivery.EditorTools
         // Director). Match por nome EXATO (trimado, case-insensitive).
         private static readonly HashSet<string> ActorNameHints = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Zelador", "Janitor", "Marina", "Entregador", "Antagonist",
-            "Vizinho", "Neighbor", "ShadowFigure",
+            "Janitor", "Marina", "Deliveryman", "Antagonist", "Neighbor", "ShadowFigure",
         };
 
-        [MenuItem("Tools/The Delivery/Organize Scene Hierarchy")]
+        [MenuItem("Tools/The Delivery/Cena - Organizar hierarquia")]
         private static void OrganizeActiveScene()
         {
             Scene scene = SceneManager.GetActiveScene();
@@ -78,7 +77,7 @@ namespace TheDelivery.EditorTools
                 return;
 
             int undoGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName("Organize Scene Hierarchy");
+            Undo.SetCurrentGroupName("Cena - Organizar hierarquia");
 
             Dictionary<string, Transform> groups = EnsureGroups(scene);
 
@@ -117,7 +116,7 @@ namespace TheDelivery.EditorTools
             LogSummary(scene, movedByGroup);
         }
 
-        [MenuItem("Tools/The Delivery/Create Group Containers Only")]
+        [MenuItem("Tools/The Delivery/Cena - Criar só os grupos")]
         private static void CreateGroupsOnly()
         {
             Scene scene = SceneManager.GetActiveScene();

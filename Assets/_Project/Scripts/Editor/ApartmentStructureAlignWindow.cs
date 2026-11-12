@@ -138,7 +138,7 @@ namespace TheDelivery.EditorTools
         private string lastApplyReport;
         private Vector2 scroll;
 
-        [MenuItem("Tools/The Delivery/Apartamento - Alinhar estrutura (paredes, chão, teto)")]
+        [MenuItem("Tools/The Delivery/Apartment - Alinhar estrutura (paredes, chão, teto)")]
         private static void Open() => GetWindow<ApartmentStructureAlignWindow>("Alinhar estrutura");
 
         private void OnEnable()
@@ -158,7 +158,7 @@ namespace TheDelivery.EditorTools
         private void OnGUI()
         {
             EditorGUILayout.HelpBox(
-                "Alinha as peças Parede / Chao / Teto sob o root (a estrutura do apartamento, Atos 3 e 4). " +
+                "Alinha as peças Wall / Floor / Ceiling sob o root (a estrutura do apartamento, Atos 3 e 4). " +
                 "Analise, revise e aplique — um único Undo. Depois de aplicar, a janela reanalisa: tem que dar 0.",
                 MessageType.None);
 
@@ -273,7 +273,7 @@ namespace TheDelivery.EditorTools
             if (root == null)
             {
                 EditorUtility.DisplayDialog("Alinhar estrutura",
-                    $"\"{rootName}\" não encontrado na cena aberta.\n\nAbra Assets/Scenes/Apartamento.unity.", "Ok");
+                    $"\"{rootName}\" não encontrado na cena aberta.\n\nAbra Assets/Scenes/Apartment.unity.", "Ok");
                 return;
             }
 
@@ -372,7 +372,7 @@ namespace TheDelivery.EditorTools
 
             analyzed = true;
             SceneView.RepaintAll();
-            Debug.Log($"[AlinharEstrutura] {pieces.Count} peças, {fixes.Count} correções em " +
+            Debug.Log($"[ApartmentStructureAlignWindow] {pieces.Count} peças, {fixes.Count} correções em " +
                       $"{fixes.Select(f => f.Piece).Distinct().Count()} peças ({outerLoops} voltas" +
                       $"{(converged ? "" : ", NÃO convergiu")}).");
         }
@@ -753,7 +753,7 @@ namespace TheDelivery.EditorTools
                   "Refaça o NavMesh e SALVE a cena (Ctrl+S)."
                 : $"{applied} correções aplicadas em {meshes.Count} peças. Reanálise ainda achou {fixes.Count} — " +
                   "provavelmente de itens desmarcados. Aplique de novo ou revise.";
-            Debug.Log($"[AlinharEstrutura] {lastApplyReport}");
+            Debug.Log($"[ApartmentStructureAlignWindow] {lastApplyReport}");
         }
 
         /// <summary>
@@ -867,7 +867,7 @@ namespace TheDelivery.EditorTools
             }
 
             NavMeshAssetManager.instance.StartBakingSurfaces(surfaces.Cast<Object>().ToArray());
-            Debug.Log($"[AlinharEstrutura] Bake do NavMesh iniciado em {surfaces.Length} surface(s). Salve a cena ao terminar.");
+            Debug.Log($"[ApartmentStructureAlignWindow] Bake do NavMesh iniciado em {surfaces.Length} surface(s). Salve a cena ao terminar.");
         }
 
         // --- Scene view -------------------------------------------------------------
@@ -917,14 +917,14 @@ namespace TheDelivery.EditorTools
             return null;
         }
 
-        /// <summary>Pelo nome, SEM espaços nas pontas — há um "Chao " no Complemento.</summary>
+        /// <summary>Pelo nome, SEM espaços nas pontas — um espaço sobrando não tira a peça da conta.</summary>
         private static bool TryKind(string name, out Kind kind)
         {
             switch (name.Trim())
             {
-                case "Parede": kind = Kind.Wall; return true;
-                case "Chao": kind = Kind.Floor; return true;
-                case "Teto": kind = Kind.Ceiling; return true;
+                case "Wall": kind = Kind.Wall; return true;
+                case "Floor": kind = Kind.Floor; return true;
+                case "Ceiling": kind = Kind.Ceiling; return true;
                 default: kind = default; return false;
             }
         }

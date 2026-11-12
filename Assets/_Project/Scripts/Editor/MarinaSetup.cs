@@ -42,8 +42,8 @@ namespace TheDelivery.EditorTools
     public static class MarinaSetup
     {
         private const string ScenePath = "Assets/Scenes/Cafeteria.unity";
-        private const string WalkingFbxPath = "Assets/_Project/Prefabs/Marina_Walking.fbx";
-        private const string SittingFbxPath = "Assets/_Project/Prefabs/Marina_Sitting.fbx";
+        private const string WalkingFbxPath = "Assets/_Project/Models/Marina_Walking.fbx";
+        private const string SittingFbxPath = "Assets/_Project/Models/Marina_Sitting.fbx";
         private const string ControllerPath = "Assets/_Project/Animation/Controllers/Marina.controller";
 
         private const string WalkingClipName = "Marina_Walking";
@@ -71,7 +71,7 @@ namespace TheDelivery.EditorTools
         /// </summary>
         private static readonly Vector3 ModelCorrectionEuler = Vector3.zero;
 
-        [MenuItem("Tools/The Delivery/Setup Marina (Ato 1 - Cafeteria)")]
+        [MenuItem("Tools/The Delivery/Cafeteria - Montar a Marina")]
         private static void Run()
         {
             // --- 1. Imports ------------------------------------------------
@@ -823,7 +823,7 @@ namespace TheDelivery.EditorTools
         private static void Fail(string message)
         {
             Debug.LogError($"[MarinaSetup] {message}");
-            EditorUtility.DisplayDialog("Setup Marina", message, "OK");
+            EditorUtility.DisplayDialog("Montar a Marina", message, "OK");
         }
     }
 }

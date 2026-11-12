@@ -30,12 +30,12 @@ namespace TheDelivery.EditorTools
         private float idleSpeedThreshold = 0.1f;
         private float transitionDuration = 0.15f;
 
-        private string outputPath = "Assets/Animation/Antagonist.controller";
+        private string outputPath = "Assets/_Project/Animation/Controllers/Antagonist.controller";
 
         private GameObject assignTarget;   // recebe/ganha um Animator
         private GameObject modelFbx;       // FBX do modelo riggado — de onde sai o Avatar humanoide
 
-        [MenuItem("Tools/The Delivery/Build Locomotion Controller")]
+        [MenuItem("Tools/The Delivery/Anim - Montar controller de locomoção")]
         private static void Open()
         {
             var window = GetWindow<LocomotionControllerBuilderWindow>("Locomotion Controller");
@@ -140,7 +140,7 @@ namespace TheDelivery.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             EditorGUIUtility.PingObject(controller);
-            Debug.Log($"[LocomotionControllerBuilder] Controller gerado em \"{outputPath}\" " +
+            Debug.Log($"[LocomotionControllerBuilderWindow] Controller gerado em \"{outputPath}\" " +
                       $"(Idle/Walking/Running, params {speedParam}/{chasingParam}).", controller);
         }
 
@@ -183,7 +183,7 @@ namespace TheDelivery.EditorTools
                 animator.avatar = avatar;
 
             EditorUtility.SetDirty(animator);
-            Debug.Log($"[LocomotionControllerBuilder] Controller atribuído ao Animator de \"{assignTarget.name}\"" +
+            Debug.Log($"[LocomotionControllerBuilderWindow] Controller atribuído ao Animator de \"{assignTarget.name}\"" +
                       (avatar != null ? $" com Avatar \"{avatar.name}\"." : " (sem Avatar — informe o FBX do modelo humanoide)."),
                       assignTarget);
         }

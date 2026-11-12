@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 namespace TheDelivery.EditorTools
 {
     /// <summary>
-    /// LIGA O CÉU DA NOITE ao <see cref="NightfallController"/> da Estrada: quando o
+    /// LIGA O CÉU DA NOITE ao <see cref="NightfallController"/> da Road: quando o
     /// anoitecer fecha, o Skybox/Procedural do fim de tarde sai de cena e entra o
     /// "Cold Night" do AllSky.
     ///
@@ -38,7 +38,7 @@ namespace TheDelivery.EditorTools
     /// </summary>
     public static class NightSkyboxSetup
     {
-        private const string ScenePath = "Assets/Scenes/Estrada.unity";
+        private const string ScenePath = "Assets/Scenes/Road.unity";
 
         /// <summary>
         /// O "Cold Night" de 6 faces (Skybox/6 Sided). O pacote também traz uma versão
@@ -62,7 +62,7 @@ namespace TheDelivery.EditorTools
 
         private const float DefaultHandoff = 0.25f;
 
-        [MenuItem("Tools/The Delivery/Estrada - Céu da noite (Cold Night)")]
+        [MenuItem("Tools/The Delivery/Road - Céu da noite (Cold Night)")]
         private static void Run()
         {
             var skybox = AssetDatabase.LoadAssetAtPath<Material>(SkyboxPath);
@@ -79,7 +79,7 @@ namespace TheDelivery.EditorTools
             NightfallController nightfall = FindNightfall(scene);
             if (nightfall == null)
             {
-                Fail("NightfallController não encontrado na cena Estrada.");
+                Fail("NightfallController não encontrado na cena Road.");
                 return;
             }
 
@@ -129,9 +129,9 @@ namespace TheDelivery.EditorTools
             if (linkedNow && handoffNow)
                 done = $"\"{skybox.name}\" ligado ao NightfallController e nível de encontro dos dois céus gravado";
 
-            Debug.Log($"[NightSkyboxSetup] {done}; cena Estrada salva.", nightfall);
+            Debug.Log($"[NightSkyboxSetup] {done}; cena Road salva.", nightfall);
             EditorUtility.DisplayDialog("Céu da noite",
-                                        $"{done}, e a cena Estrada foi salva.\n\n" +
+                                        $"{done}, e a cena Road foi salva.\n\n" +
                                         "Quando o anoitecer fechar, o céu procedural baixa até um fiapo de brilho e " +
                                         "este acende dali para cima — sem passar pelo preto, que é o que fazia a " +
                                         "troca saltar aos olhos.\n\n" +

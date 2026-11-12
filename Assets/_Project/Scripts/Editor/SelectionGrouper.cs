@@ -15,7 +15,7 @@ namespace TheDelivery.EditorTools
     /// </summary>
     public static class SelectionGrouper
     {
-        [MenuItem("Tools/The Delivery/Group Selection Under New Container %g")]
+        [MenuItem("Tools/The Delivery/Cena - Agrupar seleção em novo grupo %g")]
         private static void GroupSelection()
         {
             // Selection.transforms já filtra filhos cujo pai também está selecionado.

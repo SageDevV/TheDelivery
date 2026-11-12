@@ -20,13 +20,13 @@ namespace TheDelivery.Core
         // estão serializados em campos do Inspector, e inseri-lo no meio
         // deslocaria os índices de Act2/Act3/Act4, remapeando silenciosamente o
         // que já foi autorado nas cenas.
-        ActPercurso,
+        ActJourney,
 
         // COLD OPEN: o pesadelo que abre o jogo, ANTES do Ato 1. Cronologicamente é o
         // primeiro ato de todos, mas fica no fim do enum pela mesma razão que o
-        // ActPercurso — a ordem aqui é histórico de quando o valor foi criado, não a
+        // ActJourney — a ordem aqui é histórico de quando o valor foi criado, não a
         // ordem da narrativa. Quem conta a cronologia é o fluxo de transições.
-        ActPesadelo,
+        ActNightmare,
 
         // A FUGA: o ato que vem DEPOIS do Ato 4 — Clear, sequestrada no fim do
         // apartamento, segue na cena Escape. No fim do enum pela mesma razão dos

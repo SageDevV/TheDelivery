@@ -39,11 +39,11 @@ namespace TheDelivery.Core
                  "então viaja no DontDestroyOnLoad e vale para TODAS as cenas. Deixe VAZIO para resolver sozinho o " +
                  "Volume filho — é o caso normal, já que ele faz parte deste mesmo rig persistente.")]
         [SerializeField] private Volume globalVolume;
-        [Tooltip("Cenas que NÃO recebem o tratamento global — porque trazem o próprio. O Pesadelo é o caso: a visão " +
+        [Tooltip("Cenas que NÃO recebem o tratamento global — porque trazem o próprio. O Nightmare é o caso: a visão " +
                  "turva do sonho (NightmareVision) já tem grão, vinheta e desfoque autorados para ela, e dois Volumes " +
                  "globais disputando os mesmos overrides fazem o resultado depender de quem tem mais prioridade em vez " +
                  "de depender do que foi autorado. Ao sair da cena o tratamento global volta sozinho.")]
-        [SerializeField] private GameScene[] scenesWithoutGlobalVolume = { GameScene.Pesadelo };
+        [SerializeField] private GameScene[] scenesWithoutGlobalVolume = { GameScene.Nightmare };
 
         [Header("Debug")]
         [Tooltip("PULA O PESADELO: começa direto na Cafeteria (Ato 1), como era antes do cold open. " +
@@ -213,8 +213,8 @@ namespace TheDelivery.Core
         /// método próprio para facilitar o ajuste futuro quando houver um menu
         /// principal (que chamaria isto sob demanda em vez de no <see cref="Start"/>).
         ///
-        /// Cronologia completa: Pesadelo -> Cafeteria (Act1) -> Estrada (ActPercurso)
-        /// -> Recepcao (Act2) -> Apartamento (Act3 e Act4) -> Escape (ActEscape).
+        /// Cronologia completa: Nightmare -> Cafeteria (Act1) -> Road (ActJourney)
+        /// -> Reception (Act2) -> Apartment (Act3 e Act4) -> Escape (ActEscape).
         /// </summary>
         public void StartNewGame()
         {
@@ -226,8 +226,8 @@ namespace TheDelivery.Core
                 return;
             }
 
-            CurrentAct = GameAct.ActPesadelo;
-            StartCoroutine(TransitionToScene(GameScene.Pesadelo));
+            CurrentAct = GameAct.ActNightmare;
+            StartCoroutine(TransitionToScene(GameScene.Nightmare));
         }
 
         /// <summary>Define o ato atual (progresso de alto nível).</summary>
@@ -275,7 +275,7 @@ namespace TheDelivery.Core
         /// de volta — o fade (persistente) cobre o intervalo da troca.
         ///
         /// O LOAD É ASSÍNCRONO, e isso não é refinamento: o <c>LoadScene</c> síncrono
-        /// TRAVA O ENGINE INTEIRO enquanto a cena entra, e numa cena grande (a Estrada
+        /// TRAVA O ENGINE INTEIRO enquanto a cena entra, e numa cena grande (a Road
         /// desmonta ~300 MB ao chegar) isso é mais de um segundo de jogo PARADO com a
         /// tela preta de pé. Do lado de cá da tela, tela preta congelada é
         /// indistinguível de transição que não aconteceu — e a reação natural é achar

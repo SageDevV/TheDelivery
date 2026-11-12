@@ -9,7 +9,7 @@ namespace TheDelivery.EditorTools
 {
     /// <summary>
     /// CONFIGURA O ASSOVIO DO ESTRANHO na cena: põe o AudioSource no ator, com os
-    /// números certos, e liga tudo no <see cref="PercursoDirector"/>.
+    /// números certos, e liga tudo no <see cref="JourneyDirector"/>.
     ///
     /// POR QUE ISTO É UM COMANDO: um AudioSource montado à mão erra de três jeitos que
     /// não se distinguem jogando. Com <b>Play On Awake</b> (a caixinha vem MARCADA num
@@ -22,7 +22,7 @@ namespace TheDelivery.EditorTools
     /// O ALCANCE É CALCULADO DE TRÁS PARA A FRENTE: em vez de escolher um Max Distance e
     /// torcer, este comando mede a distância do ator até o gatilho — onde a Clear está no
     /// instante em que o som nasce — e entrega essa medida ao
-    /// <see cref="PercursoDirector.ApplyWhistleSpatialSettings"/>, que resolve o alcance
+    /// <see cref="JourneyDirector.ApplyWhistleSpatialSettings"/>, que resolve o alcance
     /// a partir de QUÃO ALTO o assovio deve chegar ali. A conta mora lá, e não aqui,
     /// porque o director também cria esse source sozinho em runtime: duas contas em dois
     /// arquivos significariam afinar o som no Editor e ouvir outro no Play.
@@ -35,17 +35,17 @@ namespace TheDelivery.EditorTools
     public static class LeaningWhistleSetup
     {
 
-        [MenuItem("Tools/The Delivery/Estrada - Assovio do Leaning")]
+        [MenuItem("Tools/The Delivery/Road - Assovio do Leaning")]
         private static void Run()
         {
             Scene scene = LeaningEncounterSetup.EnsureSceneOpen();
             if (!scene.IsValid())
                 return;
 
-            PercursoDirector director = LeaningEncounterSetup.FindInScene<PercursoDirector>(scene);
+            JourneyDirector director = LeaningEncounterSetup.FindInScene<JourneyDirector>(scene);
             if (director == null)
             {
-                Fail("PercursoDirector não encontrado na cena Estrada.");
+                Fail("JourneyDirector não encontrado na cena Road.");
                 return;
             }
 
@@ -80,7 +80,7 @@ namespace TheDelivery.EditorTools
         /// <paramref name="force"/> true é o modo do comando dedicado: reconfigura tudo,
         /// porque foi exatamente isso que quem o chamou pediu.
         /// </summary>
-        internal static string Configure(PercursoDirector director, bool force, out AudioSource source)
+        internal static string Configure(JourneyDirector director, bool force, out AudioSource source)
         {
             source = null;
 
@@ -91,8 +91,8 @@ namespace TheDelivery.EditorTools
             var actor = so.FindProperty("leaningActor").objectReferenceValue as Transform;
             if (actor == null)
             {
-                return "O PercursoDirector está sem Leaning Actor — não há em quem pôr o AudioSource.\n\n" +
-                       "Rode primeiro: Tools > The Delivery > Estrada - Encontro do Leaning";
+                return "O JourneyDirector está sem Leaning Actor — não há em quem pôr o AudioSource.\n\n" +
+                       "Rode primeiro: Tools > The Delivery > Road - Encontro do Leaning";
             }
 
             var trigger = so.FindProperty("leaningTriggerPoint").objectReferenceValue as Transform;
@@ -130,7 +130,7 @@ namespace TheDelivery.EditorTools
                 // montar o mesmo source em runtime (quando o campo está vazio), e duas
                 // contas de alcance em dois arquivos significam afinar o som no Editor e
                 // ouvir outro no Play.
-                PercursoDirector.ApplyWhistleSpatialSettings(source, Range(actor, trigger));
+                JourneyDirector.ApplyWhistleSpatialSettings(source, Range(actor, trigger));
                 source.volume = Mathf.Clamp01(volume);
             }
 
@@ -151,18 +151,18 @@ namespace TheDelivery.EditorTools
             EditorUtility.SetDirty(director);
 
             sb.AppendLine(created
-                ? $"AudioSource CRIADO em \"{actor.name}\" e ligado no PercursoDirector."
-                : $"AudioSource de \"{actor.name}\" reaproveitado e ligado no PercursoDirector.");
+                ? $"AudioSource CRIADO em \"{actor.name}\" e ligado no JourneyDirector."
+                : $"AudioSource de \"{actor.name}\" reaproveitado e ligado no JourneyDirector.");
             sb.AppendLine();
 
             sb.AppendLine(clip != null
                 ? $"• Clipe: \"{clip.name}\" ({clip.length:0.0} s)"
-                : "• Clipe: NENHUM — largue um assovio em Assets/_Project/SoundEffects/whistle.mp3 e rode de novo");
+                : "• Clipe: NENHUM — largue um assovio em Assets/_Project/SoundEffects/Whistle.mp3 e rode de novo");
 
             sb.AppendLine($"• Fade in: {fadeIn:0.00} s | fade out: {fadeOut:0.00} s" +
                           (fadeIn <= 0f
                               ? "  <- em ZERO: o assovio entra no volume cheio e ESTALA no ataque. " +
-                                "Rode Tools > The Delivery > Estrada - Encontro do Leaning para gravar o padrão na cena."
+                                "Rode Tools > The Delivery > Road - Encontro do Leaning para gravar o padrão na cena."
                               : string.Empty));
 
             if (created || force)
@@ -216,11 +216,11 @@ namespace TheDelivery.EditorTools
                               "vez, que é a única que importa aqui.");
             }
 
-            if (clip != null && clip.name.Contains("humming"))
+            if (clip != null && clip.name.Contains("Humming"))
             {
                 sb.AppendLine();
                 sb.AppendLine("O clipe é um PLACEHOLDER: o projeto ainda não tem um assovio. Serve para afinar o " +
-                              "timing, não para ficar. Largue o som certo em whistle.mp3, limpe o campo Leaning " +
+                              "timing, não para ficar. Largue o som certo em Whistle.mp3, limpe o campo Leaning " +
                               "Whistle no director e rode este comando de novo.");
             }
 
@@ -316,7 +316,7 @@ namespace TheDelivery.EditorTools
 
             if (created || force)
             {
-                PercursoDirector.ApplyWhistleSpatialSettings(call, Range(actor, trigger));
+                JourneyDirector.ApplyWhistleSpatialSettings(call, Range(actor, trigger));
                 call.volume = Mathf.Clamp01(so.FindProperty("leaningCallVolume").floatValue);
             }
 
@@ -329,7 +329,7 @@ namespace TheDelivery.EditorTools
         /// A distância que o assovio precisa vencer: do ator até o gatilho, que é onde a
         /// Clear está no instante em que o som nasce. Só a MEDIDA sai daqui — quem a
         /// transforma em Max Distance é o
-        /// <see cref="PercursoDirector.ApplyWhistleSpatialSettings"/>.
+        /// <see cref="JourneyDirector.ApplyWhistleSpatialSettings"/>.
         /// </summary>
         private static float Range(Transform actor, Transform trigger)
         {
