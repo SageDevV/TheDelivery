@@ -67,6 +67,18 @@ namespace TheDelivery.Player
         /// <summary>Esconderijo atual (null quando não escondido).</summary>
         public HideSpot CurrentHideSpot { get; private set; }
 
+        /// <summary>True durante o lerp de entrada/saída do esconderijo.</summary>
+        public bool IsTransitioning => isTransitioning;
+
+        /// <summary>
+        /// True enquanto o antagonista está arrancando o player do esconderijo
+        /// (<see cref="BeginCapture"/>): look e saída ficam travados, a câmera é de quem captura.
+        /// </summary>
+        public bool IsCaptured { get; private set; }
+
+        /// <summary>CameraHolder do player (a câmera animada pela captura).</summary>
+        public Transform CameraHolder => cameraHolder;
+
         private InputAction lookAction;
         private InputAction interactAction;
 
@@ -136,7 +148,7 @@ namespace TheDelivery.Player
 
         private void Update()
         {
-            if (!IsHidden || isTransitioning)
+            if (!IsHidden || isTransitioning || IsCaptured)
                 return;
 
             HandleHiddenLook(Time.deltaTime);
@@ -183,9 +195,70 @@ namespace TheDelivery.Player
                 antagonistAI.OnPlayerHidWhileSeen(spot);
         }
 
+        /// <summary>
+        /// O antagonista pegou o player no esconderijo: trava look e saída e entrega a
+        /// câmera a quem captura (que a anima em world space). Encerrar com <see cref="ForceRelease"/>.
+        /// </summary>
+        public void BeginCapture()
+        {
+            if (!IsHidden)
+                return;
+
+            if (transitionRoutine != null)
+            {
+                StopCoroutine(transitionRoutine);
+                transitionRoutine = null;
+            }
+            isTransitioning = false;
+            IsCaptured = true;
+        }
+
+        /// <summary>
+        /// Tira o player do esconderijo NA HORA, sem lerp (usado atrás da tela preta, após a
+        /// captura, ou num reinício de beat): devolve a câmera ao corpo na pose original,
+        /// religa o CharacterController e zera o estado. NÃO devolve o CanMove — quem chama
+        /// decide quando o player volta a andar.
+        /// </summary>
+        public void ForceRelease()
+        {
+            if (transitionRoutine != null)
+            {
+                StopCoroutine(transitionRoutine);
+                transitionRoutine = null;
+            }
+            isTransitioning = false;
+
+            if (IsHidden)
+            {
+                if (currentCameraOnly)
+                {
+                    cameraHolder.SetParent(savedCameraParent, worldPositionStays: false);
+                    cameraHolder.localPosition = savedCameraLocalPos;
+                    cameraHolder.localRotation = savedCameraLocalRot;
+                    characterController.enabled = true;
+                }
+                else
+                {
+                    Vector3 forward = Quaternion.Euler(0f, savedYaw, 0f) * Vector3.forward;
+                    bool ccWasEnabled = characterController.enabled;
+                    characterController.enabled = false; // teleporte limpo
+                    playerController.transform.SetPositionAndRotation(
+                        savedPosition + forward * exitForwardOffset,
+                        Quaternion.Euler(0f, savedYaw, 0f));
+                    characterController.enabled = ccWasEnabled;
+                    cameraHolder.localPosition = savedCameraLocalPos;
+                    cameraHolder.localRotation = Quaternion.Euler(entryPitch, 0f, 0f);
+                }
+            }
+
+            IsHidden = false;
+            IsCaptured = false;
+            CurrentHideSpot = null;
+        }
+
         public void ExitHideSpot()
         {
-            if (!IsHidden || isTransitioning)
+            if (!IsHidden || isTransitioning || IsCaptured)
                 return;
 
             if (currentCameraOnly)
@@ -201,6 +274,7 @@ namespace TheDelivery.Player
             savedPosition = playerController.transform.position;
             savedYaw = NormalizeAngle(playerController.transform.eulerAngles.y);
             entryPitch = NormalizeAngle(cameraHolder.localEulerAngles.x);
+            savedCameraLocalPos = cameraHolder.localPosition; // restaurado no ForceRelease (a captura mexe na câmera)
 
             StartPlayerTransition(hide.position, baseYaw, 0f, finishHidden: true);
         }

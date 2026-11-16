@@ -31,6 +31,12 @@ namespace TheDelivery.AI
         [Tooltip("Se true, apenas a câmera é movida (CharacterController do player é desabilitado). Use para esconderijos baixos (embaixo da cama) onde teleportar o player faria ele cair em geometria. Para guarda-roupas, sofás etc. deixe false.")]
         [SerializeField] private bool cameraOnlyMode = false;
 
+        [Header("Captura (killer abre e puxa)")]
+        [Tooltip("Porta do esconderijo (guarda-roupa, box) que o killer abre antes de puxar. Opcional.")]
+        [SerializeField] private Door spotDoor;
+        [Tooltip("Onde o killer para para arrancar o player. Vazio = 0,9 m à frente do hidePosition.")]
+        [SerializeField] private Transform extractionPoint;
+
         // --- IInteractable -------------------------------------------------
 
         public string InteractionPrompt => interactionPrompt;
@@ -56,6 +62,20 @@ namespace TheDelivery.AI
         public float MaxPitchAngle => maxPitchAngle;
         public bool CameraOnlyMode => cameraOnlyMode;
         public ThoughtData EnterThought => enterThought;
+        public Door SpotDoor => spotDoor;
+
+        /// <summary>Ponto em que o killer fica para arrancar o player (fallback: à frente do esconderijo).</summary>
+        public Vector3 GetExtractionPosition()
+        {
+            if (extractionPoint != null)
+                return extractionPoint.position;
+            Transform t = GetHidePosition();
+            Vector3 forward = t.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+                forward = Vector3.forward;
+            return t.position + forward.normalized * 0.9f;
+        }
 
         // --- Debug ---------------------------------------------------------
 

@@ -61,6 +61,10 @@ namespace TheDelivery.Narrative
         [Tooltip("AudioSource 2D dedicado a one-shots (ex.: o 'baque' das luzes). Volume FIXO, independente do fade do audioSource principal — assim um PlayOneShot não sai com o volume escalado por um fade em andamento. Auto-criado se vazio. NÃO marque \"Play On Awake\".")]
         [SerializeField] private AudioSource sfxAudioSource;
 
+        [Header("Clima")]
+        [Tooltip("Chuva da caçada: chove o Ato 4 INTEIRO (do despertar até a troca para a Escape). Vazio = procura na cena.")]
+        [SerializeField] private RainController rain;
+
         [Header("Audio Fade")]
         [Tooltip("Duração (s) do fade in dos sons tocados com fade.")]
         [SerializeField] private float audioFadeInDuration = 0.4f;
@@ -240,6 +244,18 @@ namespace TheDelivery.Narrative
         [Tooltip("Usado agora só para dimensionar a PAUSA silenciosa de tensão antes da morte (approachSteps × approachStepInterval). Não dispara mais som.")]
         [SerializeField] private float approachStepInterval = 0.9f;
 
+        [Header("Beat 7 - Microfone no esconderijo")]
+        [Tooltip("Arma o MicrophoneNoiseSensor no Beat 7: escondida, se o jogador fizer barulho real no microfone, o killer ouve, vai ao esconderijo, abre e a puxa pra fora.")]
+        [SerializeField] private bool useMicrophoneInFinalHiding = true;
+        [Tooltip("Onde o player recomeça o Beat 7 depois de ser pego. Vazio = fica onde foi solto.")]
+        [SerializeField] private Transform finalHidingRetryPoint;
+        [Tooltip("Tempo (s) de tela preta depois de ser arrancada do esconderijo, antes de recomeçar o Beat 7.")]
+        [Min(0f)]
+        [SerializeField] private float caughtBlackHold = 1.75f;
+        [Tooltip("Fade (s) da tela preta de volta ao jogo no recomeço do Beat 7.")]
+        [Min(0f)]
+        [SerializeField] private float retryFadeIn = 1f;
+
         [Header("Beat 8 - Death")]
         [Tooltip("Som dos passos do killer se AFASTANDO (indo embora - falso alívio).")]
         [SerializeField] private AudioClip footstepsLeavingSound;
@@ -398,6 +414,23 @@ namespace TheDelivery.Narrative
         // interação. Consumido em OnLandlinePickedUp para evitar disparo duplo.
         private bool landlineArmed;
 
+        // --- Estado do Beat 7 (microfone) --------------------------------
+        // O killer ouviu o microfone nesta tentativa: o box deixa de ser "seguro" (não
+        // dispara o final scriptado) até a FSM voltar a patrulhar.
+        private bool micAlerted;
+        // Já pego nesta tentativa: evita disparar o reinício duas vezes.
+        private bool caughtThisAttempt;
+        private Coroutine caughtRetryRoutine;
+        private AntagonistAI subscribedAntagonist;
+
+        private void OnEnable() => MicrophoneNoiseSensor.CriticalNoiseDetected += OnMicCriticalNoise;
+
+        private void OnDisable()
+        {
+            MicrophoneNoiseSensor.CriticalNoiseDetected -= OnMicCriticalNoise;
+            UnsubscribeCaught();
+        }
+
         private void Start()
         {
             if (!HasRequiredReferences())
@@ -515,6 +548,11 @@ namespace TheDelivery.Narrative
         /// <summary>O que roda em paralelo aos beats e precisa morrer em qualquer troca.</summary>
         protected override void OnBeatExit(Act4Beat beat)
         {
+            // Entrando em QUALQUER beat do Ato 4 (inclusive por salto de debug): chove.
+            // O Ato 3 divide a cena e não liga a chuva — ela é marca da caçada.
+            if (beat != Act4Beat.None)
+                EnsureRain();
+
             // O monitor do Beat 4 roda fora do beatRoutine (em paralelo à caçada).
             // Qualquer transição de beat o cancela para não disparar tarde demais
             // nem duas vezes (ex.: salto de debug ou o próprio avanço para DeadPhone).
@@ -522,6 +560,14 @@ namespace TheDelivery.Narrative
             {
                 StopCoroutine(deadPhoneMonitor);
                 deadPhoneMonitor = null;
+            }
+
+            // Saindo do Beat 7 (para a morte, ou num salto de debug): microfone desligado.
+            // No reinício do próprio Beat 7 ele é rearmado logo na entrada.
+            if (CurrentBeat == Act4Beat.FinalHiding)
+            {
+                SetMicArmed(false);
+                UnsubscribeCaught();
             }
         }
 
@@ -1408,6 +1454,11 @@ namespace TheDelivery.Narrative
         {
             playerController.CanMove = true;
 
+            // Microfone: arma no começo do beat (só escuta quando ela estiver escondida).
+            micAlerted = false;
+            caughtThisAttempt = false;
+            SetMicArmed(useMicrophoneInFinalHiding);
+
             // 1. Direciona ao banheiro. Espera o pensamento sumir antes do prompt.
             ShowThought(hideInBathroomThought);
             yield return null;
@@ -1439,7 +1490,10 @@ namespace TheDelivery.Narrative
                     antagonistAI = FindInSelfOrChildren<AntagonistAI>(antagonist);
 
                 if (antagonistAI != null)
+                {
                     antagonistAI.ResumeFromDirector(); // religa a FSM suspensa no Beat 4.
+                    SubscribeCaught(antagonistAI);
+                }
                 else
                     Debug.LogWarning("[Act4Director] AntagonistAI não encontrado; a caçada final não terá FSM.", this);
             }
@@ -1448,23 +1502,64 @@ namespace TheDelivery.Narrative
                 Debug.LogWarning("[Act4Director] antagonist não atribuído; a caçada final não será iniciada.", this);
             }
 
-            // 5. Loop da caçada até o player se esconder no BOX. Em outro spot furtivo,
-            //    incentiva o box (uma vez). A captura fora do box (spot comprometido) é
-            //    tratada pela própria FSM (Attack → OnPlayerCaught) — não duplicar aqui.
-            bool reachedBox = false;
+            // 5-7 em laço: se o killer OUVIR o microfone durante a pausa no box, a FSM volta
+            // e a caçada recomeça daqui (o box deixa de ser seguro até ele voltar a patrulhar).
+            while (true)
+            {
+                yield return HuntUntilSafeInBox();
+
+                // 6. FINAL SCRIPTADO: player no box. Suspende a FSM para a aproximação
+                //    roteirizada — ela NÃO pode disputar o agente nem matar aqui (a morte
+                //    é o Beat 8).
+                if (antagonistAI != null)
+                    antagonistAI.SuspendForDirector();
+
+                // 7. Tensão máxima: o player, escondido e imóvel no box, espera no escuro.
+                //    Os passos do killer NÃO soam aqui — por design, os passos só são
+                //    ouvidos quando ele VAI EMBORA do apartamento (Beat 8). Esta é uma
+                //    pausa de pavor SILENCIOSA antes da morte; sua duração reaproveita
+                //    approachSteps × approachStepInterval (que antes ritmavam os passos).
+                //    É AQUI que o microfone mais pesa: qualquer barulho e ele volta.
+                float pause = Mathf.Max(0f, approachSteps * approachStepInterval);
+                for (float t = 0f; t < pause && !micAlerted; t += Time.deltaTime)
+                    yield return null;
+
+                if (!micAlerted)
+                    break;
+            }
+
+            // 8. Pico -> morte (Beat 8).
+            AdvanceToBeat(Act4Beat.Death);
+        }
+
+        /// <summary>
+        /// Passo 5 do Beat 7: a caçada real (FSM) roda até o player estar escondido no BOX
+        /// sem o killer em alerta pelo microfone. Em outro spot furtivo, incentiva o box (uma
+        /// vez). A captura (spot comprometido, barulho no microfone ou a céu aberto) é da FSM
+        /// + <see cref="OnAntagonistCaughtPlayer"/> — não duplicar aqui.
+        /// </summary>
+        private IEnumerator HuntUntilSafeInBox()
+        {
             float wrongSpotTimer = 0f;
             bool hintShown = false;
 
-            while (!reachedBox)
+            while (true)
             {
+                // O alerta do microfone acaba quando a FSM desiste e volta a patrulhar.
+                if (micAlerted && antagonistAI != null && antagonistAI.enabled &&
+                    antagonistAI.CurrentState == AntagonistAI.AIState.Patrol)
+                    micAlerted = false;
+
                 bool hidden = PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden;
 
-                if (hidden)
+                if (hidden && !caughtThisAttempt)
                 {
                     if (PlayerHiding.Instance.CurrentHideSpot == showerBoxSpot)
                     {
-                        reachedBox = true;
-                        break;
+                        if (!micAlerted && !PlayerHiding.Instance.IsTransitioning)
+                            yield break;
+                        yield return null;
+                        continue;
                     }
 
                     // Spot errado: após o atraso, incentiva o box (uma única vez).
@@ -1484,22 +1579,129 @@ namespace TheDelivery.Narrative
 
                 yield return null;
             }
+        }
 
-            // 6. FINAL SCRIPTADO: player no box. Suspende a FSM para a aproximação
-            //    roteirizada — ela NÃO pode disputar o agente nem matar aqui (a morte
-            //    é o Beat 8).
+        // --- Clima ----------------------------------------------------------
+
+        private void EnsureRain()
+        {
+            if (rain == null)
+                rain = FindFirstObjectByType<RainController>(FindObjectsInactive.Include);
+            if (rain == null)
+            {
+                Debug.LogWarning("[Act4Director] RainController não encontrado — rode Tools/The Delivery/Chuva do Ato 4.", this);
+                return;
+            }
+            if (!rain.gameObject.activeSelf)
+                rain.gameObject.SetActive(true);
+            // Vindo do Ato 3 (ela acorda no meio da noite) a chuva já está caindo: sem fade.
+            rain.SetRaining(true, instant: CurrentBeat == Act4Beat.None);
+        }
+
+        // --- Beat 7: microfone e captura ----------------------------------
+
+        private static void SetMicArmed(bool armed)
+        {
+            if (MicrophoneNoiseSensor.Instance != null)
+                MicrophoneNoiseSensor.Instance.SetArmed(armed);
+            else if (armed)
+                Debug.LogWarning("[Act4Director] MicrophoneNoiseSensor não encontrado no Player — rode Tools/The Delivery/Microfone no Esconderijo.");
+        }
+
+        /// <summary>
+        /// Barulho crítico no microfone durante o Beat 7. Com a FSM LIGADA ela mesma reage
+        /// (AntagonistAI assina o evento); aqui só marcamos o alerta. Com a FSM SUSPENSA
+        /// (pausa silenciosa no box) quem religa o killer e o manda ao esconderijo é o diretor.
+        /// </summary>
+        private void OnMicCriticalNoise(HideSpot spot, Vector3 origin)
+        {
+            if (CurrentBeat != Act4Beat.FinalHiding || caughtThisAttempt)
+                return;
+
+            micAlerted = true;
+
+            if (antagonistAI != null && !antagonistAI.enabled)
+            {
+                Debug.Log("[Act4Director] Barulho no box durante a pausa — o killer volta para abrir.", this);
+                if (antagonist != null && !antagonist.activeSelf)
+                    antagonist.SetActive(true);
+                antagonistAI.ResumeFromDirector();
+                antagonistAI.OnPlayerHeardWhileHiding(spot);
+            }
+        }
+
+        private void SubscribeCaught(AntagonistAI ai)
+        {
+            UnsubscribeCaught();
+            subscribedAntagonist = ai;
+            ai.PlayerCaught += OnAntagonistCaughtPlayer;
+        }
+
+        private void UnsubscribeCaught()
+        {
+            if (subscribedAntagonist != null)
+                subscribedAntagonist.PlayerCaught -= OnAntagonistCaughtPlayer;
+            subscribedAntagonist = null;
+        }
+
+        private void OnAntagonistCaughtPlayer(HideSpot fromHideSpot)
+        {
+            if (CurrentBeat != Act4Beat.FinalHiding || caughtThisAttempt)
+                return;
+
+            caughtThisAttempt = true;
+            if (caughtRetryRoutine != null)
+                StopCoroutine(caughtRetryRoutine);
+            caughtRetryRoutine = StartCoroutine(CaughtRetryRoutine(fromHideSpot));
+        }
+
+        /// <summary>
+        /// Pega no Beat 7: espera o "abre e puxa" (<see cref="HideSpotPullOut"/>) terminar,
+        /// corta para preto, limpa o estado (player solto, killer fora de cena) e recomeça o
+        /// Beat 7 — checkpoint do clímax, sem refazer o ato inteiro.
+        /// </summary>
+        private IEnumerator CaughtRetryRoutine(HideSpot fromHideSpot)
+        {
+            SetMicArmed(false);
+
+            HideSpotPullOut pullOut = antagonist != null ? FindInSelfOrChildren<HideSpotPullOut>(antagonist) : null;
+            yield return null; // o PullOut liga o IsPlaying no mesmo evento
+            if (fromHideSpot != null && pullOut != null)
+                yield return new WaitUntil(() => !pullOut.IsPlaying);
+            else
+                yield return new WaitForSeconds(0.5f);
+
+            // Corte seco para o preto.
+            if (blackScreen != null)
+            {
+                blackScreen.alpha = 1f;
+                blackScreen.blocksRaycasts = true;
+            }
+            yield return new WaitForSeconds(caughtBlackHold);
+
+            // Limpa atrás do preto.
+            if (PlayerHiding.Instance != null)
+                PlayerHiding.Instance.ForceRelease();
             if (antagonistAI != null)
                 antagonistAI.SuspendForDirector();
+            if (antagonist != null)
+                antagonist.SetActive(false);
 
-            // 7. Tensão máxima: o player, escondido e imóvel no box, espera no escuro.
-            //    Os passos do killer NÃO soam aqui — por design, os passos só são
-            //    ouvidos quando ele VAI EMBORA do apartamento (Beat 8). Esta é uma
-            //    pausa de pavor SILENCIOSA antes da morte; sua duração reaproveita
-            //    approachSteps × approachStepInterval (que antes ritmavam os passos).
-            yield return new WaitForSeconds(Mathf.Max(0f, approachSteps * approachStepInterval));
+            if (finalHidingRetryPoint != null && playerController != null)
+            {
+                bool ccOn = characterController != null && characterController.enabled;
+                if (characterController != null) characterController.enabled = false;
+                playerController.transform.SetPositionAndRotation(finalHidingRetryPoint.position, finalHidingRetryPoint.rotation);
+                if (characterController != null) characterController.enabled = ccOn;
+            }
 
-            // 8. Pico -> morte (Beat 8).
-            AdvanceToBeat(Act4Beat.Death);
+            Debug.Log("[Act4Director] Pega no Beat 7 — recomeçando o Beat 7.", this);
+            caughtRetryRoutine = null;
+            AdvanceToBeat(Act4Beat.FinalHiding);
+
+            yield return FadeBlackScreen(1f, 0f, retryFadeIn);
+            if (blackScreen != null)
+                blackScreen.blocksRaycasts = false;
         }
 
         // --- BEAT 8: Death ------------------------------------------------

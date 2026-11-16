@@ -98,12 +98,27 @@ namespace TheDelivery.AI
         [Tooltip("Tempo (s) de fade do peso da layer de Sneak ao entrar/sair, pra não dar 'pop' no tronco.")]
         [SerializeField] private float sneakBlendTime = 0.2f;
 
+        [Header("Microfone (barulho no esconderijo)")]
+        [Tooltip("Distância máxima (m, no plano) em que o killer ouve o barulho crítico do microfone. " +
+                 "0 = ouve de qualquer lugar (o apartamento é pequeno e silencioso).")]
+        [Min(0f)]
+        [SerializeField] private float micHearingRadius = 0f;
+
         [Header("Debug")]
         [Tooltip("Loga as transições de estado no Console.")]
         [SerializeField] private bool showStateInConsole = true;
 
         /// <summary>Estado atual da FSM (útil para depuração e para outros sistemas).</summary>
         public AIState CurrentState { get; private set; } = AIState.Patrol;
+
+        /// <summary>
+        /// O antagonista alcançou o player (estado Attack). O parâmetro é o esconderijo de
+        /// onde ele vai ser arrancado, ou null se foi pego a céu aberto.
+        /// </summary>
+        public event System.Action<HideSpot> PlayerCaught;
+
+        /// <summary>Esconderijo do último Attack (null = pego fora de esconderijo).</summary>
+        public HideSpot CaughtHideSpot { get; private set; }
 
         private float stateTimer;          // cronômetro do estado atual (Suspicious/Search)
         private float chaseLostTimer;       // tempo desde que perdeu o player de vista (Chase)
@@ -161,6 +176,23 @@ namespace TheDelivery.AI
             // aqui só garantimos a velocidade e o estado inicial.
             CurrentState = AIState.Patrol;
             agent.speed = patrolSpeed;
+        }
+
+        // Só ouve o microfone com a FSM LIGADA: suspensa pelo diretor (enabled=false), quem
+        // decide é o diretor (ver Act4Director.OnMicCriticalNoise).
+        private void OnEnable() => MicrophoneNoiseSensor.CriticalNoiseDetected += OnMicCriticalNoise;
+        private void OnDisable() => MicrophoneNoiseSensor.CriticalNoiseDetected -= OnMicCriticalNoise;
+
+        private void OnMicCriticalNoise(HideSpot spot, Vector3 origin)
+        {
+            if (micHearingRadius > 0f && HorizontalDistance(transform.position, origin) > micHearingRadius)
+            {
+                if (showStateInConsole)
+                    Debug.Log("[AntagonistAI] Barulho do esconderijo longe demais — não ouviu.", this);
+                return;
+            }
+
+            OnPlayerHeardWhileHiding(spot);
         }
 
         private void Update()
@@ -438,10 +470,13 @@ namespace TheDelivery.AI
                 return;
             }
 
+            // Vai até a FRENTE do esconderijo (onde dá para abrir e puxar), não para dentro dele.
             Vector3 spotPos = GetCompromisedSpotPosition();
-            SetDestination(spotPos, force: true);
+            Vector3 extraction = compromisedHideSpot.GetExtractionPosition();
+            SetDestination(extraction, force: false);
 
-            if (HorizontalDistance(transform.position, spotPos) <= attackRange)
+            if (HorizontalDistance(transform.position, spotPos) <= attackRange ||
+                HorizontalDistance(transform.position, extraction) <= agent.stoppingDistance + arrivalThreshold)
                 TransitionTo(AIState.Attack);
         }
 
@@ -492,25 +527,47 @@ namespace TheDelivery.AI
                     break;
 
                 case AIState.Attack:
+                    // Guarda o spot ANTES de limpar: quem trata a captura precisa saber de onde arrancar.
+                    HideSpot caughtSpot = huntingCompromisedSpot ? compromisedHideSpot : null;
                     huntingCompromisedSpot = false;
                     compromisedHideSpot = null;
                     patrol.PausePatrol();
                     StopAgent();
                     if (playerController != null)
                         playerController.CanMove = false;
-                    Debug.Log("[AntagonistAI] GAME OVER - o antagonista alcançou o player.", this);
-                    OnPlayerCaught();
+                    Debug.Log(caughtSpot != null
+                        ? $"[AntagonistAI] GAME OVER - arrancou o player do esconderijo {caughtSpot.name}."
+                        : "[AntagonistAI] GAME OVER - o antagonista alcançou o player.", this);
+                    OnPlayerCaught(caughtSpot);
                     break;
             }
         }
 
         /// <summary>
-        /// Placeholder de captura do player. Será preenchido na Fase 3 com a cena de
-        /// morte / tela de game over.
+        /// Captura do player. Repassa via <see cref="PlayerCaught"/>: o
+        /// <see cref="HideSpotPullOut"/> encena o "abrir e puxar" quando há esconderijo, e o
+        /// diretor do ato decide o que vem depois (reinício do beat).
         /// </summary>
-        public void OnPlayerCaught()
+        public void OnPlayerCaught(HideSpot fromHideSpot)
         {
-            // Intencionalmente vazio por enquanto.
+            CaughtHideSpot = fromHideSpot;
+            PlayerCaught?.Invoke(fromHideSpot);
+        }
+
+        /// <summary>
+        /// O player fez barulho crítico no microfone estando escondido em <paramref name="spot"/>:
+        /// o antagonista interrompe o que estiver fazendo (patrulha, busca), vai direto ao
+        /// esconderijo e o abre — mesma caçada do "esconderijo comprometido".
+        /// </summary>
+        public void OnPlayerHeardWhileHiding(HideSpot spot)
+        {
+            if (spot == null || CurrentState == AIState.Attack)
+                return;
+
+            if (showStateInConsole)
+                Debug.Log($"[AntagonistAI] OUVIU o player no esconderijo {spot.name} — indo abrir.", this);
+
+            OnPlayerHidWhileSeen(spot);
         }
 
         /// <summary>
