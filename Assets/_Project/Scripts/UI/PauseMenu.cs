@@ -52,16 +52,15 @@ namespace TheDelivery.UI
         [SerializeField] private int sortingOrder = 1000;
 
         [Header("Textos")]
-        [SerializeField] private string titleText = "Pausado";
-        [SerializeField] private string resumeText = "Resumir";
-        [SerializeField] private string exitText = "Sair do Jogo";
+        [SerializeField] private string titleText = "PAUSADO";
+        [Tooltip("Linha datilografada sob o carimbo. Aceita rich text; {ink} vira o vermelho do tema.")]
+        [SerializeField] private string subtitleText = "PEDIDO Nº 0413  —  <color=#{ink}>EM ANDAMENTO</color>";
+        [SerializeField] private string resumeText = "RESUMIR";
+        [SerializeField] private string exitText = "SAIR DO JOGO";
 
         [Header("Aparência")]
-        [SerializeField] private Color dimColor = new Color(0f, 0f, 0f, 0.65f);
-        [SerializeField] private Color panelColor = new Color(0.06f, 0.06f, 0.07f, 0.92f);
-        [SerializeField] private Color buttonColor = new Color(0.16f, 0.16f, 0.18f, 1f);
-        [SerializeField] private Color buttonHighlight = new Color(0.30f, 0.30f, 0.33f, 1f);
-        [SerializeField] private Color textColor = new Color(0.88f, 0.88f, 0.84f, 1f);
+        [Tooltip("Véu sobre o jogo. O design (fontes, carimbo, cores) vem do MenuTheme (Resources).")]
+        [SerializeField] private Color dimColor = new Color(0f, 0f, 0f, 0.72f);
 
         // Mapa de input que NÃO é desligado na pausa: é o que a UI usa para navegar/clicar.
         private const string UiActionMapName = "UI";
@@ -268,31 +267,42 @@ namespace TheDelivery.UI
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
 
-            // Fundo escurecido em tela cheia — também bloqueia cliques no que está atrás.
+
+            // Véu escuro em tela cheia sobre o jogo — também bloqueia cliques no que está atrás.
             Image dim = CreateImage("Dim", root.transform, dimColor);
             Stretch(dim.rectTransform);
 
-            // Painel central.
-            Image panel = CreateImage("Panel", root.transform, panelColor);
-            RectTransform panelRect = panel.rectTransform;
-            panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(480f, 340f);
+            // MESMO DESIGN DA TELA DE INÍCIO ("comprovante de entrega"): coluna no meio da
+            // esquerda, carimbo do tamanho de uma opção, linha datilografada e opções de
+            // formulário. Fontes/moldura/cores vêm do MenuTheme (Resources); sem ele, cai
+            // na fonte padrão do TMP com as cores de fallback do próprio tema.
+            MenuTheme theme = MenuTheme.Load();
+            if (theme == null)
+            {
+                Debug.LogWarning("[PauseMenu] Resources/MenuTheme não encontrado; usando a fonte padrão. " +
+                                 "Rode Tools/The Delivery/Main Menu - Estilo (comprovante de entrega).", this);
+                theme = ScriptableObject.CreateInstance<MenuTheme>();
+            }
 
-            var layout = panel.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(48, 48, 40, 40);
-            layout.spacing = 20f;
+            var column = new GameObject("Column", typeof(RectTransform), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
+            column.SetParent(root.transform, false);
+            column.anchorMin = column.anchorMax = new Vector2(0f, 0.5f);
+            column.pivot = new Vector2(0f, 0.5f);
+            column.anchoredPosition = new Vector2(theme.leftMargin, 0f);
+            float height = theme.itemHeight * 3f + theme.subtitleHeight + theme.spacing * 3f; // carimbo, legenda, 2 opções
+            column.sizeDelta = new Vector2(theme.itemWidth, height);
+            var layout = column.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = theme.spacing;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            TextMeshProUGUI title = CreateText("Title", panel.transform, titleText, 48f);
-            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 80f;
-
-            resumeButton = CreateButton("ResumeButton", panel.transform, resumeText, Resume);
-            Button exitButton = CreateButton("ExitButton", panel.transform, exitText, ExitGame);
+            CreateStamp(column, theme);
+            CreateSubtitle(column, theme);
+            resumeButton = CreateItem("ResumeButton", column, resumeText, Resume, theme);
+            Button exitButton = CreateItem("ExitButton", column, exitText, ExitGame, theme);
 
             // Navegação explícita entre os dois botões (teclado/gamepad).
             SetVerticalNavigation(resumeButton, exitButton);
@@ -304,41 +314,105 @@ namespace TheDelivery.UI
             ownEventSystem = esGo.GetComponent<EventSystem>();
         }
 
-        private Button CreateButton(string name, Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        /// <summary>Carimbo de borracha: texto em tinta vermelha, torto, dentro da moldura gasta.</summary>
+        private void CreateStamp(Transform parent, MenuTheme theme)
         {
-            Image image = CreateImage(name, parent, Color.white);
-            image.raycastTarget = true;
-            image.gameObject.AddComponent<LayoutElement>().preferredHeight = 72f;
+            TextMeshProUGUI title = CreateText("Title", parent, titleText, theme.stampFont, theme.ink);
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 8f;
+            title.fontSizeMax = 200f;
+            title.characterSpacing = 4f;
+            title.margin = new Vector4(18f, 6f, 18f, 6f);
+            title.alignment = TextAlignmentOptions.Center;
+            title.rectTransform.localRotation = Quaternion.Euler(0f, 0f, theme.stampTilt);
+            title.gameObject.AddComponent<LayoutElement>().preferredHeight = theme.itemHeight;
 
-            var button = image.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            ColorBlock colors = button.colors;
-            colors.normalColor = buttonColor;
-            colors.highlightedColor = buttonHighlight;
-            colors.selectedColor = buttonHighlight;
-            colors.pressedColor = buttonHighlight * 0.8f;
-            colors.fadeDuration = 0.08f;
-            button.colors = colors;
+            if (theme.stampFrame == null)
+                return;
+            Image frame = CreateImage("StampFrame", title.transform, theme.ink);
+            frame.sprite = theme.stampFrame;
+            frame.type = Image.Type.Sliced;
+            frame.raycastTarget = false;
+            frame.rectTransform.SetAsFirstSibling();
+            frame.rectTransform.anchorMin = Vector2.zero;
+            frame.rectTransform.anchorMax = Vector2.one;
+            frame.rectTransform.offsetMin = new Vector2(-4f, -4f);
+            frame.rectTransform.offsetMax = new Vector2(4f, 4f);
+        }
+
+        private void CreateSubtitle(Transform parent, MenuTheme theme)
+        {
+            string text = subtitleText.Replace("{ink}", theme.inkHex);
+            TextMeshProUGUI sub = CreateText("Subtitle", parent, text, theme.typewriterFont, theme.faint);
+            sub.fontSize = 17f;
+            sub.characterSpacing = 2f;
+            sub.alignment = TextAlignmentOptions.Center;
+            sub.textWrappingMode = TextWrappingModes.NoWrap;
+            sub.gameObject.AddComponent<LayoutElement>().preferredHeight = theme.subtitleHeight;
+        }
+
+        /// <summary>
+        /// Opção de formulário: "[ ] TEXTO" datilografado; em foco, X vermelho na caixa, texto
+        /// claro e traço vermelho por baixo (MenuItemStyle — o mesmo da tela de início).
+        /// </summary>
+        private Button CreateItem(string name, Transform parent, string label, UnityEngine.Events.UnityAction onClick, MenuTheme theme)
+        {
+            Image hit = CreateImage(name, parent, new Color(0f, 0f, 0f, 0f)); // área clicável invisível
+            hit.raycastTarget = true;
+            hit.gameObject.AddComponent<LayoutElement>().preferredHeight = theme.itemHeight;
+
+            var button = hit.gameObject.AddComponent<Button>();
+            button.targetGraphic = hit;
+            button.transition = Selectable.Transition.None;
             button.onClick.AddListener(onClick);
 
-            TextMeshProUGUI text = CreateText("Label", image.transform, label, 32f);
-            Stretch(text.rectTransform);
+            TextMeshProUGUI box = CreateText("Box", hit.transform, "[ ]", theme.typewriterFont, theme.typewriter);
+            box.fontSize = 32f;
+            box.alignment = TextAlignmentOptions.MidlineLeft;
+            box.richText = true;
+            RectTransform br = box.rectTransform;
+            br.anchorMin = new Vector2(0f, 0f);
+            br.anchorMax = new Vector2(0f, 1f);
+            br.pivot = new Vector2(0f, 0.5f);
+            br.anchoredPosition = Vector2.zero;
+            br.sizeDelta = new Vector2(theme.boxWidth, 0f);
 
+            TextMeshProUGUI text = CreateText("Label", hit.transform, label.ToUpperInvariant(), theme.typewriterFont, theme.typewriter);
+            text.fontSize = 32f;
+            text.characterSpacing = 1f;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            RectTransform lr = text.rectTransform;
+            lr.anchorMin = Vector2.zero;
+            lr.anchorMax = Vector2.one;
+            lr.offsetMin = new Vector2(theme.boxWidth + 6f, 0f);
+            lr.offsetMax = Vector2.zero;
+
+            Image line = CreateImage("Underline", hit.transform, theme.ink);
+            line.raycastTarget = false;
+            RectTransform ur = line.rectTransform;
+            ur.anchorMin = new Vector2(0f, 0f);
+            ur.anchorMax = new Vector2(1f, 0f);
+            ur.pivot = new Vector2(0f, 0.5f);
+            ur.offsetMin = new Vector2(theme.boxWidth + 6f, 12f);
+            ur.offsetMax = new Vector2(-30f, 14f);
+            ur.localScale = new Vector3(0f, 1f, 1f);
+
+            hit.gameObject.AddComponent<MenuItemStyle>().Configure(box, text, ur, theme.ink, theme.typewriter);
             return button;
         }
 
-        private TextMeshProUGUI CreateText(string name, Transform parent, string content, float size)
+        private static TextMeshProUGUI CreateText(string name, Transform parent, string content, TMP_FontAsset font, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             var text = go.AddComponent<TextMeshProUGUI>();
-            text.text = content;
-            text.fontSize = size;
-            text.color = textColor;
-            text.alignment = TextAlignmentOptions.Center;
-            text.raycastTarget = false;
-            if (TMP_Settings.defaultFontAsset != null)
+            if (font != null)
+                text.font = font;
+            else if (TMP_Settings.defaultFontAsset != null)
                 text.font = TMP_Settings.defaultFontAsset;
+            text.text = content;
+            text.color = color;
+            text.raycastTarget = false;
             return text;
         }
 

@@ -55,6 +55,28 @@ namespace TheDelivery.UI
             Apply(0f);
         }
 
+        /// <summary>
+        /// Liga as partes por CÓDIGO (menus montados em runtime, ex.: o PauseMenu) — no
+        /// Inspector elas vêm pelos campos serializados.
+        /// </summary>
+        public void Configure(TMP_Text boxText, TMP_Text labelText, RectTransform underlineRect, Color inkColor, Color idleColor)
+        {
+            box = boxText;
+            label = labelText;
+            underline = underlineRect;
+            ink = inkColor;
+            idleText = idleColor;
+            if (selectable == null)
+                selectable = GetComponent<Selectable>();
+            if (label != null)
+            {
+                baseSpacing = label.characterSpacing;
+                labelBasePos = label.rectTransform.anchoredPosition;
+            }
+            t = 0f;
+            Apply(0f);
+        }
+
         private void OnDisable()
         {
             pointerOver = selected = false;
@@ -74,6 +96,25 @@ namespace TheDelivery.UI
         public void OnPointerExit(PointerEventData e) => pointerOver = false;
         public void OnSelect(BaseEventData e) => selected = true;
         public void OnDeselect(BaseEventData e) => selected = false;
+
+        private string lockedBox;
+
+        /// <summary>
+        /// Texto da caixa quando o item está DESABILITADO (ex.: "[#]" = bloqueado). Null/vazio =
+        /// caixa normal "[ ]".
+        /// </summary>
+        public void SetLockedBox(string text)
+        {
+            lockedBox = text;
+            Refresh();
+        }
+
+        /// <summary>Reaplica o visual na hora (ex.: depois de mudar o interactable por código).</summary>
+        public void Refresh()
+        {
+            if (!Focused) t = 0f;
+            Apply(t);
+        }
 
         private void Update()
         {
@@ -99,7 +140,11 @@ namespace TheDelivery.UI
             if (box != null)
             {
                 // A caixa é sempre da máquina; o X é de caneta (vermelho) e só aparece marcado.
-                box.text = ease > 0.5f ? "[<color=#" + ColorUtility.ToHtmlStringRGB(ink) + ">X</color>]" : "[ ]";
+                // Item desabilitado com "caixa de bloqueado" (Seleção de Atos): mostra o cadeado.
+                if (!interactable && !string.IsNullOrEmpty(lockedBox))
+                    box.text = lockedBox;
+                else
+                    box.text = ease > 0.5f ? "[<color=#" + ColorUtility.ToHtmlStringRGB(ink) + ">X</color>]" : "[ ]";
                 box.color = interactable ? Color.Lerp(idleText, focusText, ease) : disabledText;
             }
 

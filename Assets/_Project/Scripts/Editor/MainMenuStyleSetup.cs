@@ -71,6 +71,7 @@ namespace TheDelivery.EditorTools
                 Debug.LogError("[MainMenuStyleSetup] FALHOU | fontes não encontradas em " + FontsDir);
                 return false;
             }
+            EnsureTheme(typeFont, stampFont, frame);
 
             Scene scene = SceneManager.GetSceneByPath(MenuPath);
             bool opened = !(scene.IsValid() && scene.isLoaded);
@@ -286,6 +287,31 @@ namespace TheDelivery.EditorTools
         }
 
         // --- Assets ------------------------------------------------------------
+
+        private const string ThemePath = "Assets/_Project/Resources/MenuTheme.asset";
+
+        /// <summary>
+        /// O tema compartilhado (Resources/MenuTheme): o que os menus montados por código —
+        /// o PauseMenu — usam para ficar iguais à tela de início. Mesmas fontes, moldura e cores.
+        /// </summary>
+        private static void EnsureTheme(TMP_FontAsset typeFont, TMP_FontAsset stampFont, Sprite frame)
+        {
+            var theme = AssetDatabase.LoadAssetAtPath<MenuTheme>(ThemePath);
+            if (theme == null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(ThemePath));
+                theme = ScriptableObject.CreateInstance<MenuTheme>();
+                AssetDatabase.CreateAsset(theme, ThemePath);
+            }
+            theme.typewriterFont = typeFont;
+            theme.stampFont = stampFont;
+            theme.stampFrame = frame;
+            theme.ink = Ink;
+            theme.typewriter = Typewriter;
+            theme.faint = Faint;
+            EditorUtility.SetDirty(theme);
+            AssetDatabase.SaveAssets();
+        }
 
         private static TMP_FontAsset EnsureFontAsset(string fileName)
         {
