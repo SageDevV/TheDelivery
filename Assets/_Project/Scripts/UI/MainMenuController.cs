@@ -1,5 +1,7 @@
 using System.Collections;
+using System.IO;
 using TheDelivery.Core;
+using TheDelivery.Persistence;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -23,12 +25,23 @@ namespace TheDelivery.UI
         [SerializeField] private Button newGameButton;
         [SerializeField] private Button loadGameButton;
         [SerializeField] private Button quitButton;
+        [Tooltip("\"Atos\": abre a Seleção de Atos.")]
+        [SerializeField] private Button actsButton;
 
-        [Header("Aviso \"em breve\" (Carregar Jogo)")]
+        [Header("Seleção de Atos")]
+        [Tooltip("Painel da Seleção de Atos (começa escondido).")]
+        [SerializeField] private ActSelectUI actSelect;
+        [Tooltip("Coluna do menu principal (carimbo + botões), escondida enquanto a Seleção de Atos está aberta.")]
+        [SerializeField] private GameObject mainColumn;
+
+        [Header("Aviso (Carregar Jogo)")]
         [Tooltip("CanvasGroup do aviso temporário. Opcional: sem ele, só o Debug.Log.")]
         [SerializeField] private CanvasGroup notice;
         [SerializeField] private TMP_Text noticeLabel;
-        [SerializeField] private string loadNotImplementedText = "Carregar Jogo: em breve";
+        [Tooltip("Aviso quando não há save (o botão já fica desabilitado; isto cobre um clique por teclado/atalho).")]
+        [SerializeField] private string noSaveText = "Nenhum jogo salvo ainda";
+        [Tooltip("Aviso quando o save existe mas não pôde ser lido (corrompido/adulterado).")]
+        [SerializeField] private string invalidSaveText = "O jogo salvo não pôde ser carregado";
         [Min(0.1f)]
         [SerializeField] private float noticeDuration = 2f;
         [Min(0.1f)]
@@ -59,9 +72,30 @@ namespace TheDelivery.UI
 
         private void Start()
         {
-            // Foco inicial: teclado/gamepad navegam sem precisar do mouse.
-            if (newGameButton != null && EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject(newGameButton.gameObject);
+            RefreshLoadButton();
+
+            // Foco inicial: com save, "Carregar Jogo" (continuar é o mais provável); sem, "Novo Jogo".
+            Button first = loadGameButton != null && loadGameButton.interactable ? loadGameButton : newGameButton;
+            if (first != null && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(first.gameObject);
+        }
+
+        /// <summary>
+        /// "Carregar Jogo" só fica clicável com um save VÁLIDO no disco (existe, assinatura
+        /// confere, cena/ato conhecidos). Desabilitado, o MenuItemStyle o mostra apagado e a
+        /// navegação por teclado/controle pula ele.
+        /// </summary>
+        public void RefreshLoadButton()
+        {
+            if (loadGameButton == null)
+                return;
+            bool valid = SaveManager.HasValidSave();
+            loadGameButton.interactable = valid;
+            // O MenuItemStyle só redesenha quando o foco muda; o "apagado" tem que aparecer já.
+            loadGameButton.GetComponent<MenuItemStyle>()?.Refresh();
+            Debug.Log(valid
+                ? "[MainMenu] Save válido encontrado — \"Carregar Jogo\" habilitado."
+                : "[MainMenu] Sem save válido — \"Carregar Jogo\" desabilitado.", this);
         }
 
         private void Update()
@@ -93,18 +127,99 @@ namespace TheDelivery.UI
             SceneManager.LoadScene(fallbackFirstScene.ToString());
         }
 
-        /// <summary>Carregar Jogo: ainda não implementado — só avisa.</summary>
+        /// <summary>
+        /// Carregar Jogo: lê o save e retoma (cena + ato + beat, depois estamina/itens/pose)
+        /// pelo GameManager. Sem save válido, avisa e reavalia o botão.
+        /// </summary>
         public void OnLoadGame()
         {
-            Debug.Log("[MainMenu] Load Game ainda não implementado.", this);
+            if (starting)
+                return;
 
+            if (!SaveManager.TryLoad(out _, out string error))
+            {
+                ShowNoticeText(File.Exists(SaveManager.SavePath) ? invalidSaveText : noSaveText);
+                Debug.LogWarning($"[MainMenu] Carregar Jogo indisponível: {error}.", this);
+                RefreshLoadButton();
+                return;
+            }
+
+            if (GameManager.Instance == null)
+            {
+                Debug.LogWarning("[MainMenu] GameManager ausente (Play direto no MainMenu?). Dê Play pela Boot para carregar.", this);
+                ShowNoticeText("Inicie pela cena Boot para carregar");
+                return;
+            }
+
+            starting = true;
+            SetButtonsInteractable(false);
+            if (!GameManager.Instance.LoadSavedGame(out error))
+            {
+                starting = false;
+                SetButtonsInteractable(true);
+                RefreshLoadButton();
+                ShowNoticeText(invalidSaveText);
+            }
+        }
+
+        private void ShowNoticeText(string text)
+        {
             if (notice == null)
                 return;
             if (noticeLabel != null)
-                noticeLabel.text = loadNotImplementedText;
+                noticeLabel.text = text;
             if (noticeRoutine != null)
                 StopCoroutine(noticeRoutine);
             noticeRoutine = StartCoroutine(ShowNotice());
+        }
+
+        /// <summary>"Atos": troca a coluna principal pela Seleção de Atos.</summary>
+        public void OnActs()
+        {
+            if (starting || actSelect == null)
+                return;
+            actSelect.ActChosen -= OnActChosen;
+            actSelect.BackRequested -= OnActSelectBack;
+            actSelect.ActChosen += OnActChosen;
+            actSelect.BackRequested += OnActSelectBack;
+
+            if (mainColumn != null) mainColumn.SetActive(false);
+            actSelect.Open();
+        }
+
+        /// <summary>Volta da Seleção de Atos para o menu principal (foco no "Atos").</summary>
+        public void OnActSelectBack()
+        {
+            if (actSelect == null || !actSelect.gameObject.activeSelf)
+                return;
+            actSelect.Close();
+            if (mainColumn != null) mainColumn.SetActive(true);
+            RefreshLoadButton();
+            if (actsButton != null && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(actsButton.gameObject);
+        }
+
+        /// <summary>Ato liberado escolhido: começa nele (estado de sessão novo) pelo GameManager.</summary>
+        private void OnActChosen(GameAct act)
+        {
+            if (starting)
+                return;
+            if (GameManager.Instance == null)
+            {
+                Debug.LogWarning("[MainMenu] GameManager ausente (Play direto no MainMenu?). Dê Play pela Boot.", this);
+                ShowNoticeText("Inicie pela cena Boot para escolher um ato");
+                return;
+            }
+
+            starting = true;
+            SetButtonsInteractable(false);
+            if (!GameManager.Instance.StartAtAct(act))
+            {
+                starting = false;
+                SetButtonsInteractable(true);
+                RefreshLoadButton();
+                actSelect.Refresh();
+            }
         }
 
         /// <summary>Sair do Jogo: fecha o build; no Editor, sai do Play Mode.</summary>
@@ -149,6 +264,7 @@ namespace TheDelivery.UI
             if (newGameButton != null) newGameButton.interactable = value;
             if (loadGameButton != null) loadGameButton.interactable = value;
             if (quitButton != null) quitButton.interactable = value;
+            if (actsButton != null) actsButton.interactable = value;
         }
 
         private static void ReleaseCursor()

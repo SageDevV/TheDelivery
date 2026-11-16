@@ -260,6 +260,12 @@ namespace TheDelivery.Player
         /// controle: sem isso, o primeiro frame de <see cref="ApplyCameraTransform"/>
         /// faria a câmera "saltar" para o pitch/altura antigos.
         /// </summary>
+        /// <summary>Rotação vertical acumulada da câmera (o save guarda junto da pose).</summary>
+        public float Pitch => pitch;
+
+        /// <summary>Altura atual do olho (suavizada pelo agachar).</summary>
+        public float EyeHeight => currentEyeHeight;
+
         public void SyncCameraState(float pitch, float eyeHeight)
         {
             this.pitch = pitch;
@@ -380,7 +386,9 @@ namespace TheDelivery.Player
 
         private void OnDisable()
         {
-            moveAction?.actionMap.Disable();
+            // actionMap também com ?.: ao sair do Play o asset de input pode já ter sido
+            // descarregado e o mapa vir nulo (NullReference no OnDisable).
+            moveAction?.actionMap?.Disable();
             LockCursor(false);
         }
 

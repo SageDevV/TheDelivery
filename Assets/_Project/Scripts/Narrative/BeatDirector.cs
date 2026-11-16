@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections;
+using TheDelivery.Persistence;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using UnityEngine.InputSystem;
@@ -25,7 +27,7 @@ namespace TheDelivery.Narrative
     /// mesmo que chegar nele pelo caminho natural.
     /// </summary>
     /// <typeparam name="TBeat">O enum de beats do ato.</typeparam>
-    public abstract class BeatDirector<TBeat> : MonoBehaviour where TBeat : struct, Enum
+    public abstract class BeatDirector<TBeat> : MonoBehaviour, IBeatDirectorState where TBeat : struct, Enum
     {
         // Beats na ordem do enum, sem o None (índice 0): a tecla N pula para o N-ésimo.
         private static readonly TBeat[] DebugBeats = BuildDebugBeats();
@@ -37,6 +39,11 @@ namespace TheDelivery.Narrative
 
         /// <summary>Beat atual da sequência (<c>None</c> antes de o ato começar).</summary>
         public TBeat CurrentBeat { get; private set; }
+
+        // --- Save (IBeatDirectorState) ---------------------------------------
+        public string DirectorId => GetType().Name;
+        public int CurrentBeatValue => Convert.ToInt32(CurrentBeat);
+        private bool resumeChecked;
 
         /// <summary>
         /// TROCA ADIADA (padrão): o pedido de troca espera um quadro antes de parar o beat
@@ -75,6 +82,26 @@ namespace TheDelivery.Narrative
         /// </summary>
         public void AdvanceToBeat(TBeat beat)
         {
+            // CARREGAR JOGO: no PRIMEIRO AdvanceToBeat do ato (o que o diretor faz no Start),
+            // um save pendente deste diretor troca o beat inicial pelo beat salvo. Cada diretor
+            // continua decidindo sozinho QUANDO começar; aqui só muda ONDE. Seguro porque cada
+            // beat garante sozinho o estado de que precisa (ver o resumo desta classe).
+            if (!resumeChecked && EqualityComparer<TBeat>.Default.Equals(CurrentBeat, default))
+            {
+                resumeChecked = true;
+                if (SaveManager.TryConsumeResumeBeat(DirectorId, out int saved) && Enum.IsDefined(typeof(TBeat), saved))
+                    beat = (TBeat)Enum.ToObject(typeof(TBeat), saved);
+
+                // Começo do ato pedido com None (ex.: startBeat deixado em None no Inspector e o
+                // ato aberto direto pela Seleção de Atos / Carregar): None não é beat e deixaria o
+                // ato parado. Vale o primeiro beat da história do ato.
+                if (EqualityComparer<TBeat>.Default.Equals(beat, default) && DebugBeats.Length > 0)
+                {
+                    Debug.LogWarning($"[{GetType().Name}] Ato começando com None (startBeat vazio?): usando o primeiro beat, {DebugBeats[0]}.", this);
+                    beat = DebugBeats[0];
+                }
+            }
+
             if (!DeferBeatSwitch)
             {
                 SwitchBeat(beat);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using TheDelivery.Persistence;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
@@ -62,6 +63,10 @@ namespace TheDelivery.Core
         // COBRINDO uma troca — o certo — e um preto que sobrou de uma troca que
         // parou no meio.
         private bool transitionRunning;
+
+        // SAVE: o que fazer quando a cena da transição em curso terminar de abrir.
+        private bool autosaveOnArrival;  // chegou num ato novo -> salvar
+        private bool restoreOnArrival;   // veio do "Carregar Jogo" -> aplicar o save pendente
 
         private void Awake()
         {
@@ -248,7 +253,11 @@ namespace TheDelivery.Core
 
             // Estado de sessão limpo: quem guarda algo entre cenas se reseta aqui.
             Time.timeScale = 1f;
+            SaveManager.ResetSession();
             NewGameStarted?.Invoke();
+
+            // Salva ao CHEGAR no primeiro ato: a partida nova substitui o save anterior.
+            autosaveOnArrival = true;
 
             if (skipNightmare)
             {
@@ -262,8 +271,110 @@ namespace TheDelivery.Core
             StartCoroutine(TransitionToScene(GameScene.Nightmare));
         }
 
-        /// <summary>Define o ato atual (progresso de alto nível).</summary>
-        public void SetAct(GameAct act) => CurrentAct = act;
+        /// <summary>
+        /// CARREGAR JOGO: lê o save, marca o ato, prepara a restauração e carrega a cena
+        /// salva com o fade de sempre. Depois que a cena abre (sob o preto), o diretor do ato
+        /// retoma no beat salvo e o <see cref="SaveManager"/> aplica estamina, itens e pose.
+        /// Devolve false (com o motivo) se não houver save válido ou já houver transição.
+        /// </summary>
+        public bool LoadSavedGame(out string error)
+        {
+            if (transitionRunning)
+            {
+                error = "transição em curso";
+                return false;
+            }
+            if (!SaveManager.TryLoad(out SaveData data, out error))
+            {
+                Debug.LogWarning($"[GameManager] Carregar Jogo: {error}.", this);
+                return false;
+            }
+
+            Time.timeScale = 1f;
+            NewGameStarted?.Invoke();          // estado de sessão limpo (estamina etc.)...
+            SaveManager.BeginRestore(data);    // ...e o do save por cima (flags agora; resto no load)
+            restoreOnArrival = true;
+
+            CurrentAct = (GameAct)data.act;
+            Enum.TryParse(data.scene, out GameScene scene);
+            Debug.Log($"[GameManager] Carregando save '{data.checkpointId}' ({data.savedAtUtc}): {CurrentAct} em \"{scene}\".", this);
+            StartCoroutine(TransitionToScene(scene));
+            return true;
+        }
+
+        /// <summary>
+        /// Volta para a tela de início (ex.: "Sair para o menu" da pausa). Não salva — o
+        /// progresso fica no último save automático/checkpoint.
+        /// </summary>
+        public bool ReturnToMainMenu()
+        {
+            if (transitionRunning)
+                return false;
+            Time.timeScale = 1f;
+            CurrentAct = GameAct.None;
+            StartCoroutine(TransitionToScene(GameScene.MainMenu));
+            return true;
+        }
+
+        /// <summary>
+        /// Define o ato atual (progresso de alto nível). Mudando de ato SEM trocar de cena (o
+        /// Ato 3 -> Ato 4 no Apartment), salva automaticamente depois que o novo ato começa.
+        /// </summary>
+        public void SetAct(GameAct act)
+        {
+            bool changed = act != CurrentAct;
+            if (changed)
+                CompleteIfAdvancing(CurrentAct, act);
+            CurrentAct = act;
+            if (changed && act != GameAct.None && !transitionRunning)
+                StartCoroutine(AutosaveAfterFrames("act-start"));
+        }
+
+        /// <summary>
+        /// Conclui <paramref name="from"/> quando a história AVANÇA para um ato posterior (pela
+        /// ordem do GameActCatalog). Voltar/repetir um ato não conclui nada.
+        /// </summary>
+        private static void CompleteIfAdvancing(GameAct from, GameAct to)
+        {
+            int a = GameActCatalog.IndexOf(from), b = GameActCatalog.IndexOf(to);
+            if (a >= 0 && b > a)
+                SaveManager.CompleteAct(from);
+        }
+
+        /// <summary>
+        /// SELEÇÃO DE ATOS: começa direto no início de um ato já liberado. Reseta o estado de
+        /// sessão como uma partida nova (estamina cheia, flags limpas — os sistemas globais
+        /// inicializam como no começo de um jogo) e carrega a cena do ato com o fade de sempre;
+        /// o diretor do ato começa no primeiro beat. NÃO salva na chegada: escolher um ato para
+        /// revisitar não apaga o "Carregar Jogo" — o slot só é sobrescrito quando a história
+        /// avançar de novo.
+        /// </summary>
+        public bool StartAtAct(GameAct act)
+        {
+            if (transitionRunning)
+                return false;
+            if (!GameActCatalog.TryGet(act, out GameActCatalog.ActInfo info) || !SaveManager.IsActUnlocked(act))
+            {
+                Debug.LogWarning($"[GameManager] Seleção de Atos: {act} não está liberado.", this);
+                return false;
+            }
+
+            Time.timeScale = 1f;
+            SaveManager.ResetSession();
+            NewGameStarted?.Invoke();
+            CurrentAct = act;
+            Debug.Log($"[GameManager] Seleção de Atos: {info.Number} — {info.Title} ({act}) em \"{info.Scene}\".", this);
+            StartCoroutine(TransitionToScene(info.Scene));
+            return true;
+        }
+
+        // Dois quadros: o diretor do novo ato já fez o primeiro AdvanceToBeat (o save guarda o beat).
+        private IEnumerator AutosaveAfterFrames(string checkpointId)
+        {
+            yield return null;
+            yield return null;
+            SaveManager.SaveCheckpoint(checkpointId, includePose: false);
+        }
 
         /// <summary>
         /// Avança para o próximo ato TROCANDO DE CENA: marca o ato e conduz a transição
@@ -288,6 +399,12 @@ namespace TheDelivery.Core
             GameAct previous = CurrentAct;
             CurrentAct = act;
             Debug.Log($"[GameManager] {previous} -> {act}; carregando \"{scene}\".", this);
+            // FIM DE ATO: sair de um ato para o próximo conclui o ato que ficou para trás e grava
+            // o progresso (libera o próximo na Seleção de Atos).
+            CompleteIfAdvancing(previous, act);
+            // SALVAMENTO AUTOMÁTICO na chegada do novo ato (ex.: Ato 1 -> Ato 2): o save guarda a
+            // cena nova, o ato e o estado que veio do ato anterior (estamina, flags).
+            autosaveOnArrival = true;
             StartCoroutine(TransitionToScene(scene));
             return true;
         }
@@ -367,6 +484,20 @@ namespace TheDelivery.Core
                 yield return null;
                 yield return null;
 
+                // Ainda sob o preto: os Start da cena já rodaram (o diretor já retomou no beat
+                // salvo). Restaura o resto do save, ou salva a chegada no ato novo.
+                if (restoreOnArrival)
+                {
+                    restoreOnArrival = false;
+                    autosaveOnArrival = false;
+                    SaveManager.ApplyPendingRestore();
+                }
+                else if (autosaveOnArrival)
+                {
+                    autosaveOnArrival = false;
+                    SaveManager.SaveCheckpoint("act-start", includePose: false);
+                }
+
                 Debug.Log($"[GameManager] \"{scene}\" carregada; clareando.");
 
                 // Clareia (fade de volta), revelando a cena já pronta.
@@ -377,6 +508,10 @@ namespace TheDelivery.Core
             finally
             {
                 transitionRunning = false;
+                // Uma transição que falhou ou foi cortada não pode deixar save/restauração
+                // "armados" para a próxima troca de cena.
+                autosaveOnArrival = false;
+                restoreOnArrival = false;
             }
         }
 
