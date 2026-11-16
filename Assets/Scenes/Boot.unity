@@ -799,6 +799,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1839414674}
   - component: {fileID: 1839414673}
+  - component: {fileID: 1839414675}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -820,6 +821,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Core.GameManager
   fadeCanvas: {fileID: 554300053}
   fadeDuration: 1
+  globalVolume: {fileID: 0}
+  scenesWithoutGlobalVolume: 05000000
+  skipNightmare: 0
 --- !u!4 &1839414674
 Transform:
   m_ObjectHideFlags: 0
@@ -837,6 +841,28 @@ Transform:
   - {fileID: 2146857068}
   m_Father: {fileID: 1975730810}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1839414675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839414672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6f2357b3cadb224699334d9114d977c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Player.StaminaSystem
+  maxStamina: 100
+  drainPerSecond: 20
+  regenDelay: 1
+  regenPerSecond: 15
+  exhaustedExtraDelay: 0.75
+  recoveryThreshold: 0.3
+  sceneOverrides:
+  - scene: 5
+    drainMultiplier: 0.75
+  infinite: 0
 --- !u!1 &1955692221
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ using TheDelivery.Core;
 using TheDelivery.FX;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
+using TheDelivery.UI;
 using static TheDelivery.Narrative.DirectorUtility;
 
 namespace TheDelivery.Narrative
@@ -787,7 +788,7 @@ namespace TheDelivery.Narrative
         private static bool SpacePressed()
         {
             Keyboard kb = Keyboard.current;
-            return kb != null && kb.spaceKey.wasPressedThisFrame;
+            return kb != null && !PauseMenu.IsPaused && kb.spaceKey.wasPressedThisFrame;
         }
 
         // --- BEAT 2: Investigation ----------------------------------------

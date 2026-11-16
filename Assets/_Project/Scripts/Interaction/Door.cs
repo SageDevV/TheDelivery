@@ -157,6 +157,25 @@ namespace TheDelivery.Interaction
         }
 
         /// <summary>
+        /// Põe a porta aberta/fechada NA HORA, sem animação, sem som e sem evento — para
+        /// compor um cenário (ex.: a sala ao fundo da tela de início). Não é ação de
+        /// roteiro: quem escuta <see cref="StateChanged"/> não é avisado.
+        /// </summary>
+        public void SetOpenInstant(bool open)
+        {
+            if (animationRoutine != null)
+            {
+                StopCoroutine(animationRoutine);
+                animationRoutine = null;
+            }
+            SetYaw(open ? closedYaw + openAngle : closedYaw);
+            state = open ? DoorState.Open : DoorState.Closed;
+        }
+
+        /// <summary>Ângulo de abertura (graus) somado ao yaw fechado.</summary>
+        public float OpenAngle => openAngle;
+
+        /// <summary>
         /// Fecha a porta por ROTEIRO. No-op se já estiver fechada ou animando. Aguarde o
         /// fim com <see cref="IsClosed"/>.
         /// </summary>

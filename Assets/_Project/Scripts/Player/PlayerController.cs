@@ -156,6 +156,15 @@ namespace TheDelivery.Player
                  "(o corredor do pesadelo). Diferente de zerar o runSpeed — aqui o estado IsRunning nem chega a ligar, " +
                  "então head bob, cadência de passos e volume de passo continuam coerentes com uma caminhada.")]
         [SerializeField] private bool canRun = true;
+        [Tooltip("A corrida gasta a estamina global (StaminaSystem). Desmarque para correr sem limite neste player — " +
+                 "para desligar no jogo todo, use StaminaSystem.Infinite.")]
+        [SerializeField] private bool useStamina = true;
+
+        /// <summary>
+        /// Liga/desliga o custo de estamina da corrida NESTE player. Setter para directors
+        /// cujo trecho não deve ser decidido pelo fôlego.
+        /// </summary>
+        public bool UseStamina { get => useStamina; set => useStamina = value; }
 
         /// <summary>
         /// Trava completamente movimento, look, crouch e head bob — a gravidade
@@ -518,7 +527,13 @@ namespace TheDelivery.Player
 
             // Correr só em pé: agachado e correndo ao mesmo tempo não existe (vulnerabilidade).
             // CanRun permite a uma cena tirar a corrida de vez (ver NightmareDirector).
-            IsRunning = CanRun && CanMove && !IsCrouching && runAction.IsPressed() && input.y > 0.1f;
+            bool wantsRun = CanRun && CanMove && !IsCrouching && runAction.IsPressed() && input.y > 0.1f;
+
+            // Estamina: sem fôlego (zerou e ainda não cruzou o limiar de recuperação) o
+            // Shift é ignorado e ela volta a andar — IsRunning cai, então head bob, passos
+            // e o ruído para a IA (PlayerNoise) acompanham sozinhos.
+            StaminaSystem stamina = useStamina ? StaminaSystem.Instance : null;
+            IsRunning = wantsRun && (stamina == null || stamina.CanSprint);
 
             float targetSpeed = IsCrouching ? crouchSpeed : (IsRunning ? runSpeed : walkSpeed);
             currentSpeed = Mathf.Lerp(currentSpeed, targetSpeed, speedSmoothing * dt);
@@ -537,6 +552,10 @@ namespace TheDelivery.Player
             controller.Move(velocity * dt);
 
             IsMoving = controller.isGrounded && input.sqrMagnitude > 0.01f;
+
+            // Só drena correndo DE FATO: Shift segurado parado (ou no ar) não gasta.
+            if (stamina != null && IsRunning && IsMoving)
+                stamina.ReportSprinting();
         }
 
         // --- Head Bob ------------------------------------------------------

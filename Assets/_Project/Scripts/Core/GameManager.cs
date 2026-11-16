@@ -53,6 +53,9 @@ namespace TheDelivery.Core
         [Tooltip("PULA O PESADELO: começa direto na Cafeteria (Ato 1), como era antes do cold open. " +
                  "Para iterar nos atos seguintes sem assistir ao pesadelo inteiro a cada Play. Deixe FALSE no fluxo real.")]
         [SerializeField] private bool skipNightmare = false;
+        [Tooltip("PULA A TELA DE INÍCIO: a Boot começa a partida direto (Nightmare, ou Cafeteria com skipNightmare). " +
+                 "Para iterar rápido. Deixe FALSE no fluxo real.")]
+        [SerializeField] private bool skipMainMenu = false;
 
         // TRANSIÇÃO EM CURSO. Existe para a vigia da tela preta
         // (<see cref="WatchStuckFade"/>) saber a diferença entre um preto que está
@@ -205,10 +208,25 @@ namespace TheDelivery.Core
                       $"{(suppressed ? "SUSPENSO" : "ativo")} em {sceneName}.", this);
         }
 
+        /// <summary>
+        /// Disparado no início de cada NOVA partida, antes do load da primeira cena.
+        /// Sistemas globais com estado de sessão (estamina etc.) se inscrevem aqui para
+        /// se resetar — o GameManager não precisa conhecer cada um deles.
+        /// </summary>
+        public static event Action NewGameStarted;
+
         private void Start()
         {
-            // Sem menu principal por enquanto: abre direto no Ato 1.
-            StartNewGame();
+            // A Boot abre a TELA DE INÍCIO; é o "Novo Jogo" de lá que chama StartNewGame.
+            if (skipMainMenu)
+            {
+                Debug.LogWarning("[GameManager] skipMainMenu ligado: pulando a tela de início.", this);
+                StartNewGame();
+                return;
+            }
+
+            CurrentAct = GameAct.None;
+            StartCoroutine(TransitionToScene(GameScene.MainMenu));
         }
 
         /// <summary>
@@ -222,6 +240,16 @@ namespace TheDelivery.Core
         /// </summary>
         public void StartNewGame()
         {
+            if (transitionRunning)
+            {
+                Debug.LogWarning("[GameManager] Transição em curso; \"Novo Jogo\" ignorado.", this);
+                return;
+            }
+
+            // Estado de sessão limpo: quem guarda algo entre cenas se reseta aqui.
+            Time.timeScale = 1f;
+            NewGameStarted?.Invoke();
+
             if (skipNightmare)
             {
                 Debug.LogWarning("[GameManager] skipNightmare ligado: pulando o cold open e abrindo direto na Cafeteria.", this);

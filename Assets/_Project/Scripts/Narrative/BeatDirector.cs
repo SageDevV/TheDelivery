@@ -148,7 +148,7 @@ namespace TheDelivery.Narrative
         protected void HandleDebugKeys()
         {
             Keyboard kb = Keyboard.current;
-            if (kb == null)
+            if (kb == null || TheDelivery.UI.PauseMenu.IsPaused)
                 return;
 
             int count = Mathf.Min(9, DebugBeats.Length);

@@ -71,7 +71,14 @@ namespace TheDelivery.FX
         /// pulsar no <see cref="Update"/>. Opcionalmente toca o <see cref="sirenAudio"/>.
         /// Idempotente: chamar de novo enquanto já toca apenas reinicia o padrão.
         /// </summary>
-        public void StartSiren()
+        public void StartSiren() => StartSiren(playAudio: true);
+
+        /// <summary>
+        /// Liga o efeito escolhendo se o <see cref="sirenAudio"/> toca. Com
+        /// <paramref name="playAudio"/> = false, só as LUZES pulsam — ex.: o reflexo da
+        /// viatura na janela, ao fundo da tela de início, sem a sirene gritando no menu.
+        /// </summary>
+        public void StartSiren(bool playAudio)
         {
             timer = 0f;
             IsPlaying = true;
@@ -89,9 +96,14 @@ namespace TheDelivery.FX
             if (redLight == null && blueLight == null)
                 Debug.LogWarning("[SirenLightEffect] Nenhuma luz atribuída (redLight/blueLight); o efeito não terá o que pulsar.", this);
 
-            if (sirenAudio != null && !sirenAudio.isPlaying)
+            if (playAudio && sirenAudio != null && !sirenAudio.isPlaying)
                 sirenAudio.Play();
         }
+
+        /// <summary>Pico de intensidade configurado (para previews/composição de cena).</summary>
+        public float MaxIntensity => maxIntensity;
+        public Light RedLight => redLight;
+        public Light BlueLight => blueLight;
 
         /// <summary>
         /// Desliga o efeito: para o padrão e apaga as duas luzes (intensidade 0 +

@@ -35,6 +35,7 @@ namespace TheDelivery.EditorTools
         private static readonly GameScene[] Flow =
         {
             GameScene.Boot,        // índice 0 — a cena que sobe no Play
+            GameScene.MainMenu,    // tela de início (a Boot abre aqui)
             GameScene.Nightmare,   // ActNightmare (cold open)
             GameScene.Cafeteria,   // Act1
             GameScene.Road,        // ActJourney

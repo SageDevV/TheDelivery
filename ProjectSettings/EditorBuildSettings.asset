@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Boot.unity
     guid: 552eb5aac7a383146bb309b8045894eb
   - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 6272a18b1ae3ed74dbeb1d8f9a9e0292
+  - enabled: 1
     path: Assets/Scenes/Nightmare.unity
     guid: 40a2ec1c109148b4db42b53cbff04c3e
   - enabled: 1
