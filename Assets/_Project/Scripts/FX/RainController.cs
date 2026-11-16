@@ -64,6 +64,24 @@ namespace TheDelivery.FX
         [Tooltip("Por quanto tempo (s) cada trovão mascara o microfone do esconderijo.")]
         [Min(0f)] [SerializeField] private float thunderMaskSeconds = 5f;
 
+        [Header("Ducking (chuva abaixa quando outro áudio toca)")]
+        [Tooltip("Abaixa o SOM da chuva sempre que outro áudio audível estiver tocando (falas, efeitos, passos do killer, sirene...). O trovão não é afetado.")]
+        [SerializeField] private bool duckOnAudio = true;
+        [Tooltip("Volume da chuva (fração) enquanto outro áudio toca.")]
+        [Range(0f, 1f)] [SerializeField] private float duckLevel = 0.3f;
+        [Tooltip("Tempo (s) para abaixar quando um som começa.")]
+        [Min(0.01f)] [SerializeField] private float duckAttack = 0.12f;
+        [Tooltip("Tempo (s) para voltar ao volume cheio.")]
+        [Min(0.01f)] [SerializeField] private float duckRelease = 1f;
+        [Tooltip("Segura abaixado (s) depois que o som para — evita a chuva 'respirar' entre frases.")]
+        [Min(0f)] [SerializeField] private float duckHold = 0.4f;
+        [Tooltip("Nível mínimo absoluto (RMS no ouvinte) para um áudio contar como audível.")]
+        [Range(0.001f, 0.1f)] [SerializeField] private float duckThreshold = 0.008f;
+        [Tooltip("Nível mínimo RELATIVO à chuva: o outro áudio precisa ter pelo menos esta fração do nível da chuva para abaixá-la.")]
+        [Range(0.05f, 1f)] [SerializeField] private float duckRelativeThreshold = 0.35f;
+        [Tooltip("Se true, os passos da própria protagonista também abaixam a chuva (contínuos ao andar: a chuva 'bombeia').")]
+        [SerializeField] private bool duckForPlayerFootsteps = false;
+
         [Header("Fade")]
         [Min(0.01f)] [SerializeField] private float fadeTime = 3f;
 
@@ -72,6 +90,15 @@ namespace TheDelivery.FX
         [SerializeField] private bool rainOnStart = false;
 
         public bool IsRaining { get; private set; }
+
+        /// <summary>Multiplicador atual do ducking (1 = chuva cheia; duckLevel = abaixada).</summary>
+        public float DuckFactor => duck;
+
+        /// <summary>Debug: medidas da última checagem do ducking (montada só quando lida — sem lixo por quadro).</summary>
+        public string DuckDebug =>
+            $"mix {Mathf.Sqrt(mixSmooth):0.000} chuva/passos {Mathf.Sqrt(ownSmooth):0.000} outros {lastOthers:0.000} limiar {lastThreshold:0.000}";
+
+        private float lastOthers, lastThreshold;
 
         private float level;          // 0..1 intensidade atual (fade)
         private float nextLightning;
@@ -87,6 +114,18 @@ namespace TheDelivery.FX
                 if (lightningLights[i] != null)
                     peakIntensity[i] = lightningLights[i].intensity;
             SetFlash(0f);
+
+            // As colunas cobertas são testadas num job Burst dentro do update das partículas.
+            // No Awake (não no Start): precisa estar pronto antes de quem ligar a chuva primeiro.
+            if (rainParticles != null)
+            {
+                var cull = rainParticles.GetComponent<RainCullJob>();
+                if (cull == null) cull = rainParticles.gameObject.AddComponent<RainCullJob>();
+                cull.SetVolumes(indoorVolumes, groundKillY);
+            }
+
+            // Estado inicial: sem chuva — a menos que alguém ligue (Act4Director ou rainOnStart).
+            ApplyLevel(0f);
         }
 
         /// <summary>Aplica o clarão (0 = apagado, 1 = pico) em todas as luzes do relâmpago.</summary>
@@ -105,8 +144,10 @@ namespace TheDelivery.FX
 
         private void Start()
         {
-            ApplyLevel(0f);
-            if (rainOnStart)
+            // NÃO zera aqui: o Act4Director pode ter ligado a chuva no Start DELE, antes deste
+            // (início do Ato 4 via debug/startBeat). Zerar aqui apagava a emissão com o nível
+            // interno já em 1 — e nada mais religava. O estado inicial (0) é posto no Awake.
+            if (rainOnStart && !IsRaining)
                 SetRaining(true, instant: true);
         }
 
@@ -153,8 +194,6 @@ namespace TheDelivery.FX
                 rainParticles.transform.position = new Vector3(p.x, p.y + emitterHeight, p.z);
             }
 
-            CullCoveredDrops();
-
             float targetLevel = IsRaining ? 1f : 0f;
             if (!Mathf.Approximately(level, targetLevel))
             {
@@ -164,55 +203,14 @@ namespace TheDelivery.FX
                     rainParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             }
 
+            if (level > 0f)
+                UpdateDucking(Time.unscaledDeltaTime);
+
             if (IsRaining && lightning && level > 0.5f && Time.time >= nextLightning)
             {
                 FlashNow();
                 ScheduleLightning(first: false);
             }
-        }
-
-        private ParticleSystem.Particle[] particleBuffer;
-
-        /// <summary>
-        /// Elimina as gotas dentro das colunas cobertas (ou abaixo do chão). Roda no LateUpdate,
-        /// depois da simulação e antes do render: a gota some no mesmo quadro em que entraria —
-        /// determinístico, ao contrário da colisão de partículas, que deixa gota rápida
-        /// atravessar teto fino. Custo: um teste de caixa por gota por quadro.
-        /// </summary>
-        private void CullCoveredDrops()
-        {
-            if (rainParticles == null || rainParticles.particleCount == 0)
-                return;
-
-            int max = rainParticles.main.maxParticles;
-            if (particleBuffer == null || particleBuffer.Length < max)
-                particleBuffer = new ParticleSystem.Particle[max];
-
-            int count = rainParticles.GetParticles(particleBuffer);
-            bool changed = false;
-            int volumes = indoorVolumes != null ? indoorVolumes.Length : 0;
-
-            for (int i = 0; i < count; i++)
-            {
-                Vector3 p = particleBuffer[i].position;
-                bool kill = p.y < groundKillY;
-                for (int v = 0; !kill && v < volumes; v++)
-                {
-                    Bounds b = indoorVolumes[v];
-                    kill = p.x >= b.min.x && p.x <= b.max.x &&
-                           p.z >= b.min.z && p.z <= b.max.z &&
-                           p.y >= b.min.y && p.y <= b.max.y;
-                }
-                if (kill)
-                {
-                    particleBuffer[i].remainingLifetime = -1f;
-                    particleBuffer[i].startSize = 0f; // invisível já neste quadro
-                    changed = true;
-                }
-            }
-
-            if (changed)
-                rainParticles.SetParticles(particleBuffer, count);
         }
 
         private void OnDrawGizmosSelected()
@@ -231,10 +229,106 @@ namespace TheDelivery.FX
                 var emission = rainParticles.emission;
                 emission.rateOverTime = rainRate * l;
             }
+            ApplyAudioVolume();
+        }
+
+        /// <summary>Volume do SOM da chuva = intensidade (fade) × ducking. O trovão não passa por aqui.</summary>
+        private void ApplyAudioVolume()
+        {
+            float v = rainVolume * level * duck;
             if (synth != null)
-                synth.RainVolume = (rainLoopClip == null ? rainVolume : 0f) * l;
+                synth.RainVolume = rainLoopClip == null ? v : 0f;
             if (clipSource != null && rainLoopClip != null)
-                clipSource.volume = rainVolume * l;
+                clipSource.volume = v;
+        }
+
+        // --- Ducking: a chuva abaixa quando outro áudio toca ------------------
+
+        private AudioSource[] playerSources = System.Array.Empty<AudioSource>();
+        private float mixSmooth, ownSmooth;
+        private readonly float[] duckBuffer = new float[1024];
+
+        private static float MeanSquare(float[] b)
+        {
+            float sum = 0f;
+            for (int i = 0; i < b.Length; i++) sum += b[i] * b[i];
+            return sum / b.Length;
+        }
+        private float duck = 1f;          // multiplicador atual do volume da chuva (1 = cheio)
+        private float duckHoldUntil;      // segura abaixado um pouco depois do som parar
+        private float nextSourceScan;
+        private GameObject playerBody;
+
+        private void UpdateDucking(float dt)
+        {
+            if (!duckOnAudio)
+            {
+                if (duck != 1f) { duck = 1f; ApplyAudioVolume(); }
+                return;
+            }
+
+            // COMO DETECTA: mede a MISTURA que chega ao ouvinte (já com atenuação 3D, inclui
+            // one-shots, PlayClipAtPoint, sirene...) e desconta, por energia, o que é da própria
+            // chuva (o sintetizador sabe o que gerou) e os passos da protagonista. O que sobra é
+            // "outro áudio tocando". Medir fonte a fonte não serve: AudioSource ocioso pode
+            // ficar com isPlaying=true sem clip e ecoar no GetOutputData o sinal das outras
+            // (visto no Act4Director).
+            if (Time.unscaledTime >= nextSourceScan)
+            {
+                nextSourceScan = Time.unscaledTime + 1f;
+                if (playerBody == null)
+                    playerBody = GameObject.FindGameObjectWithTag("Player");
+                playerSources = playerBody != null ? playerBody.GetComponents<AudioSource>() : System.Array.Empty<AudioSource>();
+            }
+
+            AudioListener.GetOutputData(duckBuffer, 0);
+            float mix2 = MeanSquare(duckBuffer);
+
+            float own2 = 0f;
+            if (synth != null && rainLoopClip == null)
+            {
+                float r = synth.OutputRms;
+                own2 += r * r;
+            }
+            else if (clipSource != null && clipSource.isPlaying && clipSource.clip != null)
+            {
+                clipSource.GetOutputData(duckBuffer, 0);
+                own2 += MeanSquare(duckBuffer);
+            }
+            if (!duckForPlayerFootsteps)
+                foreach (AudioSource s in playerSources)
+                    if (s != null && s.isActiveAndEnabled && s.isPlaying && s.clip != null)
+                    {
+                        s.GetOutputData(duckBuffer, 0);
+                        own2 += MeanSquare(duckBuffer);
+                    }
+
+            // Suaviza as duas medidas (~0,15 s): o bloco do ouvinte e o do sintetizador não são o
+            // mesmo trecho de tempo, e as gotas/rajadas da chuva dariam picos falsos.
+            float k = 1f - Mathf.Exp(-dt / 0.15f);
+            mixSmooth += (mix2 - mixSmooth) * k;
+            ownSmooth += (own2 - ownSmooth) * k;
+
+            // Margem de 30% sobre o que é nosso e limiar RELATIVO: o outro som precisa ter pelo
+            // menos duckRelativeThreshold do nível da chuva (com a chuva já abaixada, o limiar
+            // cai junto — histerese natural, a chuva não "solta" no meio de uma frase).
+            float others = Mathf.Sqrt(Mathf.Max(0f, mixSmooth - ownSmooth * 1.3f));
+            float threshold = Mathf.Max(duckThreshold, duckRelativeThreshold * Mathf.Sqrt(ownSmooth));
+            lastOthers = others;
+            lastThreshold = threshold;
+
+            bool audible = others >= threshold;
+            if (audible)
+                duckHoldUntil = Time.unscaledTime + duckHold;
+
+            float target = Time.unscaledTime < duckHoldUntil ? duckLevel : 1f;
+            float tau = target < duck ? duckAttack : duckRelease;
+            float next = Mathf.Lerp(duck, target, 1f - Mathf.Exp(-dt / Mathf.Max(0.001f, tau)));
+            if (!Mathf.Approximately(next, duck))
+            {
+                duck = next;
+                ApplyAudioVolume();
+            }
         }
 
         private void ScheduleLightning(bool first)

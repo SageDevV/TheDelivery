@@ -150,7 +150,9 @@ namespace TheDelivery.AI
         private float sneakLayerWeight;          // peso atual da layer (lerpado pra suavizar)
         private Quaternion lockedSneakRotation;  // orientação congelada enquanto a layer influencia
 
-        private void Start()
+        // Componentes no Awake (roda no SetActive(true)): o diretor pode ativar o antagonista e
+        // chamar ResumeFromDirector no MESMO quadro, antes do Start (salto de debug ao Beat 7).
+        private void Awake()
         {
             if (agent == null) agent = GetComponent<NavMeshAgent>();
             if (patrol == null) patrol = GetComponent<PatrolBehavior>();
@@ -162,6 +164,10 @@ namespace TheDelivery.AI
             chasingHash = Animator.StringToHash(chasingParam);
             if (animator != null)
                 sneakLayerIndex = animator.GetLayerIndex(sneakLayerName);
+        }
+
+        private void Start()
+        {
 
             // Referência serializada primeiro; a busca por tag é só o fallback para a
             // cena em que o campo ficou vazio (mesmo padrão do PlayerHiding).
@@ -173,9 +179,10 @@ namespace TheDelivery.AI
             }
 
             // Inicia patrulhando. O PatrolBehavior inicia a própria rotina no Start dele;
-            // aqui só garantimos a velocidade e o estado inicial.
-            CurrentState = AIState.Patrol;
-            agent.speed = patrolSpeed;
+            // aqui só garantimos a velocidade e o estado inicial — a menos que o diretor já
+            // tenha posto a FSM em outro estado antes deste Start (salto de debug).
+            if (CurrentState == AIState.Patrol)
+                agent.speed = patrolSpeed;
         }
 
         // Só ouve o microfone com a FSM LIGADA: suspensa pelo diretor (enabled=false), quem

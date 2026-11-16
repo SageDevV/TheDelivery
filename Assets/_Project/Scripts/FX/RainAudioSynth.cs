@@ -56,6 +56,13 @@ namespace TheDelivery.FX
                 src.Play();
         }
 
+        /// <summary>
+        /// RMS do que este sintetizador ENTREGOU no último bloco (chuva + trovão, já com volume).
+        /// O ducking da chuva usa para descontar a própria chuva da mistura do ouvinte.
+        /// </summary>
+        public float OutputRms => outputRms;
+        private volatile float outputRms;
+
         /// <summary>Dispara um trovão (força 0-1).</summary>
         public void TriggerThunder(float strength) => pendingThunder = Mathf.Clamp01(strength);
 
@@ -90,6 +97,7 @@ namespace TheDelivery.FX
             }
 
             int frames = data.Length / channels;
+            float energy = 0f;
             for (int i = 0; i < frames; i++)
             {
                 // --- Chuva: ruído -> passa-baixa 2 polos -> passa-alta leve.
@@ -144,7 +152,9 @@ namespace TheDelivery.FX
                 sample = sample / (1f + Mathf.Abs(sample)); // soft clip
                 for (int c = 0; c < channels; c++)
                     data[i * channels + c] = sample;
+                energy += sample * sample;
             }
+            outputRms = Mathf.Sqrt(energy / Mathf.Max(1, frames));
         }
     }
 }

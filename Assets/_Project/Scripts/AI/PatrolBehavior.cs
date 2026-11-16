@@ -50,15 +50,24 @@ namespace TheDelivery.AI
         /// </summary>
         public bool IsWaitingAtPoint { get; private set; }
 
-        private void Start()
+        // Referência no Awake (roda no SetActive(true)): o diretor pode ativar o antagonista e
+        // chamar ResumePatrol no MESMO quadro, antes do Start (salto de debug direto ao Beat 7).
+        private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
+        }
 
+        private void Start()
+        {
             if (patrolPoints == null || patrolPoints.Length == 0)
             {
                 Debug.LogError("[PatrolBehavior] Nenhum ponto de patrulha atribuído.", this);
                 return;
             }
+
+            // Já retomada por quem ativou (ResumePatrol antes do Start): não abre um 2º loop.
+            if (IsPatrolling)
+                return;
 
             agent.speed = patrolSpeed;
             CurrentPatrolIndex = 0;
