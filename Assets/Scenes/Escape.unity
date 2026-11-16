@@ -227,6 +227,7 @@ GameObject:
   - component: {fileID: 78201054}
   - component: {fileID: 78201053}
   - component: {fileID: 78201052}
+  - component: {fileID: 78201058}
   m_Layer: 9
   m_Name: Kidnapper
   m_TagString: Antagonist
@@ -250,6 +251,7 @@ MonoBehaviour:
   patrol: {fileID: 78201055}
   vision: {fileID: 78201054}
   hearing: {fileID: 78201053}
+  playerController: {fileID: 0}
   patrolSpeed: 2
   suspiciousSpeed: 2.5
   chaseSpeed: 3.5
@@ -265,6 +267,7 @@ MonoBehaviour:
   sneakLayerName: UpperBody
   sneakStateName: Sneak
   sneakBlendTime: 0.2
+  micHearingRadius: 0
   showStateInConsole: 1
 --- !u!114 &78201053
 MonoBehaviour:
@@ -278,6 +281,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d88d5dfda700c8408d93797146989c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.AIHearing
+  playerNoise: {fileID: 0}
   showHearingGizmo: 1
 --- !u!114 &78201054
 MonoBehaviour:
@@ -291,6 +295,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45785feb96eac6b4a88d04020310372a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.AIVision
+  playerTransform: {fileID: 0}
   viewAngle: 60
   viewRadius: 8
   eyePosition: {fileID: 392812774}
@@ -367,6 +372,25 @@ Transform:
   - {fileID: 591040445}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &78201058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78201051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9aa4dd3f0422f24689bfa10b8cb479a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.KillerCapture
+  useAIEvent: 1
+  useTrigger: 0
+  useDistance: 0
+  captureDistance: 1.2
+  antagonistAI: {fileID: 0}
+  pullOut: {fileID: 0}
+  gameOver: {fileID: 0}
 --- !u!1 &102362227
 GameObject:
   m_ObjectHideFlags: 0
@@ -2503,6 +2527,8 @@ MonoBehaviour:
   maxYawAngle: 45
   maxPitchAngle: 30
   cameraOnlyMode: 0
+  spotDoor: {fileID: 0}
+  extractionPoint: {fileID: 0}
 --- !u!65 &701766360
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6247,6 +6273,8 @@ MonoBehaviour:
   maxYawAngle: 45
   maxPitchAngle: 30
   cameraOnlyMode: 0
+  spotDoor: {fileID: 0}
+  extractionPoint: {fileID: 0}
 --- !u!65 &1624235215
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6325,6 +6353,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
+--- !u!1001 &1661455780
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3249478615560301390, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3593188591657869227, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
+      propertyPath: m_Name
+      value: GameOver
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1952247a4b0394348b8cff42030ae705, type: 3}
 --- !u!1 &1720424683
 GameObject:
   m_ObjectHideFlags: 0
@@ -8269,3 +8354,4 @@ SceneRoots:
   - {fileID: 1723720459}
   - {fileID: 1649052551}
   - {fileID: 78201057}
+  - {fileID: 1661455780}

@@ -1649,6 +1649,16 @@ namespace TheDelivery.Narrative
             if (CurrentBeat != Act4Beat.FinalHiding || caughtThisAttempt)
                 return;
 
+            // Com a tela de morte na cena (prefab GameOver), a captura é GAME OVER — quem trata é
+            // o KillerCapture + GameOverManager. O reinício do Beat 7 abaixo fica só como reserva
+            // para uma cena sem Game Over.
+            if (GameOverManager.Instance != null)
+            {
+                caughtThisAttempt = true;
+                SetMicArmed(false);
+                return;
+            }
+
             caughtThisAttempt = true;
             if (caughtRetryRoutine != null)
                 StopCoroutine(caughtRetryRoutine);

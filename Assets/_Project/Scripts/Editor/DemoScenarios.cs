@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using TheDelivery.AI;
 using TheDelivery.Core;
+using TheDelivery.Narrative;
 using TheDelivery.Persistence;
 using TheDelivery.Player;
 using TheDelivery.UI;
@@ -36,6 +39,11 @@ namespace TheDelivery.EditorTools
             if (prep == "actsvideo")
             {
                 ActsVideo();
+                return;
+            }
+            if (prep == "gameovervideo")
+            {
+                GameOverVideo();
                 return;
             }
             if (prep != "staminavideo")
@@ -362,6 +370,126 @@ namespace TheDelivery.EditorTools
                             File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
                             File.WriteAllLines(Path.Combine(DemoFrameRecorder.OutputDir, "events.txt"), events);
                         }
+                        break;
+                }
+            }
+            EditorApplication.update += Tick;
+        }
+
+        // =====================================================================
+        // "gameovervideo" — Play pela Boot. Menu -> Ato 4 (Beat 7, a caçada) -> o killer volta,
+        // a protagonista fica no caminho dele -> ele alcança -> Game Over -> tela de início.
+        // Faz BACKUP do save e do perfil antes e restaura no fim (a ida ao Ato 4 salva sozinha).
+        // =====================================================================
+        private static void GameOverVideo()
+        {
+            string bakDir = Path.Combine(Application.temporaryCachePath, "save-backup-demo");
+            Directory.CreateDirectory(bakDir);
+            string[] files = { SaveManager.SavePath, SaveManager.ProgressPath };
+            foreach (string f in files)
+            {
+                string b = Path.Combine(bakDir, Path.GetFileName(f));
+                if (File.Exists(f)) File.Copy(f, b, true); else if (File.Exists(b)) File.Delete(b);
+            }
+
+            var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
+            Object.DontDestroyOnLoad(rec.gameObject);
+            rec.Begin(duration: 40f, fps: 24, recordAudio: true);
+            float t0 = Time.time;
+            double r0 = EditorApplication.timeSinceStartup;
+
+            var log = new StringBuilder();
+            void Ev(string text)
+            {
+                log.AppendLine($"{Time.time - t0,6:0.0}s (real {EditorApplication.timeSinceStartup - r0,5:0.0}s)  {text}");
+                Debug.Log($"[GameOverDemo] {text}");
+            }
+            string Snapshot() => string.Join(" | ", files.Select(f => File.Exists(f) ? $"{Path.GetFileName(f)}:{File.ReadAllText(f).GetHashCode():X8}" : $"{Path.GetFileName(f)}:-"));
+
+            int step = 0;
+            double stepAt = 0;
+            string before = null;
+            bool sawFrozen = false;
+            void Next() { step++; stepAt = EditorApplication.timeSinceStartup; }
+            double Since() => EditorApplication.timeSinceStartup - stepAt;
+
+            void Tick()
+            {
+                if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
+                string scene = SceneManager.GetActiveScene().name;
+                var go = GameOverManager.Instance;
+                if (go != null && go.IsActive && Time.timeScale == 0f && !sawFrozen)
+                {
+                    sawFrozen = true;
+                    var pc = Object.FindFirstObjectByType<PlayerController>();
+                    var hud = Object.FindFirstObjectByType<StaminaBarUI>();
+                    Ev($"GAME OVER ativo: timeScale={Time.timeScale}, jogador CanMove={pc?.CanMove}, HUD (Canvas da estamina) ativo={hud?.GetComponentInParent<Canvas>()?.enabled}, PauseMenu.CanPause={PauseMenu.CanPause}");
+                }
+
+                switch (step)
+                {
+                    case 0:
+                        if (Object.FindFirstObjectByType<MainMenuController>() != null && Time.time - t0 > 3f)
+                        {
+                            Ev("Tela de início -> Ato 4 (Apartment)");
+                            GameManager.Instance.GoToAct(GameAct.Act4, GameScene.Apartment);
+                            Next();
+                        }
+                        break;
+                    case 1:
+                        if (scene == "Apartment" && Since() > 3)
+                        {
+                            var d = Object.FindFirstObjectByType<Act4Director>();
+                            d.AdvanceToBeat(Act4Beat.FinalHiding);
+                            Ev("Beat 7 (a caçada): o killer volta depois da folga");
+                            Next();
+                        }
+                        break;
+                    case 2:
+                        var ai = Object.FindFirstObjectByType<AntagonistAI>();
+                        if (ai != null && ai.isActiveAndEnabled && Since() > 1)
+                        {
+                            var pc = Object.FindFirstObjectByType<PlayerController>();
+                            var cc = pc.GetComponent<CharacterController>();
+                            Vector3 k = ai.transform.position;
+                            Vector3 dir = ai.transform.forward; dir.y = 0f; dir.Normalize();
+                            Vector3 pos = k + dir * 3.5f;
+                            if (UnityEngine.AI.NavMesh.SamplePosition(pos, out var hit, 2f, UnityEngine.AI.NavMesh.AllAreas)) pos = hit.position;
+                            cc.enabled = false;
+                            pc.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-dir, Vector3.up));
+                            cc.enabled = true;
+                            pc.CanMove = true;
+                            before = Snapshot();
+                            Ev($"Killer de volta ({ai.CurrentState}); a protagonista está no caminho dele. Save/perfil antes: {before}");
+                            Next();
+                        }
+                        break;
+                    case 3:
+                        if (go != null && go.IsActive) { Ev("Killer alcançou a protagonista -> KillerCapture -> GameOverManager"); Next(); }
+                        else if (Since() > 25) { Ev("FALHOU: o killer não alcançou em 25 s"); step = 9; }
+                        break;
+                    case 4:
+                        if (Object.FindFirstObjectByType<MainMenuController>() != null && Since() > 2)
+                        {
+                            string after = Snapshot();
+                            Ev($"De volta à tela de início: timeScale={Time.timeScale}, cursor {Cursor.lockState}/visível={Cursor.visible}, PauseMenu.CanPause={PauseMenu.CanPause}, ato={GameManager.Instance.CurrentAct}");
+                            Ev($"Save/perfil depois: {after} -> {(after == before ? "INTACTOS" : "MUDARAM")}; atos liberados: {string.Join(", ", GameActCatalog.Story.Where(a => SaveManager.IsActUnlocked(a.Act)).Select(a => a.Number))}");
+                            Next();
+                        }
+                        break;
+                    case 5:
+                        if (Since() > 3) step = 9;
+                        break;
+                    case 9:
+                        EditorApplication.update -= Tick;
+                        foreach (string f in files)
+                        {
+                            string b = Path.Combine(bakDir, Path.GetFileName(f));
+                            if (File.Exists(b)) File.Copy(b, f, true); else if (File.Exists(f)) File.Delete(f);
+                        }
+                        Ev("Save e perfil de desenvolvimento restaurados do backup.");
+                        Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                        File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
                         break;
                 }
             }
