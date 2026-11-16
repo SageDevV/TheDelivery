@@ -48,7 +48,14 @@ namespace TheDelivery.Player
             Time.captureFramerate = fps;
             audioChannels = AudioSettings.speakerMode == AudioSpeakerMode.Mono ? 1 : 2;
             if (recordAudio)
+            {
+                // Uma gravação interrompida (Play encerrado no meio) deixaria o AudioRenderer
+                // aberto e o Start seguinte falharia ("already recording") — quem fecha é o
+                // OnDestroy (audioOpen). Não chamar Stop aqui: sem gravação aberta ele loga
+                // ERRO, e com "Error Pause" ligado o Editor pausa o Play.
                 AudioRenderer.Start();
+                audioOpen = true;
+            }
 
             float t0 = Time.time;
             int frame = 0;
@@ -67,7 +74,11 @@ namespace TheDelivery.Player
 
                 yield return new WaitForEndOfFrame();
 
+                // A captura pode vir nula num quadro sem Game View pronta (troca de cena, saída
+                // do Play): pula o quadro em vez de matar a gravação inteira.
                 Texture2D tex = ScreenCapture.CaptureScreenshotAsTexture();
+                if (tex == null)
+                    continue;
                 File.WriteAllBytes(Path.Combine(OutputDir, $"f{frame:0000}.jpg"), tex.EncodeToJPG(90));
                 Destroy(tex);
 
@@ -88,6 +99,7 @@ namespace TheDelivery.Player
             if (recordAudio)
             {
                 AudioRenderer.Stop();
+                audioOpen = false;
                 WriteWav(AudioFile, audioSamples, audioChannels, AudioSettings.outputSampleRate);
             }
             Time.captureFramerate = 0;
@@ -116,9 +128,16 @@ namespace TheDelivery.Player
                 w.Write((short)Mathf.Clamp(Mathf.RoundToInt(s * 32767f), short.MinValue, short.MaxValue));
         }
 
+        private bool audioOpen;
+
         private void OnDestroy()
         {
             Time.captureFramerate = 0;
+            if (audioOpen)
+            {
+                AudioRenderer.Stop(); // não deixa o AudioRenderer aberto para a próxima gravação
+                audioOpen = false;
+            }
         }
     }
 }

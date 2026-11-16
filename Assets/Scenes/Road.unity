@@ -306,7 +306,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.PercursoDirector
   playerController: {fileID: 1506943491}
   playerInteraction: {fileID: 1506943486}
-  standUpPrompt: {fileID: 1506943485}
+  standUpPrompt: {fileID: 0}
   spawnPoint: {fileID: 1355001310}
   destinationPoint: {fileID: 1834171531}
   destinationRadius: 2

@@ -358,7 +358,17 @@ namespace TheDelivery.EditorTools
                 return;
             }
 
-            if (prep != "micpreview")
+            // "hudpreview" = micpreview + estamina segura em 55% (as duas barras do HUD juntas).
+            if (prep == "hudpreview")
+            {
+                void HoldStamina()
+                {
+                    if (!EditorApplication.isPlaying) { EditorApplication.update -= HoldStamina; return; }
+                    StaminaSystem.Instance?.SetNormalized(0.55f);
+                }
+                EditorApplication.update += HoldStamina;
+            }
+            else if (prep != "micpreview")
                 return;
 
             // Espera a cena assentar (Start dos sistemas) antes de entrar no esconderijo.

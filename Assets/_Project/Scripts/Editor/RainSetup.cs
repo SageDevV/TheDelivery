@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using TheDelivery.FX;
 using TheDelivery.Narrative;
 using TheDelivery.Player;
@@ -38,6 +39,7 @@ namespace TheDelivery.EditorTools
         static RainSetup()
         {
             EditorApplication.update += AutoRun;
+            EditorApplication.update += PollDebugStart;
             GameScreenshotTool.PlayReady += OnPlayReady;
         }
 
@@ -295,8 +297,98 @@ namespace TheDelivery.EditorTools
 
         // --- Vídeo de demonstração ------------------------------------------
 
+        // --- Teste: início do Ato 4 via debug (autoStartForDebug) -------------
+
+        /// <summary>
+        /// Liga/desliga o autoStartForDebug do Act4Director na cena salva (para reproduzir o
+        /// "Play direto no Ato 4"). Marcador Temp/RainDebugStart.pending: "on &lt;beat&gt;" ou "off".
+        /// </summary>
+        private static void PollDebugStart()
+        {
+            const string marker = "Temp/RainDebugStart.pending";
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || !File.Exists(marker))
+                return;
+            string[] arg = File.ReadAllText(marker).Trim().Split(' ');
+            File.Delete(marker);
+
+            Scene scene = EditorSceneManager.GetSceneByPath(ApartmentPath);
+            bool openedHere = false;
+            if (!scene.IsValid() || !scene.isLoaded) { scene = EditorSceneManager.OpenScene(ApartmentPath, OpenSceneMode.Additive); openedHere = true; }
+            try
+            {
+                Act4Director d = scene.GetRootGameObjects().Select(r => r.GetComponentInChildren<Act4Director>(true)).FirstOrDefault(x => x != null);
+                if (d == null) return;
+                var so = new SerializedObject(d);
+                bool on = arg[0] == "on";
+                so.FindProperty("autoStartForDebug").boolValue = on;
+                so.FindProperty("startBeat").intValue = on && arg.Length > 1 ? int.Parse(arg[1]) : 0;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                Debug.Log($"[RainSetup] Act4Director autoStartForDebug={on} startBeat={so.FindProperty("startBeat").intValue}");
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
         private static void OnPlayReady(string prep)
         {
+            if (prep == "rainduck")
+            {
+                // Roteiro: chuva só (0-2 s) -> tom 2D (2-4 s, deve abaixar) -> silêncio (4-7 s,
+                // deve voltar) -> tom 3D a 40 m (7-9 s, inaudível: NÃO deve abaixar).
+                double t0 = EditorApplication.timeSinceStartup + 1.5;
+                bool startedRain = false, played2d = false, played3d = false;
+                double nextLog = 0;
+                var sb = new System.Text.StringBuilder();
+                void Tick()
+                {
+                    if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
+                    double t = EditorApplication.timeSinceStartup - t0;
+                    if (t < 0) return;
+                    RainController rc = Object.FindFirstObjectByType<RainController>(FindObjectsInactive.Include);
+                    if (rc == null) { EditorApplication.update -= Tick; return; }
+                    if (!startedRain) { rc.gameObject.SetActive(true); rc.SetRaining(true, instant: true); startedRain = true; }
+                    if (!played2d && t >= 2.0) { PlayTone(Vector3.zero, spatial: false); played2d = true; }
+                    if (!played3d && t >= 7.0)
+                    {
+                        Camera cam = Camera.main;
+                        Vector3 far = (cam != null ? cam.transform.position : Vector3.zero) + new Vector3(40f, 0f, 0f);
+                        PlayTone(far, spatial: true);
+                        played3d = true;
+                    }
+                    if (t >= nextLog) { sb.AppendLine($"{t:0.0}s={rc.DuckFactor:0.00} [{rc.DuckDebug}]"); nextLog = t + 0.5; }
+                    if (t >= 9.5)
+                    {
+                        EditorApplication.update -= Tick;
+                        Debug.Log("[RainSetup] DUCK " + sb);
+                    }
+                }
+                EditorApplication.update += Tick;
+                return;
+            }
+
+            if (prep == "raincheck")
+            {
+                double checkAt = EditorApplication.timeSinceStartup + 3.0;
+                void Check()
+                {
+                    if (!EditorApplication.isPlaying) { EditorApplication.update -= Check; return; }
+                    if (EditorApplication.timeSinceStartup < checkAt) return;
+                    EditorApplication.update -= Check;
+                    RainController rc = Object.FindFirstObjectByType<RainController>(FindObjectsInactive.Include);
+                    ParticleSystem ps = rc != null ? rc.GetComponentInChildren<ParticleSystem>(true) : null;
+                    var act4 = Object.FindFirstObjectByType<Act4Director>(FindObjectsInactive.Include);
+                    Debug.Log($"[RainSetup] CHECK beat={act4?.CurrentBeat} raining={rc?.IsRaining} " +
+                              $"ativo={rc?.gameObject.activeInHierarchy} gotas vivas={ps?.particleCount} " +
+                              $"taxa={ps?.emission.rateOverTime.constant} tocando={ps?.isPlaying}");
+                }
+                EditorApplication.update += Check;
+                return;
+            }
+
             // "rainvideo" = janela da sala (de perto); "rainvideo_bedroom" = dentro do quarto,
             // olhando a janela de longe (mostra o cômodo e o relâmpago iluminando-o).
             if (prep != "rainvideo" && prep != "rainvideo_bedroom")
@@ -347,6 +439,34 @@ namespace TheDelivery.EditorTools
                 Debug.Log("[RainSetup] Gravação da chuva iniciada.");
             }
             EditorApplication.update += Step;
+        }
+
+        /// <summary>Toca um tom de teste de 2 s (440 Hz) — 2D ou 3D na posição dada.</summary>
+        private static void PlayTone(Vector3 position, bool spatial)
+        {
+            const int rate = 44100;
+            var data = new float[rate * 2];
+            for (int i = 0; i < data.Length; i++) data[i] = 0.4f * Mathf.Sin(2f * Mathf.PI * 440f * i / rate);
+            AudioClip clip = AudioClip.Create("TestTone", data.Length, 1, rate, false);
+            clip.SetData(data, 0);
+            var go = new GameObject(spatial ? "TestTone3D" : "TestTone2D");
+            go.transform.position = position;
+            var src = go.AddComponent<AudioSource>();
+            src.spatialBlend = spatial ? 1f : 0f;
+            src.rolloffMode = AudioRolloffMode.Logarithmic;
+            src.minDistance = 1f;
+            src.maxDistance = 30f;
+            if (spatial)
+            {
+                src.clip = clip;
+                src.Play();
+            }
+            else
+            {
+                // 2D via PlayOneShot numa fonte SEM clip — é assim que os diretores tocam efeitos.
+                src.PlayOneShot(clip);
+            }
+            Object.Destroy(go, 2.2f);
         }
 
         private static void Fail(string message)

@@ -95,6 +95,15 @@ namespace TheDelivery.EditorTools
                 return;
             }
 
+            // Captura automática não pode ficar presa no "Error Pause" do Console: um LogError
+            // da cena pausa o Play e nenhum quadro é renderizado. Despausa e avisa — o erro
+            // continua no Console para ser tratado.
+            if (state >= 1 && state <= 3 && EditorApplication.isPlaying && EditorApplication.isPaused)
+            {
+                EditorApplication.isPaused = false;
+                Debug.LogWarning("[GameScreenshot] Play pausado (Error Pause do Console) — despausado para a captura. Veja o erro acima.");
+            }
+
             if (state == 1 && EditorApplication.isPlaying)
             {
                 playStartedAt = EditorApplication.timeSinceStartup;

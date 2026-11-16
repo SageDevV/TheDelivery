@@ -28,8 +28,8 @@ namespace TheDelivery.EditorTools
         private const string BarName = "StaminaBar";
         private const string Title = "Estamina";
 
-        private static readonly Vector2 BarSize = new Vector2(240f, 6f);
-        private static readonly Vector2 BarOffset = new Vector2(0f, 40f); // a partir da borda de baixo
+        private static readonly Vector2 BarSize = new Vector2(320f, 14f);
+        private static readonly Vector2 BarOffset = new Vector2(0f, 58f); // a partir da borda de baixo (deixa espaço para a legenda)
 
         // Sprint um pouco mais longo no Nightmare: dreno x0.75 ≈ 6,7 s contra 5 s nos outros atos.
         private const float NightmareDrainMultiplier = 0.75f;
@@ -75,10 +75,16 @@ namespace TheDelivery.EditorTools
 
             try
             {
-                if (FindChild(root.transform, BarName) != null)
+                Transform existing = FindChild(root.transform, BarName);
+                if (existing != null)
                 {
-                    status = $"\"{BarName}\" já existia";
-                    return true;
+                    // Estilo antigo (sem a legenda do HUD): refaz no padrão da barra de ruído.
+                    if (existing.Find("Label") != null)
+                    {
+                        status = $"\"{BarName}\" já existia";
+                        return true;
+                    }
+                    Object.DestroyImmediate(existing.gameObject);
                 }
 
                 Transform canvas = FindChild(root.transform, CanvasName);
@@ -100,11 +106,55 @@ namespace TheDelivery.EditorTools
                 barRect.sizeDelta = BarSize;
                 barRect.anchoredPosition = BarOffset;
 
+                // Mesmo HUD da barra de ruído (MicrophoneMeterUI): contorno branco fino, fundo
+                // escuro translúcido, preenchimento com 2 px de folga, régua e legenda espaçada.
+                Image frame = CreateImage("Frame", barRect, sprite, new Color(1f, 1f, 1f, 0.55f), filled: false);
+                Inset(frame.rectTransform, -2f);
                 CreateImage("Background", barRect, sprite, new Color(0f, 0f, 0f, 0.45f), filled: false);
-                Image fill = CreateImage("Fill", barRect, sprite, new Color(0.85f, 0.85f, 0.8f, 0.9f), filled: true);
+                Image fill = CreateImage("Fill", barRect, sprite, new Color(0.88f, 0.90f, 0.93f, 0.85f), filled: true);
+                Inset(fill.rectTransform, 2f);
+
+                // Régua: 9 marcas (10%..90%) acima da barra, a do meio mais longa.
+                var ticks = new Image[9];
+                for (int i = 0; i < ticks.Length; i++)
+                {
+                    Image t = CreateImage("Tick" + (i + 1), barRect, sprite, new Color(1f, 1f, 1f, 0.35f), filled: false);
+                    var tr = t.rectTransform;
+                    tr.anchorMin = tr.anchorMax = new Vector2((i + 1) * 0.1f, 1f);
+                    tr.pivot = new Vector2(0.5f, 0f);
+                    tr.sizeDelta = new Vector2(2f, i == 4 ? 12f : 6f);
+                    tr.anchoredPosition = new Vector2(0f, 6f);
+                    ticks[i] = t;
+                }
+
+                var labelGo = new GameObject("Label", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+                labelGo.layer = canvas.gameObject.layer;
+                var label = labelGo.GetComponent<TMPro.TextMeshProUGUI>();
+                var lr = label.rectTransform;
+                lr.SetParent(barRect, false);
+                lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0f);
+                lr.pivot = new Vector2(0.5f, 1f);
+                lr.sizeDelta = new Vector2(200f, 28f);
+                lr.anchoredPosition = new Vector2(0f, -10f);
+                label.text = "FÔLEGO";
+                label.fontSize = 18f;
+                label.characterSpacing = 8f;
+                label.alignment = TMPro.TextAlignmentOptions.Center;
+                label.color = new Color(1f, 1f, 1f, 0.7f);
+                label.raycastTarget = false;
+                label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
 
                 var so = new SerializedObject(bar.GetComponent<StaminaBarUI>());
                 so.FindProperty("fill").objectReferenceValue = fill;
+                so.FindProperty("frame").objectReferenceValue = frame;
+                so.FindProperty("label").objectReferenceValue = label;
+                SerializedProperty tp = so.FindProperty("ticks");
+                tp.arraySize = ticks.Length;
+                for (int i = 0; i < ticks.Length; i++)
+                    tp.GetArrayElementAtIndex(i).objectReferenceValue = ticks[i];
+                // Cores do HUD também nos campos (o prefab antigo guardava as cores velhas).
+                so.FindProperty("normalColor").colorValue = new Color(0.88f, 0.90f, 0.93f, 0.85f);
+                so.FindProperty("exhaustedColor").colorValue = new Color(0.92f, 0.13f, 0.10f, 0.9f);
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 bar.GetComponent<CanvasGroup>().alpha = 0f;
@@ -117,6 +167,12 @@ namespace TheDelivery.EditorTools
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        private static void Inset(RectTransform r, float inset)
+        {
+            r.offsetMin = new Vector2(inset, inset);
+            r.offsetMax = new Vector2(-inset, -inset);
         }
 
         private static Image CreateImage(string name, RectTransform parent, Sprite sprite, Color color, bool filled)
