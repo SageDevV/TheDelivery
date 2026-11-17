@@ -87,18 +87,45 @@ chamado, "boa noite", respiração), nunca falas longas.
 
 > Ato 1 é aplicado por `Tools/The Delivery/Cafeteria - Sonorização (atribuir áudios)` (`CafeteriaAudioSetup.cs`). Ele é idempotente: basta salvar um clipe novo com o nome esperado em `SoundEffects/` e rodar de novo.
 
-## Ato Journey — cena `Road`
+## Ato Journey (Interlúdio, "A Caminhada") — cena `Road`
 
-| ID | Beat | Evento | Tipo | Campo | Clipe atual | Status | Direção |
+**Regra da noite fechada:** nenhum carro, cachorro ou pássaro toca depois que a noite fecha — o tráfego tem toque de recolher e os eventos únicos do `NightfallSoundscape` só disparam na janela deles (nunca acima de 97% do anoitecer).
+
+**Conceito sonoro: a cidade se apagando.** A rua começa viva (fim de tarde, cidade ao longe) e vai perdendo uma camada de som a cada trecho, amarrada ao anoitecer (`NightfallController.Progress`, 0→1 em 120 s). Os pensamentos dela narram exatamente isso: *"Está fazendo muito silêncio aqui..."* (Thought-4) e *"Por que não tem ninguém na rua?"* (Thought-5). Quando a noite fecha e a trilha desce ao silêncio (J-01), só sobram **os passos dela, o vento e o assovio do estranho**. O silêncio nunca é zero digital: um tom de ar muito baixo (J-09) segura a sensação de lugar vazio.
+
+**Linha do tempo das camadas** (por `Progress` do anoitecer):
+
+| Camada | Entra | Começa a sumir | Some de vez |
+|---|---|---|---|
+| Cidade ao longe (J-02) | 0 | 0,15 | 0,55 |
+| Pássaros do entardecer (J-03) | 0 | 0,05 | 0,35 |
+| Carro passando (J-04) | ~0,05 (um só) | — | — |
+| Cachorro ao longe (J-05) | ~0,30 (o último som "vivo") | — | — |
+| Postes acendendo (J-06) | ~0,60 | — | fica (zumbido local) |
+| Vento (J-08) | 0 (baixo) | sobe até 0,9 | fica |
+| Tom de silêncio (J-09) | 0,7 | — | fica |
+| Trilha (J-01) | 0 | noite fechada (1,0) | +5 s |
+
+| ID | Beat | Evento | Tipo | Campo / Onde | Clipe atual | Status | Direção |
 |---|---|---|---|---|---|---|---|
-| J-01 | 1 Walk | Tema do cotidiano (fim de tarde) | Música loop | `AmbientMusic.clip` (vol. 0,4) | `DailyTheme.ogg` | ✅ | O mesmo tema do Ato 1 (A1-01): a caminhada continua o cotidiano dela. Desce até o silêncio com o `NightfallController` quando a noite fecha (por design). Ruídos de rua (trânsito, cachorro, vento) ainda podem entrar como camada separada |
-| J-02 | 1 Walk | Transição dia → noite | Ambiente | `NightfallController` | — | ➕ | Grilos/postes zumbindo entram enquanto a cidade some |
-| J-03 | 1 Walk | Postes de rua acendendo | SFX 3D | — | — | ➕ | Estalo + zumbido de sódio |
-| J-04 | 2 LeaningNotice | Assovio do estranho | Voz 3D loop | `JourneyDirector.leaningWhistle` | `WhisperingMusic.mp3` | 🟡 | O nome do clipe indica que é música, não um assovio. Gravar um assovio humano, desafinado e 3D |
-| J-05 | 2 LeaningNotice | Chamado ("ei, moça") | Voz 3D | `leaningCall` | `ComeHereMiss.mp3` | ✅ | — |
-| J-06 | 4 LeaningDialogue | Linhas do estranho | UI | `Dialogue_ActJourney-1` `sfx` | — | — | Opcional: um sting baixo na linha "Você não devia estar na rua hoje" |
-| J-07 | 5 LeaningRelease | Tensão residual | Música | — | — | ➕ | Pode ficar só no silêncio |
-| J-08 | 6 Arrival | Porta do prédio | SFX | — | — | ➕ | Porta pesada de vidro com mola; ponte para a Reception |
+| J-01 | 1 Walk | Tema do cotidiano (fim de tarde) | Música loop 2D | `AmbientMusic.clip` (vol. 0,4) | `DailyTheme.ogg` | ✅ | O mesmo tema do Ato 1 (A1-01). Desce até o SILÊNCIO em 5 s quando a noite fecha (`JourneyDirector.silenceFadeDuration`) |
+| J-02 | 1 Walk | Cidade ao longe | Ambiente loop 2D | `NightfallSoundscape` (camada, vol. 0,35) | `RoadCityDistant.ogg` | ✅ | Murmúrio urbano DISTANTE e abafado: trânsito longe, uma buzina perdida, um ônibus freando a quarteirões. Nada perto: a rua dela já é vazia, a cidade está "do outro lado". Some até 0,55 |
+| J-03 | 1 Walk | Pássaros do entardecer | Ambiente loop 2D | `NightfallSoundscape` (vol. 0,18) | `RoadDuskBirds.mp3` | ✅ | Andorinhas / pardais se recolhendo, poucos e esparsos. São os primeiros a sumir (0,35): a ausência deles é o primeiro sinal de "silêncio demais" |
+| J-04 | 1 Walk | Tráfego da rua | Carros 3D + SFX | `Traffic` na cena: `StreetRoute` (centro das ruas do percurso, esquinas arredondadas) + 4 `StreetTrafficCar` (2 em cada mão, modelos da Cafeteria). Som de passagem `CafeteriaTrafficPass` (vol. 1,0, cheio até 7 m, some aos 80 m). Faróis: 2 Spot por carro (facho na pista) + brilho na lente. Ainda há o evento único de carro distante no `NightfallSoundscape` (0,04) | `CafeteriaTrafficPass` | ✅ | Mesmo princípio do tráfego do Ato 1 (anda, some, espera, renasce). Os carros FREIAM e PARAM antes da Clear se ela estiver na pista, e seguem quando ela sai. TOQUE DE RECOLHER: nenhum carro novo larga depois de 70% do anoitecer, e os que ainda rodam somem na noite fechada (97%) |
+| J-16 | 1 Walk | Buzina do carro parado por causa dela | SFX 3D no carro | `StreetTrafficCar.hornSound` (vol. 0,45; 0,8 s parado → buzina; repete a cada 5 s, no máximo 3) | `RoadCarHorn.mp3` | ✅ | A buzina só existe quando um carro de verdade para na frente dela. A buzina distante dentro do loop `RoadCityDistant` fica por enquanto (decisão: avaliar depois) |
+| J-05 | 1 Walk | Cachorro latindo ao longe | SFX 3D distante (uma vez) | `NightfallSoundscape` (evento em 0,30, vol. 0,5) | `RoadDistantDog.mp3` | ✅ | Dois ou três latidos longe, com eco de quarteirão, que PARAM no meio — o último som vivo da cidade. Encaixa antes do Thought-4 ("muito silêncio") |
+| J-06 | 1 Walk | Postes acendendo | SFX 3D + loop 3D | `NightfallSoundscape`: estalo (evento 0,60) + zumbido no `StreetLight_01` (vol. 0,05, alcance 10 m — o arquivo é alto e agudo) | `RoadStreetLightOn.ogg`, `RoadStreetLightHum.mp3` | ✅ | Estalo de reator + zumbido de vapor de sódio, um pouco instável (pisca de leve no som). Acende quando o anoitecer passa de ~0,6; o zumbido fica, perto do poste |
+| J-07 | todos | Passos da Clear (asfalto/calçada) | SFX 3D | `Player.prefab` (`walkStepVolume` 0,45 / `runStepVolume` 0,7) | `Walking.mp3` | ✅ | Já tocam também na caminhada dirigida (beat 3). À noite, com a cidade calada, eles passam a ser o som mais presente — por design, sem mexer no volume. Opcional depois: um leve eco de rua vazia à noite |
+| J-08 | 1 Walk → 6 | Vento | Ambiente loop 2D | `NightfallSoundscape` (vol. 0,3; começa a 35% e sobe até 0,9) | `RoadWind.ogg` | ✅ | Vento baixo entre prédios, sem rajada forte. Sobe devagar enquanto a cidade some (substitui o que sai) e fica até o fim. Folhas/papel arrastando de vez em quando |
+| J-09 | 1 Walk (noite) → 6 | Tom de silêncio | Ambiente loop 2D | `NightfallSoundscape` (vol. 0,15, entra 0,6→0,85) | `RoadSilenceTone.ogg` | ✅ | Room tone de rua vazia à noite: um ar grave quase inaudível + zumbido elétrico de cidade muito longe. É o "silêncio" do Thought-4, só que com peso |
+| J-10 | 1 Walk (gatilho 1) → 2 | Assovio do estranho | Voz 3D loop | `JourneyDirector.leaningWhistle` (fonte 3D no ator) | `RoadStrangerWhistle.mp3` | ✅ | Substituiu o `WhisperingMusic` (era música). Direção:  um assovio humano real: melodia curta, lenta e levemente desafinada, repetida sem pressa, com o ar da boca audível. Precisa soar como uma pessoa ali, não como trilha. É o som-chave do ato: um convite que se repete |
+| J-11 | 2 LeaningNotice | Chamado ("vem cá, moça") | Voz 3D | `JourneyDirector.leaningCall` | `ComeHereMiss.mp3` | ✅ | — |
+| J-12 | 2–3 Notice/Approach | Tensão da abordagem | Música/drone 2D | `JourneyDirector.approachTensionLoop` (vol. 0,5, sobe em 4 s ao atender o chamado) | `RoadApproachTension.mp3` | ✅ | Quando ela perde o controle e vira para ele: um drone grave que sobe devagar, quase subliminar, e um pulso lento (coração abafado) enquanto ela caminha até ele. Não é susto: é desconforto |
+| J-13 | 4 LeaningDialogue | Fala do estranho | UI / sting | `Dialogue_ActJourney-1` linha 0 `sfx` | `RoadStrangerSting.ogg` | ✅ | Um sting baixo e seco (corda grave raspada) só na primeira linha: *"Você não devia estar na rua hoje."* As outras linhas, sem som: o silêncio entre as falas é o que incomoda |
+| J-14 | 5 LeaningRelease | Tensão residual | Drone 2D | `JourneyDirector` (desce em `approachTensionFadeOut` = 6 s) | `RoadApproachTension.mp3` | ✅ | O drone do J-12 desce em ~6 s quando o controle volta. O assovio NÃO volta. Sobram passos, vento e silêncio — ela segue com o *"É só um doido de rua"* |
+| J-15 | 6 Arrival | Porta do prédio | SFX 2D (atravessa a troca de cena) | `JourneyDirector.arrivalDoorSound` (vol. 0,8) | `RoadBuildingDoor.mp3` | ✅ | Porta pesada de vidro com mola e trinco metálico, o eco curto de um hall vazio. Ponte para a Reception (Ato 2), que começa com o som de dentro |
+
+> Aplicado por `Tools/The Delivery/Road - Sonorização (atribuir áudios)` (`RoadAudioSetup.cs`), idempotente. As camadas e eventos da cidade ficam no `NightfallSoundscape` da cena (valores editáveis no Inspector). Evidência: roteiro `roadvideo` (`RoadAudioDemo.cs`).
 
 ## Ato 2 — Reception
 

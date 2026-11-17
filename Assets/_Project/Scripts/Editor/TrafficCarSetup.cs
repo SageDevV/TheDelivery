@@ -125,7 +125,7 @@ namespace TheDelivery.EditorTools
         /// - descarta quem tem outra "roda" abaixo de si, que é o CONTAINER ("Wheels") — girar
         ///   o container arrastaria o grupo inteiro junto.
         /// </summary>
-        private static List<Transform> FindWheels(GameObject car)
+        internal static List<Transform> FindWheels(GameObject car)
         {
             var found = new List<Transform>();
 

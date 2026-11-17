@@ -16,7 +16,7 @@ MonoBehaviour:
   - speaker: Estranho
     text: "Voc\xEA n\xE3o devia estar na rua hoje."
     extraHold: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 8300000, guid: 2ccf8a46cd5b09c49881519da88cfdd9, type: 3}
   - speaker: "Voc\xEA"
     text: "...desculpa? Eu te conhe\xE7o?"
     extraHold: 0

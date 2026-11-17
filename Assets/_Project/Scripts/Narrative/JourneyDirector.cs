@@ -355,6 +355,21 @@ namespace TheDelivery.Narrative
                  "pergunta na cabeça dela. Vazio = nenhum.")]
         [SerializeField] private ThoughtData leaningAfterThought;
 
+        // --- Sonorização do encontro e da chegada (AudioMap J-12, J-14, J-15) ---
+        [Header("Sonorização - tensão do encontro e porta do prédio")]
+        [Tooltip("J-12/J-14: drone grave com coração abafado, em loop (2D). Sobe quando ela atende o chamado e " +
+                 "vira para o estranho, fica durante a aproximação e a conversa, e desce quando o controle volta. " +
+                 "Não é susto: é desconforto. Vazio = sem tensão.")]
+        [SerializeField] private AudioClip approachTensionLoop;
+        [Range(0f, 1f)] [SerializeField] private float approachTensionVolume = 0.5f;
+        [Tooltip("Segundos para a tensão subir — devagar, quase subliminar.")]
+        [Min(0f)] [SerializeField] private float approachTensionFadeIn = 4f;
+        [Tooltip("Segundos para a tensão descer quando a rua volta a ser dela (J-14).")]
+        [Min(0f)] [SerializeField] private float approachTensionFadeOut = 6f;
+        [Tooltip("J-15: a porta pesada do prédio, tocada no corte para a Recepção. Atravessa a troca de cena.")]
+        [SerializeField] private AudioClip arrivalDoorSound;
+        [Range(0f, 1f)] [SerializeField] private float arrivalDoorVolume = 0.8f;
+
         /// <summary>
         /// BEAT EM QUE O ATO COMEÇA. Permite testar um beat específico sem refazer o trajeto: escolha
         /// "LeaningDialogue" e a Clear nasce no gatilho do estranho já ouvindo a conversa.
@@ -620,6 +635,7 @@ namespace TheDelivery.Narrative
             // para explicá-los.
             StopWhistle();
             StopCall();
+            StopApproachTension(approachTensionFadeOut); // idempotente: o Release já pode ter começado a descida
 
             EnsurePlayerFree();
             yield break;
@@ -655,6 +671,9 @@ namespace TheDelivery.Narrative
             // A VOZ DELE, no silêncio que o assovio acabou de deixar.
             PlayCall();
 
+            // J-12: a tensão começa a subir quando ela ATENDE — devagar, por baixo do giro.
+            StartApproachTension();
+
             // O RESPIRO: ela não vira no mesmo quadro em que o som sai. Sem ele, o giro e
             // o chamado acontecem juntos e a leitura vira "o jogo girou a câmera"; com
             // ele, é ela registrando e só então virando.
@@ -686,6 +705,7 @@ namespace TheDelivery.Narrative
             MarkLeaningDelivered();
             LockPlayer();
             StartLeaningFocus();
+            StartApproachTension(); // idempotente; cobre começar o ato direto neste beat
 
             if (leaningNoticePause > 0f)
                 yield return new WaitForSeconds(leaningNoticePause);
@@ -713,6 +733,7 @@ namespace TheDelivery.Narrative
             MarkLeaningDelivered();
             LockPlayer();
             StartLeaningFocus();
+            StartApproachTension();
 
             yield return PlayLeaningDialogue();
 
@@ -736,6 +757,9 @@ namespace TheDelivery.Narrative
 
             StopLeaningFocus();
             ReleasePlayer();
+
+            // J-14: a tensão desce devagar; o assovio NÃO volta. Sobram passos, vento e silêncio.
+            StopApproachTension(approachTensionFadeOut);
 
             ShowThought(leaningAfterThought);
 
@@ -794,7 +818,84 @@ namespace TheDelivery.Narrative
                                  "o Arrival Thought Max Wait.", this);
             }
 
+            // J-15: a porta do prédio fecha atrás dela no corte — o som atravessa a troca de
+            // cena e a Recepção começa com o eco dele.
+            StopApproachTension(0.5f);
+            PlayAcrossSceneChange(arrivalDoorSound, arrivalDoorVolume);
+
             GoToReception();
+        }
+
+        // --- Tensão do encontro (J-12 / J-14) e a porta (J-15) ------------------
+
+        private AudioSource tensionSource;
+        private Coroutine tensionFade;
+        private bool tensionWanted;
+
+        /// <summary>Sobe o drone da abordagem. Idempotente: chamar com ele já subindo não reinicia nada.</summary>
+        private void StartApproachTension()
+        {
+            if (approachTensionLoop == null || tensionWanted)
+                return;
+            tensionWanted = true;
+            if (tensionSource == null)
+            {
+                tensionSource = gameObject.AddComponent<AudioSource>();
+                tensionSource.playOnAwake = false;
+                tensionSource.loop = true;
+                tensionSource.spatialBlend = 0f; // dentro da cabeça dela
+                tensionSource.volume = 0f;
+            }
+            tensionSource.clip = approachTensionLoop;
+            if (!tensionSource.isPlaying)
+                tensionSource.Play();
+            FadeTension(approachTensionVolume, approachTensionFadeIn, stopAtEnd: false);
+        }
+
+        /// <summary>Desce o drone até o silêncio e para. Idempotente.</summary>
+        private void StopApproachTension(float duration)
+        {
+            if (!tensionWanted || tensionSource == null)
+                return;
+            tensionWanted = false;
+            FadeTension(0f, duration, stopAtEnd: true);
+        }
+
+        private void FadeTension(float target, float duration, bool stopAtEnd)
+        {
+            if (tensionFade != null)
+                StopCoroutine(tensionFade);
+            tensionFade = StartCoroutine(TensionFadeRoutine(target, Mathf.Max(0f, duration), stopAtEnd));
+        }
+
+        private IEnumerator TensionFadeRoutine(float target, float duration, bool stopAtEnd)
+        {
+            float from = tensionSource.volume;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                tensionSource.volume = Mathf.Lerp(from, target, t / duration);
+                yield return null;
+            }
+            tensionSource.volume = target;
+            if (stopAtEnd)
+                tensionSource.Stop();
+            tensionFade = null;
+        }
+
+        /// <summary>
+        /// Toca um som 2D que SOBREVIVE à troca de cena (a porta da chegada): fonte própria em
+        /// DontDestroyOnLoad, destruída quando o clipe termina.
+        /// </summary>
+        private static void PlayAcrossSceneChange(AudioClip clip, float volume)
+        {
+            if (clip == null)
+                return;
+            var go = new GameObject($"OneShot_{clip.name}");
+            DontDestroyOnLoad(go);
+            var source = go.AddComponent<AudioSource>();
+            source.spatialBlend = 0f;
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+            Destroy(go, clip.length + 0.1f);
         }
 
         // --- Vigias ------------------------------------------------------------
