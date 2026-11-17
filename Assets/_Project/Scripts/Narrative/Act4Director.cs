@@ -445,7 +445,7 @@ namespace TheDelivery.Narrative
             // No fluxo real, fica INERTE até o Act3Director chamar BeginAct4() no handoff
             // (Clear dorme) — assim o despertar do Ato 4 não dispara durante o Ato 3.
             bool isAct4 = GameManager.Instance != null && GameManager.Instance.CurrentAct == GameAct.Act4;
-            if (isAct4 || autoStartForDebug)
+            if (isAct4 || (autoStartForDebug && DebugAutoStartAllowed))
                 AdvanceToBeat(startBeat);
             else
                 Debug.Log("[Act4Director] Inerte: CurrentAct não é Act4 e autoStartForDebug=false. Aguardando BeginAct4() do Act3Director.", this);

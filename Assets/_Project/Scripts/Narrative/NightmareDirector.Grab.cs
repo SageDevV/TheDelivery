@@ -1746,6 +1746,10 @@ namespace TheDelivery.Narrative
 
             Quaternion fallen = Quaternion.Euler(grabFallenPitch, 0f, grabFallenRoll);
 
+            // O zumbido é armado aqui, no quadro do pouso, mas MUDO: o envelope abaixo só o abre
+            // depois do grabDazeRingDelay — primeiro o baque, depois o ouvido reagindo a ele.
+            StartDazeRing();
+
             // O ÚLTIMO PENSAMENTO DO PESADELO tem hora, e ela não é o quadro do baque: o
             // pensamento não é a reação ao impacto, é o que vem depois dele. O teto é o fim
             // da tontura — depois disso as pálpebras estão descendo, e uma frase que nasce
@@ -1763,12 +1767,20 @@ namespace TheDelivery.Narrative
                     thoughtShown = true;
                 }
 
+                float blink = t > daze ? (close <= 0f ? 1f : Mathf.SmoothStep(0f, 1f, (t - daze) / close)) : 0f;
                 if (t > daze)
-                    SetBlink(close <= 0f ? 1f : Mathf.SmoothStep(0f, 1f, (t - daze) / close));
+                    SetBlink(blink);
+
+                // Envelope do zumbido: mudo até o baque terminar (grabDazeRingDelay), sobe no ataque,
+                // segura na tontura, desce com as pálpebras.
+                float ringT = t - Mathf.Max(0f, grabDazeRingDelay);
+                float attack = ringT <= 0f ? 0f : (grabDazeRingAttack <= 0f ? 1f : Mathf.Clamp01(ringT / grabDazeRingAttack));
+                SetDazeRingLevel(attack * (1f - blink));
 
                 yield return null;
             }
 
+            StopDazeRing();
             holder.localRotation = fallen * DazeSway(total);
 
             // FECHADAS, e escrito fora do laço: o corte vem no quadro seguinte, e uma fresta
@@ -2173,8 +2185,39 @@ namespace TheDelivery.Narrative
         /// o primeiro frame em que o controle volta faria a câmera SALTAR do chão para a
         /// altura interna guardada no controller.
         /// </summary>
+        // Fonte do zumbido da tontura (criada na primeira vez). Separada das outras porque
+        // tem envelope próprio e toca em loop por baixo do pensamento e do balanço.
+        private AudioSource dazeRingSource;
+
+        private void StartDazeRing()
+        {
+            if (grabDazeRingSound == null)
+                return;
+            if (dazeRingSource == null)
+                dazeRingSource = CreateSource();
+            dazeRingSource.clip = grabDazeRingSound;
+            dazeRingSource.loop = true;
+            dazeRingSource.volume = 0f;
+            dazeRingSource.Play();
+        }
+
+        /// <summary>Nível 0..1 do zumbido, já multiplicado pelo volume do Inspector.</summary>
+        private void SetDazeRingLevel(float level)
+        {
+            if (dazeRingSource != null && dazeRingSource.isPlaying)
+                dazeRingSource.volume = Mathf.Clamp01(level) * Mathf.Clamp01(grabDazeRingVolume);
+        }
+
+        /// <summary>Para o zumbido. Chamado no fim da tontura, ao desmontar a pegada e no corte.</summary>
+        private void StopDazeRing()
+        {
+            if (dazeRingSource != null)
+                dazeRingSource.Stop();
+        }
+
         private void EndGrab()
         {
+            StopDazeRing();
             if (!grabStaged)
                 return;
 

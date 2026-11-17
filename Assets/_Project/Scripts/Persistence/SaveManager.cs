@@ -136,10 +136,23 @@ namespace TheDelivery.Persistence
         /// Progressão LINEAR: o primeiro ato da história está sempre liberado; os outros, quando
         /// o ato ANTERIOR (na ordem do <see cref="GameActCatalog"/>) foi concluído.
         /// </summary>
+        /// <summary>
+        /// MODO DEV: todos os atos liberados na Seleção de Atos, sem gravar nada no perfil (só
+        /// muda a leitura). Ligado pelo GameManager (devUnlockAllActs) e só em Editor /
+        /// Development Build — num build de release fica sempre falso.
+        /// </summary>
+        public static bool DevUnlockAll
+        {
+            get => devUnlockAll;
+            set => devUnlockAll = value && (Application.isEditor || Debug.isDebugBuild);
+        }
+        private static bool devUnlockAll;
+
         public static bool IsActUnlocked(GameAct act)
         {
             int i = GameActCatalog.IndexOf(act);
             if (i < 0) return false;
+            if (DevUnlockAll) return true;
             if (i == 0) return true;
             return Completed.Contains(GameActCatalog.Story[i - 1].Act);
         }

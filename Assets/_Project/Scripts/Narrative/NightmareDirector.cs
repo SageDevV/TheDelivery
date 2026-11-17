@@ -1275,9 +1275,37 @@ namespace TheDelivery.Narrative
         [Tooltip("QUANTO TEMPO (s) as pálpebras levam para fechar POR COMPLETO no fim da tontura — o apagar.")]
         [SerializeField] private float grabDazeEyeCloseDuration = 1.2f;
 
+        /// <summary>
+        /// O ZUMBIDO DA TONTURA: o apito agudo no ouvido de quem bateu a cabeça. Entra colado no
+        /// baque do pouso (com um ataque curto de <see cref="grabDazeRingAttack"/>, para não soar
+        /// como um segundo impacto), se sustenta enquanto a cabeça balança e SOME junto com as
+        /// pálpebras — fechadas, o que resta é o silêncio em que o corte entra. Toca em loop numa
+        /// fonte própria, então o clipe pode ser mais curto que a tontura. Opcional.
+        /// </summary>
+        [Tooltip("Zumbido agudo de tontura após o baque da queda (loop). Vazio = sem zumbido.")]
+        [SerializeField] private AudioClip grabDazeRingSound;
+        [Range(0f, 1f)]
+        [Tooltip("Volume do zumbido da tontura.")]
+        [SerializeField] private float grabDazeRingVolume = 0.45f;
+        [Range(0f, 3f)]
+        [Tooltip("Segundos DEPOIS do baque até o zumbido começar — deixa o baque soar sozinho primeiro.")]
+        [SerializeField] private float grabDazeRingDelay = 1.0f;
+        [Range(0f, 2f)]
+        [Tooltip("Segundos para o zumbido subir do zero ao volume cheio, contados a partir do atraso.")]
+        [SerializeField] private float grabDazeRingAttack = 0.35f;
+
+        /// <summary>
+        /// O som do CORTE — o "estalo" de acordar, comum aos dois fins (ataque e queda). Toca numa
+        /// fonte 2D que SOBREVIVE à troca de cena: o clipe cresce até o fim, e a cena do pesadelo é
+        /// descarregada no meio dele; numa fonte desta cena o pico seria cortado. Persistindo, o
+        /// estalo termina em cima do arquejo da Clear na cafeteria.
+        /// </summary>
         [Header("Beat 6 - Corte")]
-        [Tooltip("Baque do impacto.")]
+        [Tooltip("Som do corte para o despertar (toca através da troca de cena).")]
         [SerializeField] private AudioClip impactSound;
+        [Tooltip("Volume do som do corte.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float impactSoundVolume = 0.9f;
         [Tooltip("Tempo (s) entre o baque e o início do fade de saída. Muito curto: o corte é o efeito.")]
         [SerializeField] private float cutHoldDuration = 0.12f;
 
@@ -1527,7 +1555,7 @@ namespace TheDelivery.Narrative
             // atalho de debug que só funciona quando o jogo já está rodando pela Boot
             // não serve para depurar — o uso natural dele é abrir a Nightmare e dar Play.
             bool isNightmare = GameManager.Instance != null && GameManager.Instance.CurrentAct == GameAct.ActNightmare;
-            if (!isNightmare && !autoStartForDebug && !debugStartAtGrowl && !debugStartAtAbyss)
+            if (!isNightmare && !(autoStartForDebug && DebugAutoStartAllowed) && !debugStartAtGrowl && !debugStartAtAbyss)
             {
                 Debug.LogWarning("[NightmareDirector] INERTE — nenhum beat vai rodar nesta cena. " +
                                  "CurrentAct não é ActNightmare e autoStartForDebug/debugStartAtGrowl/debugStartAtAbyss estão desligados. " +
@@ -1762,13 +1790,14 @@ namespace TheDelivery.Narrative
                 loopSource.Stop();
 
             StopBreathing();
+            StopDazeRing();
 
             // A criatura, o pulso e a luz saem COM o baque, e a câmera volta para a cabeça
             // da Clear — mas o clear PRETO fica, que é o corte. Restaurar o mundo aqui
             // devolveria o corredor por uma fração de segundo bem no meio do impacto.
             EndAttack(restoreWorld: false);
 
-            PlaySfx(impactSound);
+            PlayAcrossSceneChange(impactSound, impactSoundVolume);
 
             if (dreamVolume != null)
                 dreamVolume.SetActive(false);
@@ -2381,6 +2410,24 @@ namespace TheDelivery.Narrative
         {
             if (sfxSource != null && clip != null)
                 sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+        }
+
+        /// <summary>
+        /// Toca um clipe 2D numa fonte própria marcada DontDestroyOnLoad, que se destrói sozinha
+        /// ao fim do clipe — o som atravessa o unload desta cena. Null-safe.
+        /// </summary>
+        private static void PlayAcrossSceneChange(AudioClip clip, float volume)
+        {
+            if (clip == null)
+                return;
+
+            var go = new GameObject($"Sfx_{clip.name}");
+            DontDestroyOnLoad(go);
+            AudioSource source = go.AddComponent<AudioSource>();
+            source.spatialBlend = 0f;
+            source.playOnAwake = false;
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+            Destroy(go, clip.length + 0.1f);
         }
 
         /// <summary>

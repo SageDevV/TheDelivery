@@ -40,6 +40,7 @@ namespace TheDelivery.EditorTools
         {
             EditorApplication.update += AutoRun;
             EditorApplication.update += PollDebugStart;
+            EditorApplication.update += PollTune;
             GameScreenshotTool.PlayReady += OnPlayReady;
         }
 
@@ -66,6 +67,49 @@ namespace TheDelivery.EditorTools
 
         [MenuItem("Tools/The Delivery/Chuva do Ato 4 (Apartment)")]
         private static void Run() => Apply(true, false);
+
+        // Afinação do SOM: chuva lá FORA, abafada pelas paredes/vidro, sem ofuscar o ambiente.
+        private const float TunedRainVolume = 0.3f, TunedCutoffHz = 650f, TunedDropVolume = 0.2f;
+
+        [MenuItem("Tools/The Delivery/Chuva do Ato 4 - Afinar som (abafado, de fora)")]
+        private static void MenuTune() => TuneSound();
+
+        private static void PollTune()
+        {
+            const string marker = "Temp/RainTune.pending";
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || !File.Exists(marker)) return;
+            File.Delete(marker);
+            try { TuneSound(); } catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        public static void TuneSound()
+        {
+            Scene scene = EditorSceneManager.GetSceneByPath(ApartmentPath);
+            bool opened = false;
+            if (!scene.IsValid() || !scene.isLoaded) { scene = EditorSceneManager.OpenScene(ApartmentPath, OpenSceneMode.Additive); opened = true; }
+            try
+            {
+                RainController rc = scene.GetRootGameObjects().Select(r => r.GetComponentInChildren<RainController>(true)).FirstOrDefault(x => x != null);
+                RainAudioSynth synth = scene.GetRootGameObjects().Select(r => r.GetComponentInChildren<RainAudioSynth>(true)).FirstOrDefault(x => x != null);
+                if (rc == null || synth == null) { Debug.LogError("[RainSetup] Chuva não encontrada no Apartment."); return; }
+
+                var so = new SerializedObject(rc);
+                float oldVol = so.FindProperty("rainVolume").floatValue;
+                so.FindProperty("rainVolume").floatValue = TunedRainVolume;
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                var ss = new SerializedObject(synth);
+                float oldCut = ss.FindProperty("rainCutoffHz").floatValue, oldDrop = ss.FindProperty("dropVolume").floatValue;
+                ss.FindProperty("rainCutoffHz").floatValue = TunedCutoffHz;
+                ss.FindProperty("dropVolume").floatValue = TunedDropVolume;
+                ss.ApplyModifiedPropertiesWithoutUndo();
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                Debug.Log($"[RainSetup] Som da chuva afinado: volume {oldVol}->{TunedRainVolume}, corte {oldCut}->{TunedCutoffHz} Hz, gotas {oldDrop}->{TunedDropVolume}.");
+            }
+            finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
+        }
 
         public static bool Apply(bool interactiveMode, bool rebuild)
         {

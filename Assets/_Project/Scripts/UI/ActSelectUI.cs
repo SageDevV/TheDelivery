@@ -31,6 +31,8 @@ namespace TheDelivery.UI
         [SerializeField] private string titleText = "ATOS";
         [SerializeField] private string subtitleText = "ESCOLHA UM ATO JÁ CONCLUÍDO — <color=#{ink}>OS OUTROS SEGUEM LACRADOS</color>";
         [SerializeField] private string lockedTag = "BLOQUEADO";
+        [Tooltip("Legenda no modo dev (GameManager.devUnlockAllActs).")]
+        [SerializeField] private string devSubtitleText = "<color=#{ink}>MODO DEV</color> — TODOS OS ATOS LIBERADOS PARA TESTE";
         [SerializeField] private string backText = "Voltar";
         [Tooltip("Caixa do item bloqueado (cadeado de máquina de escrever).")]
         [SerializeField] private string lockedBox = "[#]";
@@ -172,7 +174,8 @@ namespace TheDelivery.UI
 
         private void CreateSubtitle(Transform parent)
         {
-            TextMeshProUGUI sub = CreateText("Subtitle", parent, subtitleText.Replace("{ink}", theme.inkHex), theme.typewriterFont, theme.faint);
+            string text = SaveManager.DevUnlockAll ? devSubtitleText : subtitleText;
+            TextMeshProUGUI sub = CreateText("Subtitle", parent, text.Replace("{ink}", theme.inkHex), theme.typewriterFont, theme.faint);
             sub.fontSize = 17f;
             sub.characterSpacing = 2f;
             sub.alignment = TextAlignmentOptions.MidlineLeft;

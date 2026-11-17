@@ -26,6 +26,7 @@ namespace TheDelivery.EditorTools
         private const string KeyShotAt = "GameShot.ShotAt";
         private const string KeyPrevStart = "GameShot.PrevStart";
         private const string KeyPrep = "GameShot.Prep";
+        private const string KeyPrevRunInBg = "GameShot.PrevRunInBackground";
 
         /// <summary>
         /// Disparado quando o Play começa, com o 3º argumento do marcador (ex.: "micpreview"):
@@ -61,6 +62,12 @@ namespace TheDelivery.EditorTools
 
             if (File.Exists(OutputPath))
                 File.Delete(OutputPath);
+
+            // Sem foco de janela (o usuário usando outra coisa enquanto a automação roda), o Play
+            // com "Run In Background" desligado não processa áudio: as fontes não tocam e a
+            // gravação de evidência sai MUDA. Liga só durante este Play; o Restore devolve.
+            SessionState.SetBool(KeyPrevRunInBg, PlayerSettings.runInBackground);
+            PlayerSettings.runInBackground = true;
 
             EditorSceneManager.playModeStartScene = scene;
             EditorApplication.EnterPlaymode();
@@ -161,6 +168,7 @@ namespace TheDelivery.EditorTools
             EditorSceneManager.playModeStartScene = string.IsNullOrEmpty(prev)
                 ? null
                 : AssetDatabase.LoadAssetAtPath<SceneAsset>(prev);
+            PlayerSettings.runInBackground = SessionState.GetBool(KeyPrevRunInBg, false);
             SessionState.SetInt(KeyState, 0);
             playStartedAt = -1;
         }

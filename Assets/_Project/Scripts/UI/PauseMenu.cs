@@ -56,6 +56,7 @@ namespace TheDelivery.UI
         [Tooltip("Linha datilografada sob o carimbo. Aceita rich text; {ink} vira o vermelho do tema.")]
         [SerializeField] private string subtitleText = "PEDIDO Nº 0413  —  <color=#{ink}>EM ANDAMENTO</color>";
         [SerializeField] private string resumeText = "RESUMIR";
+        [SerializeField] private string titleScreenText = "VOLTAR À TELA DE TÍTULO";
         [SerializeField] private string exitText = "SAIR DO JOGO";
 
         [Header("Aparência")]
@@ -210,6 +211,39 @@ namespace TheDelivery.UI
             RestoreGameplayInput();
         }
 
+        /// <summary>
+        /// "Voltar à tela de título": fecha a pausa devolvendo tempo, áudio, cursor e input, trava
+        /// a protagonista (o fade leva ~1 s e ela não pode andar por baixo dele) e volta à tela de
+        /// início pelo GameManager. Não grava nada — o "Carregar Jogo" segue no último save.
+        /// </summary>
+        public void ReturnToTitle()
+        {
+            if (!IsPaused)
+                return;
+            IsPaused = false;
+
+            root.SetActive(false);
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+            ownEventSystem.gameObject.SetActive(false);
+
+            Time.timeScale = 1f;
+            if (pauseAudio)
+                AudioListener.pause = false;
+            RestoreGameplayInput();
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            var pc = FindAnyObjectByType<TheDelivery.Player.PlayerController>();
+            if (pc != null)
+                pc.CanMove = false;
+
+            Debug.Log("[PauseMenu] Voltando à tela de título.", this);
+            if (GameManager.Instance != null && GameManager.Instance.ReturnToMainMenu())
+                return;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameScene.MainMenu.ToString());
+        }
+
         /// <summary>Fecha o jogo. No Editor, sai do Play Mode. Ligado ao botão "Sair do Jogo".</summary>
         public void ExitGame()
         {
@@ -289,7 +323,7 @@ namespace TheDelivery.UI
             column.anchorMin = column.anchorMax = new Vector2(0f, 0.5f);
             column.pivot = new Vector2(0f, 0.5f);
             column.anchoredPosition = new Vector2(theme.leftMargin, 0f);
-            float height = theme.itemHeight * 3f + theme.subtitleHeight + theme.spacing * 3f; // carimbo, legenda, 2 opções
+            float height = theme.itemHeight * 4f + theme.subtitleHeight + theme.spacing * 4f; // carimbo, legenda, 3 opções
             column.sizeDelta = new Vector2(theme.itemWidth, height);
             var layout = column.GetComponent<VerticalLayoutGroup>();
             layout.spacing = theme.spacing;
@@ -302,10 +336,11 @@ namespace TheDelivery.UI
             CreateStamp(column, theme);
             CreateSubtitle(column, theme);
             resumeButton = CreateItem("ResumeButton", column, resumeText, Resume, theme);
+            Button titleButton = CreateItem("TitleScreenButton", column, titleScreenText, ReturnToTitle, theme);
             Button exitButton = CreateItem("ExitButton", column, exitText, ExitGame, theme);
 
-            // Navegação explícita entre os dois botões (teclado/gamepad).
-            SetVerticalNavigation(resumeButton, exitButton);
+            // Navegação explícita em ciclo entre os três botões (teclado/gamepad).
+            SetVerticalNavigation(resumeButton, titleButton, exitButton);
 
             // EventSystem de reserva, desligado até uma pausa precisar dele.
             var esGo = new GameObject("PauseEventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
@@ -432,12 +467,18 @@ namespace TheDelivery.UI
             rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
-        private static void SetVerticalNavigation(Selectable top, Selectable bottom)
+        /// <summary>Navegação vertical explícita em ciclo (o de baixo volta ao de cima).</summary>
+        private static void SetVerticalNavigation(params Selectable[] items)
         {
-            var topNav = new Navigation { mode = Navigation.Mode.Explicit, selectOnDown = bottom, selectOnUp = bottom };
-            var bottomNav = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = top, selectOnDown = top };
-            top.navigation = topNav;
-            bottom.navigation = bottomNav;
+            for (int i = 0; i < items.Length; i++)
+            {
+                items[i].navigation = new Navigation
+                {
+                    mode = Navigation.Mode.Explicit,
+                    selectOnUp = items[(i - 1 + items.Length) % items.Length],
+                    selectOnDown = items[(i + 1) % items.Length],
+                };
+            }
         }
     }
 }

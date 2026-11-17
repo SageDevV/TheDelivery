@@ -28,6 +28,13 @@ namespace TheDelivery.Interaction
         [SerializeField] private string interactionPrompt = "Sentar";
         [Tooltip("Verbo exibido quando JÁ está sentado (para levantar).")]
         [SerializeField] private string standPrompt = "Levantar";
+        [Tooltip("Som ao SENTAR (cadeira arrastando, estofado). Vazio = mudo.")]
+        [SerializeField] private AudioClip sitSound;
+        [Tooltip("Som ao LEVANTAR. Vazio = usa o som de sentar.")]
+        [SerializeField] private AudioClip standSound;
+        [Tooltip("Volume dos sons de sentar/levantar.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float seatSoundVolume = 0.8f;
         /// <summary>
         /// Se ligado, o player também LEVANTA com a MESMA tecla de interação (F), além do Espaço — útil
         /// em assentos de exploração livre (ex.: sofá da sala), onde a câmera assume o assento e o
@@ -261,10 +268,26 @@ namespace TheDelivery.Interaction
             transition = StartCoroutine(StandUpRoutine());
         }
 
+        /// <summary>
+        /// Toca o som de levantar sem passar pela transição desta cadeira. Para roteiros que
+        /// levantam a Clear com a própria câmera (o despertar do Ato 1), onde ela nunca
+        /// "sentou" por aqui e o <see cref="StandUp"/> é ignorado.
+        /// </summary>
+        public void PlayStandSound() => PlaySeatSound(standSound != null ? standSound : sitSound);
+
+        /// <summary>Toca um som da cadeira na posição dela (3D). Null-safe.</summary>
+        private void PlaySeatSound(AudioClip clip)
+        {
+            if (clip != null)
+                AudioSource.PlayClipAtPoint(clip, transform.position, seatSoundVolume);
+        }
+
         // --- Transições ----------------------------------------------------
 
         private IEnumerator SitRoutine()
         {
+            PlaySeatSound(sitSound);
+
             // Trava movimento E olhar (early-return em HandleLook do PlayerController).
             player.CanMove = false;
 
@@ -334,6 +357,7 @@ namespace TheDelivery.Interaction
 
         private IEnumerator StandUpRoutine()
         {
+            PlayStandSound();
             Transform cam = player.CameraHolder;
             if (cam == null)
             {

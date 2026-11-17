@@ -6038,9 +6038,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db6bcd4db2cca4b40803d7ddade52861, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.RainAudioSynth
-  rainCutoffHz: 2200
+  rainCutoffHz: 650
   dropsPerSecond: 9
-  dropVolume: 0.35
+  dropVolume: 0.2
   thunderVolume: 1.1
 --- !u!82 &294178818
 AudioSource:
@@ -35347,7 +35347,7 @@ MonoBehaviour:
   rainLoopClip: {fileID: 0}
   thunderClips: []
   clipSource: {fileID: 294178818}
-  rainVolume: 0.55
+  rainVolume: 0.3
   lightningLights:
   - {fileID: 1993929576}
   - {fileID: 918250760}

@@ -40,6 +40,16 @@ namespace TheDelivery.Narrative
         /// <summary>Beat atual da sequência (<c>None</c> antes de o ato começar).</summary>
         public TBeat CurrentBeat { get; private set; }
 
+        /// <summary>
+        /// O "autoStartForDebug" de um diretor só pode valer quando NÃO há um ato em andamento
+        /// (Play isolado sem GameManager, ou ato None). Com um ato definido pelo fluxo do jogo,
+        /// quem manda é ele — senão um autoStart esquecido ligado na cena faz dois atos rodarem
+        /// juntos (visto no Apartment: Ato 3 + Ato 4 ao mesmo tempo).
+        /// </summary>
+        protected static bool DebugAutoStartAllowed =>
+            TheDelivery.Core.GameManager.Instance == null ||
+            TheDelivery.Core.GameManager.Instance.CurrentAct == TheDelivery.Core.GameAct.None;
+
         // --- Save (IBeatDirectorState) ---------------------------------------
         public string DirectorId => GetType().Name;
         public int CurrentBeatValue => Convert.ToInt32(CurrentBeat);

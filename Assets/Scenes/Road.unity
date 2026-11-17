@@ -3136,17 +3136,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1254146648}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1506943485 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8608346235461898063, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
-  m_PrefabInstance: {fileID: 983575763}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1506943486 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7815970170006407642, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
   m_PrefabInstance: {fileID: 983575763}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1506943485}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 35896edcd0a82c5479a0082e906ce4b3, type: 3}
@@ -3157,7 +3152,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5556570876930409936, guid: 91d25e844c829db4b8bdf6364bf82a98, type: 3}
   m_PrefabInstance: {fileID: 983575763}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1506943485}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0c4b79b2b9556e419228612bfe34f7e, type: 3}
@@ -3550,8 +3545,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 718093fa57715064097d30d1584b7413, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientMusic
-  clip: {fileID: 8300000, guid: c3c40527b09c3434e8ed05a41c526513, type: 3}
-  volume: 0.25
+  clip: {fileID: 8300000, guid: d4d0ae74769192240b8b88b441574555, type: 3}
+  volume: 0.4
   playOnStart: 1
   fadeInDuration: 2
 --- !u!82 &1699506925

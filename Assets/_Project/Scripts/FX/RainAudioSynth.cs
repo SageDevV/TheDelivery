@@ -18,12 +18,12 @@ namespace TheDelivery.FX
     [RequireComponent(typeof(AudioSource))]
     public sealed class RainAudioSynth : MonoBehaviour
     {
-        [Tooltip("Corte (Hz) do passa-baixa da chuva. Menor = mais abafado (atrás do vidro).")]
-        [SerializeField] private float rainCutoffHz = 2200f;
+        [Tooltip("Corte (Hz) do passa-baixa da chuva. Menor = mais abafado. ~650 Hz = chuva lá FORA, ouvida de dentro de casa (paredes e vidro cortam os agudos).")]
+        [SerializeField] private float rainCutoffHz = 650f;
         [Tooltip("Gotas no vidro por segundo.")]
         [SerializeField] private float dropsPerSecond = 9f;
         [Tooltip("Volume relativo das gotas no vidro.")]
-        [Range(0f, 1f)] [SerializeField] private float dropVolume = 0.35f;
+        [Range(0f, 1f)] [SerializeField] private float dropVolume = 0.2f;
         [Tooltip("Volume do trovão.")]
         [Range(0f, 2f)] [SerializeField] private float thunderVolume = 1.1f;
 
@@ -40,7 +40,7 @@ namespace TheDelivery.FX
         private float lp1, lp2, hp, hpIn;
         private float swell = 1f, swellTarget = 1f;
         private int swellCounter;
-        private float dropEnv, dropLp;
+        private float dropEnv;
         private float thunderEnv, thunderStrength, thunderBrown, thunderLp, crackEnv;
         private int thunderAge;
 
@@ -100,8 +100,15 @@ namespace TheDelivery.FX
             float energy = 0f;
             for (int i = 0; i < frames; i++)
             {
-                // --- Chuva: ruído -> passa-baixa 2 polos -> passa-alta leve.
-                float n = Noise();
+                // Gotas no vidro: estalos curtos. Entram ANTES do filtro — de dentro de casa elas
+                // também chegam abafadas; somadas depois, ficavam "secas" e brilhantes demais.
+                if ((Noise() * 0.5f + 0.5f) < dropChance)
+                    dropEnv = 0.4f + 0.6f * (Noise() * 0.5f + 0.5f);
+                dropEnv *= dropDecay;
+                float drop = Noise() * dropEnv * dropVolume * 3f;
+
+                // --- Chuva: (ruído + gotas) -> passa-baixa 2 polos -> passa-alta leve.
+                float n = Noise() + drop;
                 lp1 += lpA * (n - lp1);
                 lp2 += lpA * (lp1 - lp2);
                 float h = hpA * (hp + lp2 - hpIn);
@@ -117,13 +124,6 @@ namespace TheDelivery.FX
                 swell += (swellTarget - swell) * 0.00002f;
 
                 float rain = h * 2.6f * swell;
-
-                // Gotas no vidro: estalos curtos.
-                if ((Noise() * 0.5f + 0.5f) < dropChance)
-                    dropEnv = 0.4f + 0.6f * (Noise() * 0.5f + 0.5f);
-                dropEnv *= dropDecay;
-                dropLp += 0.35f * (Noise() * dropEnv - dropLp);
-                rain += dropLp * dropVolume * 3f;
 
                 float sample = rain * vol;
 

@@ -75,6 +75,35 @@ namespace TheDelivery.FX
         [Tooltip("Raio da roda em metros — é ele que converte metros andados em graus girados. Deixe 0 para MEDIR sozinho pelo tamanho da malha da roda no Start (funciona para qualquer carro importado).")]
         [SerializeField] private float wheelRadius;
 
+        /// <summary>
+        /// O som de PASSAGEM: um "whoosh" com o pico no meio do clipe. Toca UMA vez por volta,
+        /// <see cref="passLeadTime"/> segundos ANTES de o carro cruzar o ponto da rua mais perto
+        /// do ouvinte — assim o pico do clipe cai no instante da passagem, seja a rua a 5 m ou a
+        /// 30 m. A distância lateral só decide o VOLUME (fonte 3D no carro, rolloff linear até
+        /// <see cref="passMaxDistance"/>). Vazio = carro mudo.
+        /// </summary>
+        [Header("Som")]
+        [Tooltip("Som de passagem do carro (um por volta). Vazio = carro mudo.")]
+        [SerializeField] private AudioClip passSound;
+        [Tooltip("Segundos antes da passagem mais próxima em que o som dispara (~metade do clipe).")]
+        [SerializeField] private float passLeadTime = 1.5f;
+        [Tooltip("Distância (m) a partir da qual o carro não é mais ouvido.")]
+        [SerializeField] private float passMaxDistance = 60f;
+        [Tooltip("Volume do som de passagem.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float passVolume = 0.85f;
+
+        /// <summary>Quantas passagens com som já tocaram (diagnóstico/roteiros de vídeo).</summary>
+        public int PassesPlayed { get; private set; }
+
+        /// <summary>Distância (m) do ouvinte na última passagem que tocou.</summary>
+        public float LastPassDistance { get; private set; }
+
+        // Fonte 3D criada no Start quando há passSound; passPlayed trava um som por volta.
+        private AudioSource passSource;
+        private bool passPlayed;
+        private AudioListener listener;
+
         // Pose de origem: capturada no Start, é para onde o respawn devolve o carro.
         private Vector3 originPosition;
         private Quaternion originRotation;
@@ -110,6 +139,17 @@ namespace TheDelivery.FX
             bodyRenderers = GetComponentsInChildren<Renderer>(false);
             effectiveWheelRadius = ResolveWheelRadius();
 
+            if (passSound != null)
+            {
+                passSource = gameObject.AddComponent<AudioSource>();
+                passSource.playOnAwake = false;
+                passSource.spatialBlend = 1f;
+                passSource.rolloffMode = AudioRolloffMode.Linear;
+                passSource.minDistance = 4f;
+                passSource.maxDistance = Mathf.Max(5f, passMaxDistance);
+                passSource.dopplerLevel = 0.4f;
+            }
+
             // A primeira largada também espera: é o startDelay que escalona os carros.
             BeginWait(Mathf.Max(0f, startDelay));
         }
@@ -135,7 +175,38 @@ namespace TheDelivery.FX
             passTime = 0f;
             cruiseSpeed = Random.Range(Mathf.Min(speedMin, speedMax), Mathf.Max(speedMin, speedMax));
             SetVisible(true);
+            passPlayed = false;
             driving = true;
+        }
+
+        /// <summary>
+        /// Dispara o som de passagem uma vez por volta, quando faltam <see cref="passLeadTime"/>
+        /// segundos para o carro cruzar o ponto mais perto do ouvinte (projeção do ouvinte na
+        /// direção de avanço). O ouvinte é procurado de novo se sumir (o Player troca de cena).
+        /// </summary>
+        private void TryPlayPassSound()
+        {
+            if (passPlayed || passSource == null)
+                return;
+
+            if (listener == null || !listener.isActiveAndEnabled)
+                listener = FindAnyObjectByType<AudioListener>();
+            if (listener == null)
+                return;
+
+            Vector3 toListener = listener.transform.position - transform.position;
+            float ahead = Vector3.Dot(toListener, DriveDirection); // metros até o ponto mais perto
+            if (ahead > Mathf.Max(cruiseSpeed, 1f) * passLeadTime)
+                return;
+
+            passPlayed = true;
+            if (ahead < -2f || toListener.magnitude > passMaxDistance)
+                return; // já passou ou longe demais: esta volta fica muda
+
+            PassesPlayed++;
+            LastPassDistance = toListener.magnitude;
+            passSource.pitch = Random.Range(0.92f, 1.08f);
+            passSource.PlayOneShot(passSound, passVolume);
         }
 
         /// <summary>
@@ -166,6 +237,7 @@ namespace TheDelivery.FX
             traveled += step;
 
             SpinWheels(step);
+            TryPlayPassSound();
 
             if (traveled >= travelDistance)
             {

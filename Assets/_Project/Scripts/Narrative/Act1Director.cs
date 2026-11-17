@@ -138,6 +138,27 @@ namespace TheDelivery.Narrative
         [FormerlySerializedAs("saidaRadius")]
         [SerializeField] private float exitRadius = 1.5f;
 
+        /// <summary>
+        /// Os sons do roteiro da cafeteria. O AMBIENTE (salão, balcão, rua) não mora aqui: fica
+        /// no <c>AmbientMusic</c> e nos <c>AmbientSoundEmitter</c>/<c>TrafficCar</c> da cena. O
+        /// diretor só toca o que depende de um beat — o susto de acordar e a porta.
+        /// </summary>
+        [Header("Áudio")]
+        [Tooltip("AudioSource 2D dos sons narrativos. Auto-criado se vazio.")]
+        [SerializeField] private AudioSource audioSource;
+        [Tooltip("Beat 1: o arquejo de quem acorda de um pesadelo (2D). Opcional.")]
+        [SerializeField] private AudioClip wakeSound;
+        [Tooltip("Volume do arquejo ao acordar.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float wakeVolume = 0.9f;
+        [Tooltip("Sino da porta: Marina chegando/saindo e a Clear indo embora (3D, na porta). Opcional.")]
+        [SerializeField] private AudioClip doorBellSound;
+        [Tooltip("Volume do sino da porta.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float doorBellVolume = 0.8f;
+        [Tooltip("Cadeira arrastando quando a Marina senta (3D, no MarinaSitPoint). Opcional.")]
+        [SerializeField] private AudioClip marinaChairSound;
+
         [Header("Debug")]
         [Tooltip("Beat inicial. Use para pular beats ao testar.")]
         [SerializeField] private Act1Beat startBeat = Act1Beat.Awakening;
@@ -154,6 +175,7 @@ namespace TheDelivery.Narrative
                 return;
 
             characterController = playerController.GetComponent<CharacterController>();
+            audioSource = DirectorUtility.EnsureNarrativeAudioSource(this, audioSource);
 
             // Marina não deve aparecer antes da hora: começa inativa.
             if (marina != null)
@@ -254,6 +276,11 @@ namespace TheDelivery.Narrative
             // clareando do fade do GameManager quando este beat começa.
             ShowThought(nightmareThought);
 
+            // O corpo acorda antes da cabeça: o arquejo vem junto do corte, ainda com a cena
+            // escura, e é a primeira coisa que separa o pesadelo da cafeteria.
+            if (wakeSound != null && audioSource != null)
+                audioSource.PlayOneShot(wakeSound, wakeVolume);
+
             Transform cam = playerController.CameraHolder;
             if (cam != null)
             {
@@ -295,6 +322,10 @@ namespace TheDelivery.Narrative
             // Levantar é uma animação comandada pelo director: tranca o olhar de
             // novo para o input do jogador não brigar com a subida da câmera.
             playerController.CanLookOverride = false;
+
+            // A cadeira da Clear arrasta ao levantar (o som é da própria cadeira).
+            if (clearChair != null)
+                clearChair.PlayStandSound();
 
             // Levanta da cadeira: a câmera sobe da altura sentada para a altura em pé.
             // O CharacterController segue desabilitado durante a subida (a câmera é
@@ -486,6 +517,7 @@ namespace TheDelivery.Narrative
                 marina.transform.SetPositionAndRotation(marinaSpawnPoint.position, marinaSpawnPoint.rotation);
 
             marina.gameObject.SetActive(true);
+            PlayDoorBell(marinaSpawnPoint);
             // Um frame para o NavMeshAgent registrar na malha após reativar.
             yield return null;
 
@@ -493,6 +525,7 @@ namespace TheDelivery.Narrative
             {
                 marina.WalkTo(marinaSitPoint.position);
                 yield return new WaitUntil(() => marina.HasArrived(marinaArriveThreshold));
+                PlayAt(marinaChairSound, marinaSitPoint, 0.8f);
                 marina.Sit(marinaSitPoint);
             }
             else
@@ -550,6 +583,7 @@ namespace TheDelivery.Narrative
                 yield return new WaitUntil(() => marina.HasArrived(marinaArriveThreshold));
             }
 
+            PlayDoorBell(marinaSpawnPoint);
             marina.gameObject.SetActive(false);
 
             if (afterMarinaThought != null)
@@ -592,6 +626,9 @@ namespace TheDelivery.Narrative
             else
                 Debug.LogWarning("[Act1Director] exitZone não atribuída; transição não será disparada.", this);
 
+            // O sino é a última coisa segura que ela ouve: dali em diante é a rua escurecendo.
+            PlayDoorBell(exitZone);
+
             // Avança o ato e troca de cena via GameManager persistente. O Ato 1 NÃO
             // vai direto para a Recepção: entre eles há o PERCURSO (a caminhada pela
             // rua até o prédio), conduzido pelo JourneyDirector — é ELE quem marca
@@ -606,6 +643,41 @@ namespace TheDelivery.Narrative
             }
 
             ReleaseBeatRoutine();
+        }
+
+        // --- Áudio ---------------------------------------------------------
+
+        /// <summary>Sino da porta na posição dada (a porta da cafeteria). Null-safe.</summary>
+        private void PlayDoorBell(Transform where) => PlayAt(doorBellSound, where, doorBellVolume);
+
+        /// <summary>
+        /// Toca um clipe 3D num ponto da cena. Sem ponto, cai no AudioSource 2D do diretor —
+        /// o som do roteiro nunca some por falta de referência. Null-safe no clipe.
+        /// </summary>
+        private void PlayAt(AudioClip clip, Transform where, float volume)
+        {
+            if (clip == null)
+                return;
+
+            if (where == null)
+            {
+                if (audioSource != null)
+                    audioSource.PlayOneShot(clip, volume);
+                return;
+            }
+
+            // Fonte temporária MEIO 3D: a direção vem da porta/cadeira, mas o salão é pequeno e
+            // o sino precisa ser ouvido da mesa (o PlayClipAtPoint, 100% 3D com rolloff
+            // logarítmico, o deixava quase inaudível a poucos metros).
+            var go = new GameObject($"Sfx_{clip.name}");
+            go.transform.position = where.position;
+            AudioSource src = go.AddComponent<AudioSource>();
+            src.spatialBlend = 0.6f;
+            src.rolloffMode = AudioRolloffMode.Linear;
+            src.minDistance = 3f;
+            src.maxDistance = 25f;
+            src.PlayOneShot(clip, volume);
+            Destroy(go, clip.length + 0.2f);
         }
 
         // --- Helpers -------------------------------------------------------

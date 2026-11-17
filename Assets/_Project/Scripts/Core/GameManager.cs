@@ -57,12 +57,26 @@ namespace TheDelivery.Core
         [Tooltip("PULA A TELA DE INÍCIO: a Boot começa a partida direto (Nightmare, ou Cafeteria com skipNightmare). " +
                  "Para iterar rápido. Deixe FALSE no fluxo real.")]
         [SerializeField] private bool skipMainMenu = false;
+        [Tooltip("MODO DEV: todos os atos liberados na Seleção de Atos (\"Atos\" na tela de início), para testar " +
+                 "qualquer ato direto. Não grava nada no progresso do jogador. Só vale no Editor e em Development " +
+                 "Build — num build de release é ignorado.")]
+        [SerializeField] private bool devUnlockAllActs = true;
 
         // TRANSIÇÃO EM CURSO. Existe para a vigia da tela preta
         // (<see cref="WatchStuckFade"/>) saber a diferença entre um preto que está
         // COBRINDO uma troca — o certo — e um preto que sobrou de uma troca que
         // parou no meio.
         private bool transitionRunning;
+
+        // PLAY ISOLADO (Editor): ato da cena em que o Play começou direto, sem a Boot. Estático
+        // porque é marcado ANTES de o GameManager existir (IsolatedPlayBootstrap).
+        private static GameAct? pendingIsolatedAct;
+
+        /// <summary>Este GameManager foi criado pelo Play isolado (não veio da Boot).</summary>
+        public bool IsIsolatedPlay { get; private set; }
+
+        /// <summary>Marca o ato para o GameManager que vai ser criado pelo Play isolado.</summary>
+        public static void PrepareIsolatedPlay(GameAct act) => pendingIsolatedAct = act;
 
         // SAVE: o que fazer quando a cena da transição em curso terminar de abrir.
         private bool autosaveOnArrival;  // chegou num ato novo -> salvar
@@ -91,6 +105,10 @@ namespace TheDelivery.Core
 
             DontDestroyOnLoad(gameObject);
 
+            SaveManager.DevUnlockAll = devUnlockAllActs;
+            if (SaveManager.DevUnlockAll)
+                Debug.Log("[GameManager] MODO DEV: todos os atos liberados na Seleção de Atos (devUnlockAllActs).", this);
+
             // Começa coberto pelo preto: a cena Boot é vazia (só o GameManager), então
             // a tela preta evita mostrar o "nada" antes da primeira cena carregar. A
             // primeira transição faz fade para 1 (já está em 1, instantâneo), carrega
@@ -99,6 +117,20 @@ namespace TheDelivery.Core
             {
                 fadeCanvas.alpha = 1f;
                 fadeCanvas.blocksRaycasts = true;
+            }
+
+            // PLAY ISOLADO: a cena do ato já está aberta — sem preto por cima, e o ato já vale
+            // aqui no Awake, antes do Start dos diretores (eles decidem começar por ele).
+            if (pendingIsolatedAct.HasValue)
+            {
+                IsIsolatedPlay = true;
+                CurrentAct = pendingIsolatedAct.Value;
+                pendingIsolatedAct = null;
+                if (fadeCanvas != null)
+                {
+                    fadeCanvas.alpha = 0f;
+                    fadeCanvas.blocksRaycasts = false;
+                }
             }
 
             // O tratamento global é reavaliado a CADA cena carregada, e não dentro do
@@ -222,6 +254,13 @@ namespace TheDelivery.Core
 
         private void Start()
         {
+            // Play isolado: o ato já está rodando nesta cena; não há tela de início para abrir.
+            if (IsIsolatedPlay)
+            {
+                Debug.Log($"[GameManager] Play isolado: {CurrentAct} em \"{SceneManager.GetActiveScene().name}\" (sem Boot).", this);
+                return;
+            }
+
             // A Boot abre a TELA DE INÍCIO; é o "Novo Jogo" de lá que chama StartNewGame.
             if (skipMainMenu)
             {

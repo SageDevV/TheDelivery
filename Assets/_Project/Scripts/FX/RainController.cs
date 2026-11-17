@@ -48,7 +48,7 @@ namespace TheDelivery.FX
         [SerializeField] private AudioClip[] thunderClips;
         [Tooltip("Fonte 2D para o loop/trovões gravados.")]
         [SerializeField] private AudioSource clipSource;
-        [Range(0f, 1f)] [SerializeField] private float rainVolume = 0.55f;
+        [Range(0f, 1f)] [SerializeField] private float rainVolume = 0.3f;
 
         [Header("Relâmpagos")]
         [Tooltip("Luzes do relâmpago: a direcional geral e uma por janela, de fora apontando para dentro. " +

@@ -220,6 +220,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.UI.MainMenuAtmosphere
   darkThreshold: 0.5
+  menuTheme: {fileID: 8300000, guid: 45e0e90e37d08444885b864d5a10d1f9, type: 3}
+  themeVolume: 0.55
+  themeDarkLevel: 0.2
+  themeFadeIn: 4
+  themeDuckSpeed: 2.5
   ambientDrone: {fileID: 8300000, guid: 53d84c3793b8f264d9e0102bd44f748c, type: 3}
   droneVolume: 0.35
   blackoutClick: {fileID: 8300000, guid: 86be4cf2be7f25649815d18fa58aa11e, type: 3}
@@ -1079,6 +1084,8 @@ MonoBehaviour:
   subtitleText: "ESCOLHA UM ATO J\xC1 CONCLU\xCDDO \u2014 <color=#{ink}>OS OUTROS
     SEGUEM LACRADOS</color>"
   lockedTag: BLOQUEADO
+  devSubtitleText: "<color=#{ink}>MODO DEV</color> \u2014 TODOS OS ATOS LIBERADOS
+    PARA TESTE"
   backText: Voltar
   lockedBox: '[#]'
 --- !u!1 &637322384

@@ -24,6 +24,18 @@ namespace TheDelivery.UI
         [Range(0.05f, 0.95f)]
         [SerializeField] private float darkThreshold = 0.5f;
 
+        [Header("Trilha")]
+        [Tooltip("Tema musical do menu, em loop. Quase some no apagão: a luz caindo leva a música junto, " +
+                 "e o que sobra no escuro é o cantarolar do corredor.")]
+        [SerializeField] private AudioClip menuTheme;
+        [Range(0f, 1f)] [SerializeField] private float themeVolume = 0.55f;
+        [Tooltip("Fração do volume da trilha que sobra com a luz apagada.")]
+        [Range(0f, 1f)] [SerializeField] private float themeDarkLevel = 0.2f;
+        [Tooltip("Segundos para a trilha entrar ao abrir o menu.")]
+        [Min(0f)] [SerializeField] private float themeFadeIn = 4f;
+        [Tooltip("Velocidade com que a trilha cai/volta no apagão (fração do volume por segundo).")]
+        [Min(0.1f)] [SerializeField] private float themeDuckSpeed = 2.5f;
+
         [Header("Áudio")]
         [SerializeField] private AudioClip ambientDrone;
         [Range(0f, 1f)] [SerializeField] private float droneVolume = 0.35f;
@@ -63,7 +75,9 @@ namespace TheDelivery.UI
         [Min(0.01f)] [SerializeField] private float swaySpeed = 0.18f;
 
         private FlickeringLight source;
-        private AudioSource drone, click, presence;
+        private AudioSource drone, click, presence, theme;
+        private float themeDuck = 1f;
+        private float themeClock;
         private bool wasDark;
         private float darkTime;
         private Vector3 basePos;
@@ -77,6 +91,7 @@ namespace TheDelivery.UI
             drone = MakeSource("Drone", ambientDrone, loop: true, spatial: false);
             click = MakeSource("Click", null, loop: false, spatial: false);
             presence = MakeSource("Presence", darkPresence, loop: true, spatial: true);
+            theme = MakeSource("Theme", menuTheme, loop: true, spatial: false);
         }
 
         // Capturado só com o cenário pronto: a essa altura o VerticalLayoutGroup já posicionou
@@ -102,15 +117,32 @@ namespace TheDelivery.UI
                 drone.volume = droneVolume;
                 drone.Play();
             }
+            if (theme.clip != null)
+                theme.Play(); // nasce com volume 0 (MakeSource); o fade de entrada é no UpdateTheme
+        }
+
+        /// <summary>Fade de entrada da trilha e a queda dela no apagão.</summary>
+        private void UpdateTheme(bool dark, float dt)
+        {
+            if (theme == null || theme.clip == null)
+                return;
+            themeClock += dt;
+            themeDuck = Mathf.MoveTowards(themeDuck, dark ? themeDarkLevel : 1f, themeDuckSpeed * dt);
+            float fade = themeFadeIn <= 0f ? 1f : Mathf.Clamp01(themeClock / themeFadeIn);
+            theme.volume = themeVolume * themeDuck * fade;
         }
 
         private void Update()
         {
-            if (source == null && !TryBindScene())
-                return;
-
             float dt = Time.unscaledDeltaTime;
+            if (source == null && !TryBindScene())
+            {
+                UpdateTheme(false, dt); // a trilha entra mesmo com o cenário ainda carregando
+                return;
+            }
+
             bool dark = source.Level < darkThreshold;
+            UpdateTheme(dark, dt);
 
             if (dark && !wasDark && blackoutClick != null)
                 click.PlayOneShot(blackoutClick, clickVolume);

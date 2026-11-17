@@ -75,10 +75,35 @@ namespace TheDelivery.FX
             if (source == null || source.clip == null)
                 return;
 
-            if (!source.isPlaying)
+            // Só dá Play com o clipe CARREGADO: um Play() durante o carregamento (Streaming +
+            // Load In Background, cena recém-aberta) deixava o source travado — ele não tocava
+            // nem com Play() de novo depois (visto na Road). Se ainda não carregou, o Update
+            // dá o Play assim que ficar pronto.
+            if (source.clip.loadState == AudioDataLoadState.Unloaded)
+                source.clip.LoadAudioData();
+            if (!source.isPlaying && source.clip.loadState == AudioDataLoadState.Loaded)
                 source.Play();
+            wantPlaying = true;
 
             StartFade(volume, fadeInDuration);
+        }
+
+        // A trilha DEVERIA estar tocando (Play pedido, sem FadeOut depois). Existe porque um
+        // Play() no Start de uma cena recém-carregada pode falhar CALADO com o clipe em
+        // Streaming ainda abrindo: o fade sobe o volume de um source parado e a cena fica sem
+        // trilha (visto na Road). O Update insiste até o source tocar de verdade.
+        private bool wantPlaying;
+
+        private void Update()
+        {
+            if (!wantPlaying || source == null || source.clip == null || source.isPlaying)
+                return;
+            if (AudioListener.pause)
+                return; // pausa do jogo: isPlaying fica falso de propósito
+            if (source.clip.loadState == AudioDataLoadState.Unloaded)
+                source.clip.LoadAudioData();
+            if (source.clip.loadState == AudioDataLoadState.Loaded)
+                source.Play();
         }
 
         /// <summary>
@@ -90,6 +115,7 @@ namespace TheDelivery.FX
             if (source == null)
                 return;
 
+            wantPlaying = false;
             StartFade(0f, duration, stopAtEnd: true);
         }
 

@@ -450,7 +450,7 @@ namespace TheDelivery.Narrative
             // Mesmo padrão dos outros diretores: só assume se for a vez deste ato
             // (ou em teste isolado). Senão fica inerte e não mexe no player.
             bool isJourney = GameManager.Instance != null && GameManager.Instance.CurrentAct == GameAct.ActJourney;
-            if (!isJourney && !autoStartForDebug)
+            if (!isJourney && !(autoStartForDebug && DebugAutoStartAllowed))
             {
                 Debug.Log($"[JourneyDirector] Inerte: CurrentAct não é ActJourney e autoStartForDebug=false. " +
                           $"(GameManager.Instance {(GameManager.Instance == null ? "NULO — dando Play direto nesta cena? Ligue autoStartForDebug" : $"ok, CurrentAct={GameManager.Instance.CurrentAct}")})", this);

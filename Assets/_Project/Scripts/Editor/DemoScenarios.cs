@@ -46,6 +46,23 @@ namespace TheDelivery.EditorTools
                 GameOverVideo();
                 return;
             }
+            if (prep == "devactsvideo")
+            {
+                DevActsVideo();
+                return;
+            }
+            if (prep == "pausevideo")
+            {
+                PauseVideo();
+                return;
+            }
+            // "rec:<segundos>" — só grava (ex.: Play isolado numa cena de ato).
+            // "recact:<GameAct>:<segundos>" — Play pela Boot, entra no ato pela seleção e grava.
+            if (prep.StartsWith("rec:") || prep.StartsWith("recact:"))
+            {
+                RecordScenario(prep);
+                return;
+            }
             if (prep != "staminavideo")
                 return;
 
@@ -491,6 +508,205 @@ namespace TheDelivery.EditorTools
                         Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
                         File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
                         break;
+                }
+            }
+            EditorApplication.update += Tick;
+        }
+
+        // =====================================================================
+        // "devactsvideo" — Play pela Boot. Modo dev: "Atos" com todos liberados -> Ato 4 direto.
+        // Confere que o perfil de progresso do disco não muda.
+        // =====================================================================
+        private static void DevActsVideo()
+        {
+            var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
+            Object.DontDestroyOnLoad(rec.gameObject);
+            rec.Begin(duration: 24f, fps: 24, recordAudio: true);
+            float t0 = Time.time;
+            var log = new StringBuilder();
+            void Ev(string text) { log.AppendLine($"{Time.time - t0,6:0.0}s  {text}"); Debug.Log($"[DevActsDemo] {text}"); }
+            string Hash(string p) => File.Exists(p) ? File.ReadAllText(p).GetHashCode().ToString("X8") : "-";
+            string progressBefore = Hash(SaveManager.ProgressPath);
+
+            Button Field(string name)
+            {
+                var m = Object.FindFirstObjectByType<MainMenuController>();
+                return m == null ? null : typeof(MainMenuController).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(m) as Button;
+            }
+            Button ActItem(string goName)
+            {
+                var ui = Object.FindFirstObjectByType<ActSelectUI>(FindObjectsInactive.Include);
+                Transform t = ui == null ? null : ui.transform.Find("Column/" + goName);
+                return t != null ? t.GetComponent<Button>() : null;
+            }
+            void Submit(Button b)
+            {
+                if (b == null) return;
+                if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(b.gameObject);
+                ExecuteEvents.Execute(b.gameObject, new BaseEventData(EventSystem.current), ExecuteEvents.submitHandler);
+            }
+
+            int step = 0;
+            float at = 0f;
+            void Tick()
+            {
+                if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
+                float t = Time.time - t0;
+                switch (step)
+                {
+                    case 0:
+                        if (Object.FindFirstObjectByType<MainMenuController>() != null && t > 3f)
+                        {
+                            Ev($"Tela de início. Modo dev = {SaveManager.DevUnlockAll}. Abrindo \"Atos\".");
+                            Submit(Field("actsButton")); step++; at = t;
+                        }
+                        break;
+                    case 1:
+                        if (t - at > 1.5f)
+                        {
+                            var sb = new StringBuilder();
+                            foreach (GameActCatalog.ActInfo a in GameActCatalog.Story)
+                            {
+                                Button b = ActItem("Act_" + a.Act);
+                                sb.Append($"{a.Number}={(b != null && b.interactable ? "LIBERADO" : "bloqueado")}  ");
+                            }
+                            Ev("Atos: " + sb);
+                            step++; at = t;
+                        }
+                        break;
+                    case 2:
+                        if (t - at > 3f) { Ev("Escolhendo \"Ato 4 — A Caçada\""); Submit(ActItem("Act_Act4")); step++; at = t; }
+                        break;
+                    case 3:
+                        if (SceneManager.GetActiveScene().name == "Apartment" && t - at > 6f)
+                        {
+                            var d = Object.FindFirstObjectByType<Act4Director>();
+                            Ev($"Apartment carregado: ato {GameManager.Instance.CurrentAct}, Act4Director no beat {d?.CurrentBeat}");
+                            Ev($"Perfil de progresso: antes {progressBefore}, depois {Hash(SaveManager.ProgressPath)} -> {(progressBefore == Hash(SaveManager.ProgressPath) ? "INALTERADO" : "MUDOU")}");
+                            step++; at = t;
+                        }
+                        break;
+                    case 4:
+                        if (t > 23.5f)
+                        {
+                            EditorApplication.update -= Tick;
+                            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+                        }
+                        break;
+                }
+            }
+            EditorApplication.update += Tick;
+        }
+
+        // =====================================================================
+        // "pausevideo" — Play isolado no Apartment (Ato 4, com chuva): 10 s de jogo (som novo da
+        // chuva) -> pausa (= Esc) -> "Voltar à tela de título" -> tela de início.
+        // =====================================================================
+        private static void PauseVideo()
+        {
+            var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
+            Object.DontDestroyOnLoad(rec.gameObject);
+            rec.Begin(26f, 24, true);
+            float t0 = Time.time;
+            var log = new StringBuilder();
+            void Ev(string text) { log.AppendLine($"{Time.unscaledTime:0.0}  {text}"); Debug.Log($"[PauseDemo] {text}"); }
+            Ev($"Play isolado: ato {GameManager.Instance?.CurrentAct}, chuva tocando");
+
+            int step = 0;
+            double at = EditorApplication.timeSinceStartup;
+            void Tick()
+            {
+                if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
+                double el = EditorApplication.timeSinceStartup - at;
+                switch (step)
+                {
+                    case 0:
+                        if (Time.time - t0 > 10f)
+                        {
+                            PauseMenu.Instance.Pause(); // o mesmo que o Esc faz
+                            var items = PauseMenu.Instance.GetComponentsInChildren<Button>(true).Select(b => b.name);
+                            Ev($"Esc -> pausa aberta: IsPaused={PauseMenu.IsPaused}, timeScale={Time.timeScale}, itens: {string.Join(", ", items)}");
+                            step++; at = EditorApplication.timeSinceStartup;
+                        }
+                        break;
+                    case 1:
+                        if (el > 2.0)
+                        {
+                            Button title = PauseMenu.Instance.GetComponentsInChildren<Button>(true).First(b => b.name == "TitleScreenButton");
+                            EventSystem.current.SetSelectedGameObject(title.gameObject); // seta para baixo
+                            Ev("Seleciona \"VOLTAR À TELA DE TÍTULO\"");
+                            step++; at = EditorApplication.timeSinceStartup;
+                        }
+                        break;
+                    case 2:
+                        if (el > 1.5)
+                        {
+                            Button title = PauseMenu.Instance.GetComponentsInChildren<Button>(true).First(b => b.name == "TitleScreenButton");
+                            ExecuteEvents.Execute(title.gameObject, new BaseEventData(EventSystem.current), ExecuteEvents.submitHandler);
+                            Ev("Confirmado (Enter)");
+                            step++; at = EditorApplication.timeSinceStartup;
+                        }
+                        break;
+                    case 3:
+                        if (Object.FindFirstObjectByType<MainMenuController>() != null && el > 3)
+                        {
+                            Ev($"Tela de título: timeScale={Time.timeScale}, IsPaused={PauseMenu.IsPaused}, AudioListener.pause={AudioListener.pause}, cursor {Cursor.lockState}/visível={Cursor.visible}, ato={GameManager.Instance?.CurrentAct}");
+                            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+                            EditorApplication.update -= Tick;
+                        }
+                        break;
+                }
+            }
+            EditorApplication.update += Tick;
+        }
+
+        private static void RecordScenario(string prep)
+        {
+            string[] p = prep.Split(':');
+            bool viaAct = p[0] == "recact";
+            float seconds = float.Parse(p[viaAct ? 2 : 1], System.Globalization.CultureInfo.InvariantCulture);
+            var log = new StringBuilder();
+            void Ev(string text) { log.AppendLine(text); Debug.Log($"[RecDemo] {text}"); }
+
+            DemoFrameRecorder rec = null;
+            void StartRec()
+            {
+                rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
+                Object.DontDestroyOnLoad(rec.gameObject);
+                rec.Begin(seconds, 24, true);
+            }
+
+            if (!viaAct)
+            {
+                Ev($"Play isolado em \"{SceneManager.GetActiveScene().name}\": GameManager={(GameManager.Instance != null ? $"sim ({GameManager.Instance.name}), ato {GameManager.Instance.CurrentAct}, isolado={GameManager.Instance.IsIsolatedPlay}" : "NÃO")}");
+                StartRec();
+            }
+
+            bool requested = false;
+            double start = EditorApplication.timeSinceStartup;
+            int reported = 0;
+            void Tick()
+            {
+                if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
+                if (viaAct && !requested && Object.FindFirstObjectByType<MainMenuController>() != null && EditorApplication.timeSinceStartup - start > 3)
+                {
+                    requested = true;
+                    var act = (GameAct)System.Enum.Parse(typeof(GameAct), p[1]);
+                    StartRec();
+                    Ev($"Seleção de Atos -> {act}: {GameManager.Instance.StartAtAct(act)}");
+                }
+                double el = EditorApplication.timeSinceStartup - start;
+                if (reported < 1 && el > (viaAct ? 12 : 6))
+                {
+                    reported = 1;
+                    foreach (MonoBehaviour mb in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include))
+                        if (mb is IBeatDirectorState d)
+                            Ev($"diretor {d.DirectorId}: beat {mb.GetType().GetProperty("CurrentBeat")?.GetValue(mb)}");
+                    Ev($"Volumes globais: {string.Join(", ", Object.FindObjectsByType<UnityEngine.Rendering.Volume>(FindObjectsInactive.Exclude).Where(v => v.isGlobal).Select(v => v.name))}");
+                    Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                    File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
                 }
             }
             EditorApplication.update += Tick;

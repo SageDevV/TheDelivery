@@ -6786,7 +6786,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 20c9c00b1e375704394d43f1958f16a5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 953729972}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 20c9c00b1e375704394d43f1958f16a5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1402418312}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 20c9c00b1e375704394d43f1958f16a5, type: 3}
 --- !u!4 &244044485 stripped
@@ -6928,8 +6934,14 @@ MonoBehaviour:
   sitNudgeDelay: 6
   afterMarinaThought: {fileID: 11400000, guid: 9485f64e3f7321947baf45c4a0350244, type: 2}
   leaveThought: {fileID: 11400000, guid: 95ee246edbed16a4e8b29916c4499bb5, type: 2}
-  saidaZone: {fileID: 106485343}
-  saidaRadius: 1
+  exitZone: {fileID: 106485343}
+  exitRadius: 1
+  audioSource: {fileID: 0}
+  wakeSound: {fileID: 8300000, guid: eecd7d6f549a15740abc5b981d61f51b, type: 3}
+  wakeVolume: 0.9
+  doorBellSound: {fileID: 8300000, guid: 15c44bcc8e677914aaf3f2c59e7ef576, type: 3}
+  doorBellVolume: 0.8
+  marinaChairSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
   startBeat: 1
   debugMode: 0
 --- !u!4 &268871620
@@ -8131,6 +8143,10 @@ MonoBehaviour:
   - {fileID: 1041853688}
   - {fileID: 1099054298}
   wheelRadius: 0
+  passSound: {fileID: 8300000, guid: ea59489d2c442a842b016b8b6976fa26, type: 3}
+  passLeadTime: 1.5
+  passMaxDistance: 60
+  passVolume: 0.85
 --- !u!43 &382268482
 Mesh:
   m_ObjectHideFlags: 0
@@ -8843,7 +8859,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2d8fac4dea680974f98cb5c279a0c616, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 663186380}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2d8fac4dea680974f98cb5c279a0c616, type: 3}
       insertIndex: -1
@@ -10707,11 +10726,68 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9abbb65035ff82947847a6fca66fe9b4, type: 3}
       insertIndex: -1
       addedObject: {fileID: 996571432}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9abbb65035ff82947847a6fca66fe9b4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2141215016}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9abbb65035ff82947847a6fca66fe9b4, type: 3}
       insertIndex: -1
       addedObject: {fileID: 139659624}
   m_SourcePrefab: {fileID: 100100000, guid: 9abbb65035ff82947847a6fca66fe9b4, type: 3}
+--- !u!1 &663186379
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 663186380}
+  - component: {fileID: 663186381}
+  m_Layer: 0
+  m_Name: DisplayHumSound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &663186380
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663186379}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.000115540024, y: 0.008999999, z: -0.000030731473}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 443311436}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &663186381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663186379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae6a6bab46084b74c9843cc73086dc8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientSoundEmitter
+  loopClip: {fileID: 8300000, guid: 02ebd96b025f0ef4a807e1efd3e02df3, type: 3}
+  loopVolume: 0.1
+  oneShotClips: []
+  oneShotVolume: 0.6
+  intervalMin: 8
+  intervalMax: 20
+  firstDelay: 2
+  pitchJitter: 0.06
+  minDistance: 1.5
+  maxDistance: 6
 --- !u!1001 &687273243
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16703,6 +16779,61 @@ Transform:
   - {fileID: 1270524198}
   m_Father: {fileID: 899666449}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &953729971
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 953729972}
+  - component: {fileID: 953729973}
+  m_Layer: 0
+  m_Name: CounterSound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &953729972
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953729971}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.000008361341, y: 0.0020000003, z: -0.0000048184384}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 244044485}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &953729973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953729971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae6a6bab46084b74c9843cc73086dc8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientSoundEmitter
+  loopClip: {fileID: 0}
+  loopVolume: 0
+  oneShotClips:
+  - {fileID: 8300000, guid: 667553d92a3476f469b2da0a14806575, type: 3}
+  oneShotVolume: 0.15
+  intervalMin: 12
+  intervalMax: 26
+  firstDelay: 4.651501
+  pitchJitter: 0.06
+  minDistance: 1.5
+  maxDistance: 14
 --- !u!1001 &964666723
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16829,6 +16960,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Interaction.SittableChair
   interactionPrompt: Sentar
   standPrompt: Levantar
+  sitSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
+  standSound: {fileID: 0}
+  seatSoundVolume: 0.8
   standWithInteractKey: 0
   seatCameraPoint: {fileID: 16300403}
   sitTransitionDuration: 0.5
@@ -19142,6 +19276,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4921155755746164, guid: 2f1d0a7a525e5a84d976ce1371b65d90, type: 3}
       insertIndex: 0
       addedObject: {fileID: 717904387}
+    - targetCorrespondingSourceObject: {fileID: 4921155755746164, guid: 2f1d0a7a525e5a84d976ce1371b65d90, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1910938606}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 1363597634297898, guid: 2f1d0a7a525e5a84d976ce1371b65d90, type: 3}
       insertIndex: -1
@@ -21405,6 +21542,61 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &1402418311
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1402418312}
+  - component: {fileID: 1402418313}
+  m_Layer: 0
+  m_Name: BlenderSound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1402418312
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1402418311}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.000008361341, y: 0.0020000003, z: -0.0000048184384}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 244044485}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1402418313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1402418311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae6a6bab46084b74c9843cc73086dc8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientSoundEmitter
+  loopClip: {fileID: 0}
+  loopVolume: 0
+  oneShotClips:
+  - {fileID: 8300000, guid: 7b34a377c2db70548b960af04ca6038c, type: 3}
+  oneShotVolume: 0.07
+  intervalMin: 25
+  intervalMax: 50
+  firstDelay: 5.028138
+  pitchJitter: 0.06
+  minDistance: 1.5
+  maxDistance: 12
 --- !u!4 &1434514631 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8456815162550665588, guid: fb7f0b0b882b5f9458c7a4dbef85d606, type: 3}
@@ -22683,8 +22875,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 718093fa57715064097d30d1584b7413, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientMusic
-  clip: {fileID: 8300000, guid: c3c40527b09c3434e8ed05a41c526513, type: 3}
-  volume: 0.25
+  clip: {fileID: 8300000, guid: d4d0ae74769192240b8b88b441574555, type: 3}
+  volume: 0.4
   playOnStart: 1
   fadeInDuration: 2
 --- !u!82 &1699506925
@@ -28834,6 +29026,60 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!1 &1910938605
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1910938606}
+  - component: {fileID: 1910938607}
+  m_Layer: 0
+  m_Name: ArcadeSound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1910938606
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910938605}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.00000333786, y: 0.98327446, z: 0.11857397}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1134985072}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1910938607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910938605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae6a6bab46084b74c9843cc73086dc8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientSoundEmitter
+  loopClip: {fileID: 8300000, guid: 026de7d572676e74b9482dadaee38385, type: 3}
+  loopVolume: 0.055
+  oneShotClips: []
+  oneShotVolume: 0.6
+  intervalMin: 8
+  intervalMax: 20
+  firstDelay: 2
+  pitchJitter: 0.06
+  minDistance: 1.5
+  maxDistance: 8
 --- !u!1001 &1910961570
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28938,6 +29184,10 @@ MonoBehaviour:
   - {fileID: 1993507460}
   - {fileID: 1661793723}
   wheelRadius: 0
+  passSound: {fileID: 8300000, guid: ea59489d2c442a842b016b8b6976fa26, type: 3}
+  passLeadTime: 1.5
+  passMaxDistance: 60
+  passVolume: 0.85
 --- !u!1001 &1921997650
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29148,6 +29398,10 @@ MonoBehaviour:
   - {fileID: 1080589071}
   - {fileID: 1556353217}
   wheelRadius: 0
+  passSound: {fileID: 8300000, guid: ea59489d2c442a842b016b8b6976fa26, type: 3}
+  passLeadTime: 1.5
+  passMaxDistance: 60
+  passVolume: 0.85
 --- !u!1 &1976276570
 GameObject:
   m_ObjectHideFlags: 0
@@ -29733,6 +29987,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Interaction.SittableChair
   interactionPrompt: Sentar
   standPrompt: Levantar
+  sitSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
+  standSound: {fileID: 0}
+  seatSoundVolume: 0.8
   standWithInteractKey: 0
   seatCameraPoint: {fileID: 0}
   sitTransitionDuration: 0.5
@@ -30055,6 +30312,10 @@ MonoBehaviour:
   - {fileID: 1824629320}
   - {fileID: 578331004}
   wheelRadius: 0
+  passSound: {fileID: 8300000, guid: ea59489d2c442a842b016b8b6976fa26, type: 3}
+  passLeadTime: 1.5
+  passMaxDistance: 60
+  passVolume: 0.85
 --- !u!1 &2074623104
 GameObject:
   m_ObjectHideFlags: 0
@@ -30416,6 +30677,61 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7680261333158715632, guid: 6468ee3e8a46369478f8bb5ceb53dfea, type: 3}
   m_PrefabInstance: {fileID: 3828198276586867476}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2141215015
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2141215016}
+  - component: {fileID: 2141215017}
+  m_Layer: 0
+  m_Name: CupSound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2141215016
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2141215015}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.3666729, y: 0.008159267, z: 1.0922935}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 139659622}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2141215017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2141215015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae6a6bab46084b74c9843cc73086dc8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.AmbientSoundEmitter
+  loopClip: {fileID: 0}
+  loopVolume: 0
+  oneShotClips:
+  - {fileID: 8300000, guid: 7f887829ea1c09640b2b2a37a432bd3f, type: 3}
+  oneShotVolume: 0.6
+  intervalMin: 9
+  intervalMax: 20
+  firstDelay: 3.1617591
+  pitchJitter: 0.06
+  minDistance: 1.5
+  maxDistance: 9
 --- !u!1001 &3828198276586867476
 PrefabInstance:
   m_ObjectHideFlags: 0

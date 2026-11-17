@@ -438,7 +438,7 @@ namespace TheDelivery.Narrative
             // fica inerte — o Act4Director (mesma cena) cuida do Ato 4 quando for a vez.
             bool isAct3 = GameManager.Instance != null && GameManager.Instance.CurrentAct == GameAct.Act3;
             Debug.Log($"[Act3Director] Start. CurrentAct={GameManager.Instance?.CurrentAct}, isAct3={isAct3}, autoStart={autoStartForDebug}", this);
-            if (isAct3 || autoStartForDebug)
+            if (isAct3 || (autoStartForDebug && DebugAutoStartAllowed))
             {
                 // A cena do apartamento é COMPARTILHADA com o Ato 4, cujo despertar
                 // começa no escuro: por isso o blackScreen (o MESMO CanvasGroup que o

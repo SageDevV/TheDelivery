@@ -728,8 +728,8 @@ MonoBehaviour:
   growlPoint: {fileID: 179637293}
   reachRadius: 2
   corridorThought: {fileID: 0}
-  corridorAmbience: {fileID: 0}
-  corridorAmbienceVolume: 0.607
+  corridorAmbience: {fileID: 8300000, guid: 78dcdfed02d26984e9351b48e4535254, type: 3}
+  corridorAmbienceVolume: 0.6
   growlSound: {fileID: 8300000, guid: 87904800e724edb498d4b8eaaf2ecffe, type: 3}
   creatureObject: {fileID: 813981207}
   creatureSpawnPoint: {fileID: 2083115775}
@@ -757,7 +757,7 @@ MonoBehaviour:
   catchOnContact: 1
   catchDistance: 1.2
   catchEndsDream: 1
-  chaseLoop: {fileID: 0}
+  chaseLoop: {fileID: 8300000, guid: b691dd773475dc844b1ddaab20bc853a, type: 3}
   chaseLoopVolume: 0.9
   chaseAudioRange: 14
   corridorLights: []
@@ -796,8 +796,8 @@ MonoBehaviour:
   grabSound: {fileID: 8300000, guid: 289b95ca98b5b3c4b8f32097ea312870, type: 3}
   grabSoundVolume: 1
   grabSoundClipTime: 0.15
-  grabLoopSound: {fileID: 8300000, guid: d69f1b17affb8a245b91c321824a46e0, type: 3}
-  grabLoopVolume: 0.577
+  grabLoopSound: {fileID: 8300000, guid: 4bfb43d506550244282a73209eb96d0c, type: 3}
+  grabLoopVolume: 0.45
   grabLoopCrossfade: 0.5
   grabLoopHeadTrim: 0.05
   grabLoopTailTrim: 0.05
@@ -839,10 +839,10 @@ MonoBehaviour:
   grabFallenPitch: -35
   grabFallenRoll: 22
   grabLingerDuration: 0
-  ventoSound: {fileID: 8300000, guid: 455dd3ae0ca405c4e9a316d5d86b4150, type: 3}
-  ventoCrossfade: 0.6
-  ventoHeadTrim: 0.05
-  ventoTailTrim: 0.05
+  windSound: {fileID: 8300000, guid: 455dd3ae0ca405c4e9a316d5d86b4150, type: 3}
+  windCrossfade: 0.6
+  windHeadTrim: 0.05
+  windTailTrim: 0.05
   fallStreakRate: 140
   fallStreakMaterial: {fileID: 0}
   fallStreakColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0.36078432}
@@ -853,11 +853,16 @@ MonoBehaviour:
   fallImpactAutoCut: 1
   fallImpactOnsetThreshold: 0.1
   fallImpactStartTime: 0.9
-  grabDazeDuration: 6.9
+  grabDazeDuration: 9.5
   grabDazeAmplitude: 3.5
   grabDazeSpeed: 0.35
   grabDazeEyeCloseDuration: 3.85
-  impactSound: {fileID: 0}
+  grabDazeRingSound: {fileID: 8300000, guid: 83a1d5aff9d508b40810617f39442182, type: 3}
+  grabDazeRingVolume: 0.45
+  grabDazeRingDelay: 1
+  grabDazeRingAttack: 0.35
+  impactSound: {fileID: 8300000, guid: 52b06989d6451514f920f26354daf813, type: 3}
+  impactSoundVolume: 0.9
   cutHoldDuration: 0.12
   dreamVolume: {fileID: 200869108}
   debugStartAtGrowl: 0
@@ -9359,6 +9364,70 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1200656946}
     m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 106.46
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 180.81
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 317.758
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.57357645
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.81915206
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 138
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_Name
+      value: CreatureGrab
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -8211682993464967936, guid: cda64e220c034c7488b99a77c5f53a03, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: -56.715263
@@ -9654,70 +9723,6 @@ PrefabInstance:
     - target: {fileID: 9209473232806845289, guid: cda64e220c034c7488b99a77c5f53a03, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -122.215256
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 2.4
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 2.4
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 2.4
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 106.46
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 180.81
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 317.758
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.57357645
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.81915206
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 138
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_Name
-      value: CreatureGrab
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: 738d10d02bf91b64c83c400f7ec51fef, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
