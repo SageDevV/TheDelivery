@@ -28,6 +28,7 @@ namespace TheDelivery.EditorTools
         private const float Warmup = 4f;
         private const float FilmLength = 66f;
         private const float LightsLength = 40f;
+        private const float BusLength = 42f;
 
         // Centro das faixas (pista ± laneOffset 2,2): A (x) e B (z).
         private const float AIda = 249.2f, AVolta = 244.8f, BIda = 374.1f, BVolta = 369.7f;
@@ -44,9 +45,10 @@ namespace TheDelivery.EditorTools
 
         private static void OnPlayReady(string prep)
         {
-            if (prep != "cityfilm" && prep != "lightsfilm")
+            if (prep != "cityfilm" && prep != "lightsfilm" && prep != "busfilm")
                 return;
             bool lightsOnly = prep == "lightsfilm";
+            bool busOnly = prep == "busfilm";
             void Tick()
             {
                 if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
@@ -58,8 +60,8 @@ namespace TheDelivery.EditorTools
                 EditorApplication.update -= Tick;
                 var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
                 Object.DontDestroyOnLoad(rec.gameObject);
-                rec.Begin(Warmup + (lightsOnly ? LightsLength : FilmLength) + 1f, 24, true);
-                rec.StartCoroutine(lightsOnly ? LightsFilm(player, cars) : Film(player, cars, peds));
+                rec.Begin(Warmup + (busOnly ? BusLength : lightsOnly ? LightsLength : FilmLength) + 1f, 24, true);
+                rec.StartCoroutine(busOnly ? BusFilm(player) : lightsOnly ? LightsFilm(player, cars) : Film(player, cars, peds));
             }
             EditorApplication.update += Tick;
         }
@@ -447,6 +449,142 @@ namespace TheDelivery.EditorTools
             {
                 float e = Ease(u);
                 Pose(new Vector3(-27.1f, Mathf.Lerp(14f, 10f, e), Mathf.Lerp(105f, 125f, e)), new Vector3(-27.1f, 0f, 230f));
+            });
+
+            filming = false;
+            Ev("CORTE_FIM");
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "busfilm": a linha de ônibus. O ônibus é adiantado na pista para chegar ao ponto da rua B
+        /// logo após o corte (2 passageiros embarcam) e, depois, ao ponto da rua C (3 passageiros).
+        /// 5 planos; anoitecer 0,50 → 0,64 (os postes acendem durante o vídeo).
+        /// Play pela Road: "300 Assets/Scenes/Road.unity busfilm".
+        /// </summary>
+        private static IEnumerator BusFilm(PlayerController player)
+        {
+            var log = new StringBuilder();
+            float t0 = Time.time;
+            void Ev(string text) { log.AppendLine($"{Time.time - t0:0.0}  {text}"); Debug.Log($"[RoadCityFilm] {Time.time - t0:0.0}s {text}"); }
+            float T() => Time.time - t0 - Warmup;
+
+            var cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            player.transform.SetPositionAndRotation(new Vector3(258.5f, 0.5f, 200f), Quaternion.identity);
+            if (cc != null) cc.enabled = true;
+
+            Camera gameCam = Camera.main;
+            var camGo = new GameObject("BusFilmCamera");
+            var cam = camGo.AddComponent<Camera>();
+            cam.CopyFrom(gameCam);
+            cam.fieldOfView = 50f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = Mathf.Max(gameCam.farClipPlane, 600f);
+            var src = gameCam.GetUniversalAdditionalCameraData();
+            var dst = cam.GetUniversalAdditionalCameraData();
+            dst.renderPostProcessing = src.renderPostProcessing;
+            dst.antialiasing = src.antialiasing;
+            dst.volumeLayerMask = src.volumeLayerMask;
+            dst.volumeTrigger = camGo.transform;
+            cam.depth = gameCam.depth + 10f;
+            foreach (var l in Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude)) l.enabled = false;
+            camGo.AddComponent<AudioListener>();
+            gameCam.enabled = false;
+            camGo.tag = "MainCamera";
+
+            var nightfall = Object.FindAnyObjectByType<NightfallController>();
+            MethodInfo apply = typeof(NightfallController).GetMethod("Apply", F);
+            var host = Object.FindAnyObjectByType<DemoFrameRecorder>();
+            var busGo = GameObject.Find("Bus_Linha");
+            var bus = busGo != null ? busGo.GetComponent<StreetTrafficCar>() : null;
+            if (bus == null) { Ev("SEM ONIBUS"); yield break; }
+            while (fLane.GetValue(bus) == null) yield return null;
+            FieldInfo fStopS = typeof(StreetTrafficCar).GetField("stopS", F);
+            FieldInfo fNextStop = typeof(StreetTrafficCar).GetField("nextStop", F);
+
+            bool filming = true;
+            int lastDwell = -2;
+            IEnumerator Upkeep()
+            {
+                while (filming)
+                {
+                    foreach (var cv in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude))
+                        if (cv.renderMode == RenderMode.ScreenSpaceOverlay && cv.enabled) cv.enabled = false;
+                    if (nightfall != null)
+                    {
+                        if (nightfall.IsRunning) nightfall.Stop();
+                        apply?.Invoke(nightfall, new object[] { Mathf.Lerp(0.50f, 0.64f, Mathf.Clamp01(T() / BusLength)) });
+                    }
+                    if (bus.DwellingAt != lastDwell)
+                    {
+                        lastDwell = bus.DwellingAt;
+                        Ev(lastDwell >= 0 ? $"onibus PARADO no ponto {lastDwell}" : $"onibus andando (proximo ponto {bus.NextStop})");
+                    }
+                    yield return null;
+                }
+            }
+            host.StartCoroutine(Upkeep());
+
+            // Põe o ônibus 'meters' antes do ponto 'stop' (larga se estiver esperando).
+            void BusBefore(int stop, float meters)
+            {
+                if (!bus.IsDriving) mLaunch.Invoke(bus, null);
+                var stops = (float[])fStopS.GetValue(bus);
+                if (stops == null || stop >= stops.Length) { Ev("pontos nao calculados"); return; }
+                fNextStop.SetValue(bus, stop);
+                fS.SetValue(bus, Mathf.Max(0f, stops[stop] - meters));
+                fSpeed.SetValue(bus, (float)fCruise.GetValue(bus));
+                Ev($"onibus a {meters:0} m do ponto {stop}");
+            }
+
+            void Pose(Vector3 pos, Vector3 lookAt) =>
+                camGo.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(lookAt - pos, Vector3.up));
+            float Ease(float x) => x * x * (3f - 2f * x);
+            IEnumerator Shot(string title, float from, float to, System.Action<float> frame)
+            {
+                while (T() < from) yield return null;
+                Ev($"PLANO {title}");
+                while (T() < to)
+                {
+                    frame(Mathf.Clamp01((T() - from) / (to - from)));
+                    yield return null;
+                }
+            }
+
+            // Ainda no aquecimento: ônibus a caminho do ponto da B.
+            while (T() < -1.5f) yield return null;
+            BusBefore(0, 62f);
+            Vector3 shelterB = new Vector3(13f, 0f, 378.85f), doorB = bus.StopDoorWorld(0);
+            Pose(new Vector3(4f, 1.7f, 364.6f), shelterB + Vector3.up * 1.2f);
+
+            yield return Shot("1 ponto B chegada", 0f, 10f, u =>
+            {
+                Pose(new Vector3(Mathf.Lerp(4f, 6f, u), 1.7f, 364.6f),
+                     Vector3.Lerp(shelterB + new Vector3(14f, 1.4f, 0f), shelterB + new Vector3(2f, 1.2f, 0f), Ease(u)));
+            });
+            yield return Shot("2 porta embarque", 10f, 17f, u =>
+            {
+                Pose(doorB + new Vector3(6f, 1.6f, 2.0f), doorB + new Vector3(-0.5f, 1.2f, -0.2f)); // calçada a leste da porta, ao longo da lateral do ônibus
+            });
+            yield return Shot("3 saindo do ponto", 17f, 22f, u =>
+            {
+                Vector3 b = bus.transform.position;
+                Pose(new Vector3(Mathf.Lerp(18f, 8f, u), 3.2f, 366f), b + Vector3.up * 1.6f);
+            });
+
+            BusBefore(1, 60f);
+            Vector3 shelterC = new Vector3(-34.85f, 0f, 302f), doorC = bus.StopDoorWorld(1);
+            yield return Shot("4 ponto C embarque", 22f, 34f, u =>
+            {
+                Vector3 aim = Vector3.Lerp(shelterC + new Vector3(1.5f, 1.4f, 12f), doorC + new Vector3(0f, 1.3f, 0f), Ease(Mathf.Clamp01(u * 1.6f)));
+                Pose(new Vector3(-21.2f, 1.7f, Mathf.Lerp(292f, 294f, u)), aim);
+            });
+            yield return Shot("5 seguindo pela C", 34f, BusLength, u =>
+            {
+                Vector3 b = bus.transform.position;
+                Pose(new Vector3(-27.1f, Mathf.Lerp(11f, 13f, u), 318f), b + Vector3.up * 1.2f);
             });
 
             filming = false;

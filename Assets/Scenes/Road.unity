@@ -879,6 +879,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 13898840}
   - {fileID: 13898839}
@@ -2267,6 +2271,109 @@ Transform:
   m_Children: []
   m_Father: {fileID: 383572041}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &109279230
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 27
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.14118706
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 377.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_Name
+      value: Rider_BusStop_B_1_NPC3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 5529939b8e1cfbe41aa923b6630ee34d, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 109279234}
+  m_SourcePrefab: {fileID: 100100000, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+--- !u!4 &109279231 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+  m_PrefabInstance: {fileID: 109279230}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &109279232 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+  m_PrefabInstance: {fileID: 109279230}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &109279233 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 271dea226bd7c6e40b423a4bb65618a2, type: 3}
+  m_PrefabInstance: {fileID: 109279230}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &109279234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109279232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d68f2802307978845ab3b42812bb99ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.BusRider
+  bus: {fileID: 588042722}
+  stopIndex: 0
+  approachFrom: {x: 27, y: 0.14118706, z: 377.6}
+  queueIndex: 0
+  walkSpeed: 1.3
+  triggerDistance: 55
+  animator: {fileID: 109279233}
+  clipStrideSpeed: 1.3027295
 --- !u!1 &109382004
 GameObject:
   m_ObjectHideFlags: 0
@@ -4916,6 +5023,109 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1001 &211645065
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.14118707
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 377.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_Name
+      value: Rider_BusStop_B_2_NPC6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8ab28222171cc5643bb7ac49f2dc4e4c, type: 2}
+    - target: {fileID: 5866666021909216657, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 211645069}
+  m_SourcePrefab: {fileID: 100100000, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+--- !u!4 &211645066 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+  m_PrefabInstance: {fileID: 211645065}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &211645067 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+  m_PrefabInstance: {fileID: 211645065}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &211645068 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: f5a3863cf8cb19941a33ffc7b3be2dd6, type: 3}
+  m_PrefabInstance: {fileID: 211645065}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &211645069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 211645067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d68f2802307978845ab3b42812bb99ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.BusRider
+  bus: {fileID: 588042722}
+  stopIndex: 0
+  approachFrom: {x: 3, y: 0.14118707, z: 377.6}
+  queueIndex: 1
+  walkSpeed: 1.3
+  triggerDistance: 55
+  animator: {fileID: 211645068}
+  clipStrideSpeed: 1.3040454
 --- !u!1 &230873838
 GameObject:
   m_ObjectHideFlags: 0
@@ -6922,6 +7132,109 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 117.96655, y: 13.959032, z: 0.5826881}
   m_Center: {x: -50.404938, y: 6.479515, z: 0.20865601}
+--- !u!1001 &320020708
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -34.6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0907017
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 318
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_Name
+      value: Rider_BusStop_C_3_NPC2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: b3110521977f514479124f97f1f7506a, type: 2}
+    - target: {fileID: 5866666021909216657, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 320020712}
+  m_SourcePrefab: {fileID: 100100000, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+--- !u!4 &320020709 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+  m_PrefabInstance: {fileID: 320020708}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &320020710 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+  m_PrefabInstance: {fileID: 320020708}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &320020711 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: a9c5f42fa6bc665479e082d7a6ce652c, type: 3}
+  m_PrefabInstance: {fileID: 320020708}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &320020712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 320020710}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d68f2802307978845ab3b42812bb99ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.BusRider
+  bus: {fileID: 588042722}
+  stopIndex: 1
+  approachFrom: {x: -34.6, y: 0.0907017, z: 318}
+  queueIndex: 2
+  walkSpeed: 1.3
+  triggerDistance: 55
+  animator: {fileID: 320020711}
+  clipStrideSpeed: 1.3055227
 --- !u!1 &321892119
 GameObject:
   m_ObjectHideFlags: 0
@@ -11796,6 +12109,158 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1001 &588042715
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: 1917009586730878832, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_Name
+      value: Bus_Linha
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 247
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 252
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1917009586730878832, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 588042722}
+  m_SourcePrefab: {fileID: 100100000, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+--- !u!4 &588042716 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8415293048845115783, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+  m_PrefabInstance: {fileID: 588042715}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &588042717 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6390070968724285966, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+  m_PrefabInstance: {fileID: 588042715}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &588042718 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8198408073427458836, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+  m_PrefabInstance: {fileID: 588042715}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &588042719 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6362965643057352166, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+  m_PrefabInstance: {fileID: 588042715}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &588042720 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1917009586730878832, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+  m_PrefabInstance: {fileID: 588042715}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &588042721 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6356233358866180405, guid: 2469e42b2dd4e6742aad0fb72a4b97a4, type: 3}
+  m_PrefabInstance: {fileID: 588042715}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &588042722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588042720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 362a07494a0cc64488e57f2ffd0a7210, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.FX.StreetTrafficCar
+  route: {fileID: 1453070192}
+  reverse: 0
+  laneOffset: 3
+  forwardAxis: 0
+  speedMin: 6
+  speedMax: 7
+  accelerationTime: 4
+  brakeDeceleration: 3.5
+  startDelay: 6
+  respawnDelayMin: 15
+  respawnDelayMax: 30
+  spawnClearance: 45
+  detectDistance: 14
+  detectHalfWidth: 2.4
+  stopGap: 2.5
+  hornSound: {fileID: 8300000, guid: 7d6647f18e987b64ab56843127220ac0, type: 3}
+  hornVolume: 0.5
+  hornDelay: 0.8
+  hornInterval: 5
+  maxHorns: 3
+  passSound: {fileID: 8300000, guid: ea59489d2c442a842b016b8b6976fa26, type: 3}
+  passLeadTime: 1.5
+  passMaxDistance: 90
+  passMinDistance: 9
+  passVolume: 1
+  nightfall: {fileID: 446554576}
+  stopSpawningAt: 0.7
+  vanishAt: 0.97
+  headlights: 1
+  logHeadlightGeometry: 0
+  headlightColor: {r: 1, g: 0.93, b: 0.8, a: 1}
+  headlightIntensity: 13.4
+  headlightRange: 16
+  headlightGlowRange: 0.73
+  headlightAngle: 80
+  headlightTilt: 3
+  headlightHeight: 0.38
+  headlightGlowIntensity: 0.74
+  stopPoints:
+  - {x: 15, y: 0, z: 377}
+  - {x: -33.2, y: 0, z: 300}
+  doorLocal: {x: 1.25, y: 0, z: 4.9}
+  stopDwell: 5
+  stopMaxDwell: 25
+  wheels:
+  - {fileID: 588042719}
+  - {fileID: 588042718}
+  - {fileID: 588042717}
+  - {fileID: 588042716}
+  wheelRadius: 0
 --- !u!1001 &595005099
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13375,6 +13840,68 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1001 &645330274
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -34.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.07693052
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 302
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8073069353521784173, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_Name
+      value: BusStop_C
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+--- !u!4 &645330275 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+  m_PrefabInstance: {fileID: 645330274}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &645654672
 GameObject:
   m_ObjectHideFlags: 0
@@ -15510,6 +16037,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 707213216}
   - {fileID: 707213215}
@@ -19912,6 +20443,68 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 20, y: 6, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1001 &951146556
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.07233116
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 378.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8073069353521784173, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+      propertyPath: m_Name
+      value: BusStop_B
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+--- !u!4 &951146557 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 386628139907411062, guid: fd9f88da4b12bc3498a5e1c2c1c1ae92, type: 3}
+  m_PrefabInstance: {fileID: 951146556}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &953299619
 GameObject:
   m_ObjectHideFlags: 0
@@ -24890,6 +25483,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 1190997864}
   - {fileID: 1190997863}
@@ -25737,6 +26334,109 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1001 &1239085152
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -33.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.13476923
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 314
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_Name
+      value: Rider_BusStop_C_1_NPC1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 54f8652eb78a44648aeb3b1515589e21, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1239085156}
+  m_SourcePrefab: {fileID: 100100000, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+--- !u!4 &1239085153 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+  m_PrefabInstance: {fileID: 1239085152}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1239085154 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+  m_PrefabInstance: {fileID: 1239085152}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1239085155 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 9e88b7e38979bc744b54bc057d257981, type: 3}
+  m_PrefabInstance: {fileID: 1239085152}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1239085156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239085154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d68f2802307978845ab3b42812bb99ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.BusRider
+  bus: {fileID: 588042722}
+  stopIndex: 1
+  approachFrom: {x: -33.8, y: 0.13476923, z: 314}
+  queueIndex: 0
+  walkSpeed: 1.3
+  triggerDistance: 55
+  animator: {fileID: 1239085155}
+  clipStrideSpeed: 1.3025985
 --- !u!1 &1246944151
 GameObject:
   m_ObjectHideFlags: 0
@@ -33435,6 +34135,45 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &1608481945
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1608481946}
+  m_Layer: 0
+  m_Name: BusLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1608481946
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1608481945}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 951146557}
+  - {fileID: 645330275}
+  - {fileID: 588042721}
+  - {fileID: 109279231}
+  - {fileID: 211645066}
+  - {fileID: 1239085153}
+  - {fileID: 1823055756}
+  - {fileID: 320020709}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1611301363
 GameObject:
   m_ObjectHideFlags: 0
@@ -33728,6 +34467,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 1628204612}
   - {fileID: 1628204611}
@@ -34967,6 +35710,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 1691622987}
   - {fileID: 1691622986}
@@ -35651,6 +36398,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 1722538330}
   - {fileID: 1722538329}
@@ -37966,6 +38717,109 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1001 &1823055755
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1608481946}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -33.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.13476925
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 288
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_Name
+      value: Rider_BusStop_C_2_NPC5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: e8842884c1822a64a83f0237f8e1cf19, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1823055759}
+  m_SourcePrefab: {fileID: 100100000, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+--- !u!4 &1823055756 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+  m_PrefabInstance: {fileID: 1823055755}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1823055757 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+  m_PrefabInstance: {fileID: 1823055755}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1823055758 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 7ecc49ea513094647b2cffcfdcfe82c9, type: 3}
+  m_PrefabInstance: {fileID: 1823055755}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1823055759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823055757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d68f2802307978845ab3b42812bb99ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.AI.BusRider
+  bus: {fileID: 588042722}
+  stopIndex: 1
+  approachFrom: {x: -33.8, y: 0.13476925, z: 288}
+  queueIndex: 1
+  walkSpeed: 1.3
+  triggerDistance: 55
+  animator: {fileID: 1823055758}
+  clipStrideSpeed: 1.2924457
 --- !u!1 &1832538808
 GameObject:
   m_ObjectHideFlags: 0
@@ -38282,6 +39136,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 1858411164}
   - {fileID: 1858411163}
@@ -40615,6 +41473,10 @@ MonoBehaviour:
   headlightTilt: 3
   headlightHeight: 0.38
   headlightGlowIntensity: 0.74
+  stopPoints: []
+  doorLocal: {x: 1.25, y: 0, z: 4.7}
+  stopDwell: 5
+  stopMaxDwell: 25
   wheels:
   - {fileID: 1992511170}
   - {fileID: 1992511169}
@@ -43351,3 +44213,4 @@ SceneRoots:
   - {fileID: 1175075985}
   - {fileID: 1453070193}
   - {fileID: 1802906508}
+  - {fileID: 1608481946}

@@ -33,12 +33,12 @@ namespace TheDelivery.EditorTools
                 string[] parts = raw.Trim().Split(' ');
                 string path = parts[0];
                 if (path.Length == 0) continue;
-                try { Render(path, parts.Length > 1 && (parts[1] == "front" || parts[1] == "back"), parts.Length > 1 && parts[1] == "back"); }
+                try { Render(path, parts.Length > 1 && (parts[1] == "front" || parts[1] == "back" || parts[1] == "right"), parts.Length > 1 && parts[1] == "back", parts.Length > 1 && parts[1] == "right"); }
                 catch (System.Exception e) { Debug.LogWarning($"[PrefabPreviewRender] {path}: {e.Message}"); }
             }
         }
 
-        public static void Render(string assetPath, bool front = false, bool back = false)
+        public static void Render(string assetPath, bool front = false, bool back = false, bool right = false)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
             if (prefab == null)
@@ -96,8 +96,9 @@ namespace TheDelivery.EditorTools
                     // FRENTE ORTOGRÁFICA (+Z olhando para -Z): 1 px = 2*orthoSize/640 m, centro da imagem = centro da caixa.
                     cam.orthographic = true;
                     cam.orthographicSize = orthoSize;
-                    Vector3 look = back ? Vector3.forward : Vector3.back;
-                    cam.transform.position = b.center - look * (b.extents.z + 5f);
+                    Vector3 look = right ? Vector3.left : back ? Vector3.forward : Vector3.back;
+                    cam.transform.position = b.center - look * (b.extents.magnitude + 5f);
+                    if (right) cam.orthographicSize = Mathf.Max(b.size.y, b.size.z * 640f / 1024f) * 0.5f * 1.1f;
                     cam.transform.rotation = Quaternion.LookRotation(look, Vector3.up);
                 }
 
@@ -105,7 +106,7 @@ namespace TheDelivery.EditorTools
                 pru.lights[0].transform.rotation = Quaternion.Euler(40f, 30f, 0f);
                 pru.lights[1].intensity = 0.7f;
                 pru.ambientColor = new Color(0.45f, 0.45f, 0.5f);
-                if (front) pru.lights[0].transform.rotation = Quaternion.Euler(20f, back ? 0f : 180f, 0f); // luz batendo de frente
+                if (front) pru.lights[0].transform.rotation = Quaternion.Euler(20f, right ? -90f : back ? 0f : 180f, 0f); // luz batendo de frente
 
                 var rect = new Rect(0, 0, 1024, 640);
                 pru.BeginStaticPreview(rect);
@@ -113,7 +114,7 @@ namespace TheDelivery.EditorTools
                 pru.Render(true); // o 1º render de cada PreviewRenderUtility às vezes sai vazio
                 Texture2D tex = pru.EndStaticPreview();
 
-                string file = $"Temp/PrefabPreview_{Path.GetFileNameWithoutExtension(assetPath)}{(back ? "_back" : front ? "_front" : "")}.png";
+                string file = $"Temp/PrefabPreview_{Path.GetFileNameWithoutExtension(assetPath)}{(right ? "_right" : back ? "_back" : front ? "_front" : "")}.png";
                 File.WriteAllBytes(file, tex.EncodeToPNG());
                 Object.DestroyImmediate(tex);
                 Debug.Log($"[PrefabPreviewRender] {file} | bounds {b.size.x:0.00} x {b.size.y:0.00} x {b.size.z:0.00} | tris~{tris} | centro {b.center.x:0.000},{b.center.y:0.000},{b.center.z:0.000} min {b.min.x:0.000},{b.min.y:0.000},{b.min.z:0.000} | orto {orthoSize:0.000} (m por px {2f * orthoSize / 640f:0.0000})");

@@ -34,6 +34,7 @@ namespace TheDelivery.EditorTools
             ("CarWagon", -90f, 0.56f, 0.61f),
             ("CarPickup", -90f, 0.49f, 0.87f),
             ("CarSedan", -90f, 0.54f, 0.635f),
+            ("CityBus", -90f, 0.85f, 0.75f),
         };
 
         private static double nextPoll;
@@ -98,7 +99,7 @@ namespace TheDelivery.EditorTools
                     int wheels = 0;
                     foreach (Renderer r in inst.GetComponentsInChildren<Renderer>(true))
                     {
-                        r.sharedMaterial = mat;
+                        r.sharedMaterials = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Repeat(mat, Mathf.Max(1, r.sharedMaterials.Length))); // todos os slots
                         if (r.name.ToLowerInvariant().Contains("wheel")) wheels++;
                     }
                     Bounds bb = new Bounds(root.transform.position, Vector3.zero);
@@ -128,7 +129,7 @@ namespace TheDelivery.EditorTools
             return true;
         }
 
-        private static Material BuildMaterial(string name, string dir)
+        internal static Material BuildMaterial(string name, string dir)
         {
             string texDir = $"{dir}/{name}_textures";
             string baseP = $"{texDir}/base_color.png", nrmP = $"{texDir}/normal.png";
@@ -172,6 +173,23 @@ namespace TheDelivery.EditorTools
             if (msTex != null) mat.EnableKeyword("_METALLICSPECGLOSSMAP");
             mat.SetFloat("_Metallic", 1f);
             mat.SetFloat("_Smoothness", 1f); // escala do A do mapa
+
+            // Emissão (modelos feitos por script: faróis, lanternas, letreiro acesos na paleta).
+            string emP = $"{texDir}/emission.png";
+            SetupTexture(emP, TextureImporterType.Default, srgb: true);
+            var emTex = AssetDatabase.LoadAssetAtPath<Texture2D>(emP);
+            if (emTex != null)
+            {
+                mat.SetTexture("_EmissionMap", emTex);
+                mat.SetColor("_EmissionColor", Color.white * 1.6f);
+                mat.EnableKeyword("_EMISSION");
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            }
+            else
+            {
+                mat.SetTexture("_EmissionMap", null);
+                mat.DisableKeyword("_EMISSION");
+            }
             EditorUtility.SetDirty(mat);
             return mat;
         }
@@ -180,16 +198,23 @@ namespace TheDelivery.EditorTools
         {
             if (AssetImporter.GetAtPath(path) is not TextureImporter ti)
                 return;
+            // PALETA (textura pequena de células de cor chapada, modelos feitos por script): sem mipmap e
+            // filtro de ponto — senão as células vizinhas se misturam de longe e nas bordas.
+            var probe = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            bool palette = probe != null && probe.width <= 256 && probe.height <= 256;
+            bool mips = !palette;
+            FilterMode filter = palette ? FilterMode.Point : FilterMode.Trilinear;
+            var compression = palette ? TextureImporterCompression.Uncompressed : TextureImporterCompression.CompressedHQ;
             if (ti.textureType == type && ti.sRGBTexture == srgb && ti.maxTextureSize == 2048 &&
-                ti.textureCompression == TextureImporterCompression.CompressedHQ && ti.anisoLevel == 8 &&
-                ti.filterMode == FilterMode.Trilinear && ti.mipmapEnabled)
+                ti.textureCompression == compression && ti.anisoLevel == 8 &&
+                ti.filterMode == filter && ti.mipmapEnabled == mips)
                 return;
             ti.textureType = type;
             ti.sRGBTexture = srgb;
             ti.maxTextureSize = 2048;
-            ti.textureCompression = TextureImporterCompression.CompressedHQ;
-            ti.mipmapEnabled = true;
-            ti.filterMode = FilterMode.Trilinear;
+            ti.textureCompression = compression;
+            ti.mipmapEnabled = mips;
+            ti.filterMode = filter;
             ti.anisoLevel = 8;
             ti.SaveAndReimport();
         }

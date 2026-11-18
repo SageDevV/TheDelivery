@@ -98,6 +98,16 @@ namespace TheDelivery.FX
         [Tooltip("Brilho curto (Point) colado em cada lente — o farol 'aceso' visto de frente. ESCALA 1 (multiplicado pela escala²).")]
         [Min(0f)] [SerializeField] private float headlightGlowIntensity = 0.74f;
 
+        [Header("Ônibus (pontos de parada)")]
+        [Tooltip("Pontos de parada (mundo, na guia): o veículo para com a PORTA alinhada a cada um, na ordem da pista. Vazio = carro comum.")]
+        [SerializeField] private Vector3[] stopPoints;
+        [Tooltip("Porta de embarque no espaço local do veículo (x = lado direito, z = à frente do centro).")]
+        [SerializeField] private Vector3 doorLocal = new Vector3(1.25f, 0f, 4.7f);
+        [Tooltip("Tempo mínimo parado em cada ponto (s).")]
+        [Min(0f)] [SerializeField] private float stopDwell = 5f;
+        [Tooltip("Tempo máximo esperando passageiros atrasados (s).")]
+        [Min(0f)] [SerializeField] private float stopMaxDwell = 25f;
+
         [Header("Rodas")]
         [SerializeField] private Transform[] wheels;
         [SerializeField] private float wheelRadius;
@@ -129,6 +139,60 @@ namespace TheDelivery.FX
         private Transform player;
         private AudioListener listener;
         private Quaternion axisFix = Quaternion.identity;
+
+        // --- Pontos de parada (ônibus) ---
+        private float[] stopS;            // posição de cada ponto na pista (centro do veículo parado)
+        private int nextStop;             // próximo ponto a atender nesta volta
+        private float dwellTime;          // há quanto tempo está parado no ponto
+        private bool dwelling;
+        private int boardingHolds;        // passageiros a caminho da porta
+
+        /// <summary>Índice do ponto em que está parado agora (-1 se não está parado em ponto).</summary>
+        public int DwellingAt => dwelling ? nextStop : -1;
+        public int NextStop => stopS != null && nextStop < stopS.Length ? nextStop : -1;
+        public int StopCount => stopPoints != null ? stopPoints.Length : 0;
+
+        /// <summary>Metros (na pista) até parar no ponto <paramref name="i"/>; infinito se ele não é o próximo.</summary>
+        public float DistanceToStop(int i)
+        {
+            if (!driving || stopS == null || i != nextStop || i >= stopS.Length) return float.PositiveInfinity;
+            return Mathf.Max(0f, stopS[i] - s);
+        }
+
+        public float CurrentSpeed => speed;
+
+        /// <summary>Onde fica a porta quando o veículo está parado no ponto <paramref name="i"/> (mundo, chão).</summary>
+        public Vector3 StopDoorWorld(int i, float outward = 0f)
+        {
+            EnsureStops();
+            if (lane == null || stopS == null || i < 0 || i >= stopS.Length) return transform.position;
+            lane.Evaluate(stopS[i], out Vector3 p, out Vector3 dir);
+            Vector3 right = Vector3.Cross(Vector3.up, dir);
+            return p + dir * doorLocal.z + right * (doorLocal.x + outward);
+        }
+
+        /// <summary>Passageiro avisa que está indo para a porta (o veículo espera) / que embarcou.</summary>
+        public void HoldDoor() => boardingHolds++;
+        public void ReleaseDoor() => boardingHolds = Mathf.Max(0, boardingHolds - 1);
+
+        private void EnsureStops()
+        {
+            if (stopS != null || lane == null || stopPoints == null || stopPoints.Length == 0)
+                return;
+            stopS = new float[stopPoints.Length];
+            for (int i = 0; i < stopPoints.Length; i++)
+            {
+                float best = 0f, bestD = float.MaxValue;
+                for (float d = 0f; d < lane.Length; d += 0.5f)
+                {
+                    lane.Evaluate(d, out Vector3 q, out _);
+                    float dd = (new Vector2(q.x, q.z) - new Vector2(stopPoints[i].x, stopPoints[i].z)).sqrMagnitude;
+                    if (dd < bestD) { bestD = dd; best = d; }
+                }
+                stopS[i] = best - doorLocal.z; // a PORTA alinhada ao ponto, não o centro
+            }
+            System.Array.Sort(stopS);
+        }
 
         private void OnEnable() => All.Add(this);
         private void OnDisable() => All.Remove(this);
@@ -365,6 +429,10 @@ namespace TheDelivery.FX
             stoppedForPlayer = 0f;
             hornsThisStop = 0;
             driving = true;
+            EnsureStops();
+            nextStop = 0;
+            dwelling = false;
+            boardingHolds = 0;
             Place(0f, snapRotation: true);
             SetVisible(true);
         }
@@ -374,6 +442,20 @@ namespace TheDelivery.FX
             float dt = Time.deltaTime;
             lane.Evaluate(s, out Vector3 here, out Vector3 dir);
             Vector3 right = Vector3.Cross(Vector3.up, dir);
+
+            // PARADO NO PONTO: espera o mínimo e os passageiros que vêm para a porta.
+            if (dwelling)
+            {
+                dwellTime += dt;
+                speed = 0f;
+                if ((dwellTime >= stopDwell && boardingHolds == 0) || dwellTime >= stopMaxDwell)
+                {
+                    dwelling = false;
+                    boardingHolds = 0;
+                    nextStop++;
+                }
+                return;
+            }
 
             // O que há à frente na pista: a Clear ou outro carro.
             float gap = float.MaxValue;
@@ -391,6 +473,28 @@ namespace TheDelivery.FX
                 {
                     float g = cd - halfLength - other.halfLength;
                     if (g < gap) { gap = g; playerAhead = false; }
+                }
+            }
+
+            // Próximo ponto de ônibus: um "obstáculo" exatamente onde o veículo deve parar.
+            bool stopAhead = false;
+            if (stopS != null && nextStop < stopS.Length)
+            {
+                float toStop = stopS[nextStop] - s;
+                if (toStop < -1f)
+                    nextStop++; // passou (ex.: largou depois do ponto)
+                else if (toStop + stopGap < gap)
+                {
+                    gap = Mathf.Max(0f, toStop) + stopGap;
+                    playerAhead = false;
+                    stopAhead = true;
+                }
+                if (stopAhead && toStop < 0.35f && speed < 0.4f)
+                {
+                    dwelling = true;
+                    dwellTime = 0f;
+                    speed = 0f;
+                    return;
                 }
             }
 
@@ -534,14 +638,34 @@ namespace TheDelivery.FX
             halfLength = Mathf.Abs(Vector3.Dot(body.size, new Vector3(Mathf.Abs(axis.x), 0f, Mathf.Abs(axis.z)))) * 0.5f;
         }
 
+        // Giro das rodas SEM erro acumulado: rotação de repouso de cada roda + um ângulo em torno do
+        // eixo LATERAL do veículo (no espaço da própria roda). Girar no eixo da pista a cada quadro
+        // (como era) acumulava o desvio das curvas — a carroceria vira suave, atrasada em relação à
+        // pista — e as rodas ficavam tortas/bambas depois de algumas esquinas.
+        private Quaternion[] wheelRest;
+        private Vector3[] wheelAxis;
+        private float wheelAngle;
+
         private void SpinWheels(float step, Vector3 dir)
         {
             if (wheels == null || effectiveWheelRadius <= 0f)
                 return;
-            float degrees = step / effectiveWheelRadius * Mathf.Rad2Deg;
-            Vector3 axis = Vector3.Cross(Vector3.up, dir);
-            foreach (Transform w in wheels)
-                if (w != null) w.Rotate(axis, degrees, Space.World);
+            if (wheelRest == null || wheelRest.Length != wheels.Length)
+            {
+                wheelRest = new Quaternion[wheels.Length];
+                wheelAxis = new Vector3[wheels.Length];
+                Vector3 sideWorld = transform.TransformDirection(Vector3.Cross(Vector3.up, LocalAxis()));
+                for (int i = 0; i < wheels.Length; i++)
+                {
+                    if (wheels[i] == null) continue;
+                    wheelRest[i] = wheels[i].localRotation;
+                    wheelAxis[i] = Quaternion.Inverse(wheels[i].rotation) * sideWorld;
+                }
+            }
+            wheelAngle = Mathf.Repeat(wheelAngle + step / effectiveWheelRadius * Mathf.Rad2Deg, 360f);
+            for (int i = 0; i < wheels.Length; i++)
+                if (wheels[i] != null)
+                    wheels[i].localRotation = wheelRest[i] * Quaternion.AngleAxis(wheelAngle, wheelAxis[i]);
         }
 
         private float ResolveWheelRadius()
