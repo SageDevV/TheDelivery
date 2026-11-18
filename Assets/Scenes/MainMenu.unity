@@ -225,7 +225,7 @@ MonoBehaviour:
   themeDarkLevel: 0.2
   themeFadeIn: 4
   themeDuckSpeed: 2.5
-  ambientDrone: {fileID: 8300000, guid: 53d84c3793b8f264d9e0102bd44f748c, type: 3}
+  ambientDrone: {fileID: 0}
   droneVolume: 0.35
   blackoutClick: {fileID: 8300000, guid: 86be4cf2be7f25649815d18fa58aa11e, type: 3}
   clickVolume: 0.5

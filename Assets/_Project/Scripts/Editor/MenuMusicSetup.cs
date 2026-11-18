@@ -91,6 +91,9 @@ namespace TheDelivery.EditorTools
                         if (clip != null)
                             so.FindProperty("menuTheme").objectReferenceValue = clip;
                         so.FindProperty("themeVolume").floatValue = 0.55f;
+                        // A trilha nova é a ÚNICA música do menu: o drone antigo (Ominous_Placeholder)
+                        // tocava por baixo e ficava sobreposto a ela.
+                        so.FindProperty("ambientDrone").objectReferenceValue = null;
                         so.ApplyModifiedPropertiesWithoutUndo();
                         count++;
                     }

@@ -11,7 +11,7 @@ namespace TheDelivery.EditorTools
     /// <summary>
     /// TRÁFEGO DA RUA (Interlúdio): monta na Road um GameObject "Traffic" com a
     /// <see cref="StreetRoute"/> — o centro das ruas do percurso da Clear, medido nas paredes
-    /// invisíveis (StreetCollider) — e quatro <see cref="StreetTrafficCar"/>: dois em cada mão,
+    /// invisíveis (StreetCollider) — e oito <see cref="StreetTrafficCar"/>: quatro em cada mão (BBW30 + carros do Meshy),
     /// com os mesmos prefabs e a mesma escala da Cafeteria. Eles param e buzinam se a Clear estiver na pista, e somem
     /// com a noite (toque de recolher ligado ao NightfallController).
     /// IDEMPOTENTE: refaz o "Traffic" do zero. Automação: <c>Temp/RoadTrafficSetup.pending</c>.
@@ -37,12 +37,18 @@ namespace TheDelivery.EditorTools
             new Vector3(-162.2f, 0f, 220f),
         };
 
-        private static readonly (string prefab, bool reverse, float delay)[] Cars =
+        // Escala: os BBW30 usam a da Cafeteria (modelo cru pequeno); os do Meshy (RoadCarModelsSetup)
+        // já vêm em metros, com a frente no +Z.
+        private static readonly (string prefab, bool reverse, float delay, float scale)[] Cars =
         {
-            ("Assets/_Project/Prefabs/BBW30_NA.prefab", false, 2f),
-            ("Assets/_Project/Prefabs/BBW30_UP.prefab", false, 24f),
-            ("Assets/_Project/Prefabs/BBW30_TuneSample.prefab", true, 1f),
-            ("Assets/_Project/Prefabs/BBW30_UP.prefab", true, 18f),
+            ("Assets/_Project/Prefabs/BBW30_NA.prefab", false, 2f, CafeteriaCarScale),
+            ("Assets/_Project/Prefabs/CarHatch.prefab", false, 12f, 1f),
+            ("Assets/_Project/Prefabs/BBW30_UP.prefab", false, 24f, CafeteriaCarScale),
+            ("Assets/_Project/Prefabs/CarWagon.prefab", false, 36f, 1f),
+            ("Assets/_Project/Prefabs/BBW30_TuneSample.prefab", true, 1f, CafeteriaCarScale),
+            ("Assets/_Project/Prefabs/CarPickup.prefab", true, 9f, 1f),
+            ("Assets/_Project/Prefabs/CarSedan.prefab", true, 18f, 1f),
+            ("Assets/_Project/Prefabs/BBW30_UP.prefab", true, 30f, CafeteriaCarScale),
         };
 
         private static double nextPoll;
@@ -110,7 +116,7 @@ namespace TheDelivery.EditorTools
                 rso.ApplyModifiedPropertiesWithoutUndo();
 
                 int index = 0;
-                foreach (var (prefabPath, reverse, delay) in Cars)
+                foreach (var (prefabPath, reverse, delay, scale) in Cars)
                 {
                     var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
                     if (prefab == null)
@@ -122,7 +128,7 @@ namespace TheDelivery.EditorTools
                     car.name = $"Car_{(reverse ? "Volta" : "Ida")}_{++index}";
                     car.transform.SetParent(traffic.transform, false);
                     // Mesma escala dos carros da Cafeteria (Ato 1): o modelo cru é pequeno demais.
-                    car.transform.localScale = Vector3.one * CafeteriaCarScale;
+                    car.transform.localScale = Vector3.one * scale;
                     // Parado na origem da pista até largar (fica escondido pelo próprio componente).
                     car.transform.position = reverse ? RoutePoints[RoutePoints.Length - 1] : RoutePoints[0];
 

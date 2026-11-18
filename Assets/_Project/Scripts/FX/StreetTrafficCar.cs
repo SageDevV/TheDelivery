@@ -206,6 +206,16 @@ namespace TheDelivery.FX
             {
                 Vector3 local = body.center + fwd * (length * 0.5f + 0.05f) + side * (width * 0.33f * s);
                 local.y = bottom + size.y * headlightHeight;
+                // Âncora do modelo (HeadlightAnchor_L/R no prefab): a lente de verdade. A regra genérica
+                // acima erra em modelos cuja caixa inclui antena/retrovisores ou com lanterna alta (picape).
+                // A âncora define a altura e o afastamento lateral; a frente continua sendo a da caixa.
+                Transform anchor = FindChildDeep(transform, s < 0 ? "HeadlightAnchor_L" : "HeadlightAnchor_R");
+                if (anchor != null)
+                {
+                    Vector3 a = transform.InverseTransformPoint(anchor.position);
+                    local += side * (Vector3.Dot(a, side) - Vector3.Dot(local, side));
+                    local.y = a.y;
+                }
 
                 var beamGo = new GameObject(s < 0 ? "Headlight_L" : "Headlight_R");
                 beamGo.transform.SetParent(transform, false);
@@ -238,6 +248,14 @@ namespace TheDelivery.FX
                 list.Add(g);
             }
             lights = list.ToArray();
+        }
+
+        private static Transform FindChildDeep(Transform root, string childName)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name == childName)
+                    return t;
+            return null;
         }
 
         private static Texture2D headlightCookie;
