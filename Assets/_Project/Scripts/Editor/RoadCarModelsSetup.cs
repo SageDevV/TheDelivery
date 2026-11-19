@@ -30,10 +30,10 @@ namespace TheDelivery.EditorTools
         /// </summary>
         public static readonly (string name, float yaw, float lampX, float lampY)[] Models =
         {
-            ("CarHatch", -90f, 0.50f, 0.61f),
-            ("CarWagon", -90f, 0.56f, 0.61f),
-            ("CarPickup", -90f, 0.49f, 0.87f),
-            ("CarSedan", -90f, 0.54f, 0.635f),
+            ("CarHatch", -90f, 0.55f, 0.62f),   // Blender/build_car.py (medidas do script)
+            ("CarWagon", -90f, 0.58f, 0.63f),
+            ("CarPickup", -90f, 0.58f, 0.72f),
+            ("CarSedan", -90f, 0.56f, 0.62f),
             ("CityBus", -90f, 0.85f, 0.75f),
         };
 
@@ -88,6 +88,7 @@ namespace TheDelivery.EditorTools
                     importer.SaveAndReimport();
 
                 Material mat = BuildMaterial(name, dir);
+                Material glassMat = GlassMaterial();
                 var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
 
                 var root = new GameObject(name);
@@ -99,6 +100,7 @@ namespace TheDelivery.EditorTools
                     int wheels = 0;
                     foreach (Renderer r in inst.GetComponentsInChildren<Renderer>(true))
                     {
+                        if (r.name == "Glass") { r.sharedMaterials = new[] { glassMat }; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On; continue; }
                         r.sharedMaterials = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Repeat(mat, Mathf.Max(1, r.sharedMaterials.Length))); // todos os slots
                         if (r.name.ToLowerInvariant().Contains("wheel")) wheels++;
                     }
@@ -127,6 +129,41 @@ namespace TheDelivery.EditorTools
                 PrefabPreviewRender.Render(PrefabPath(m.name), front: true);
             }
             return true;
+        }
+
+        /// <summary>Vidro dos carros feitos por script (objeto "Glass" do FBX): URP/Lit OPACO, quase
+        /// preto e bem liso — ninguém dirige os carros do tráfego, então o vidro não deixa ver o
+        /// interior; só reflete o céu e os postes, como insulfilme escuro.</summary>
+        internal static Material GlassMaterial()
+        {
+            const string path = "Assets/_Project/Materials/CarGlass.mat";
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                Directory.CreateDirectory("Assets/_Project/Materials");
+                m = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(m, path);
+            }
+            m.SetFloat("_Surface", 0f);
+            m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.Zero);
+            m.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            m.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.Zero);
+            m.SetFloat("_ZWrite", 1f);
+            m.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            m.DisableKeyword("_ALPHABLEND_ON");
+            m.SetOverrideTag("RenderType", "Opaque");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
+            m.SetShaderPassEnabled("DepthOnly", true);
+            m.SetShaderPassEnabled("ShadowCaster", true);
+            m.SetShaderPassEnabled("MotionVectors", true);
+            m.SetColor("_BaseColor", new Color(0.022f, 0.027f, 0.031f, 1f));
+            m.SetFloat("_Metallic", 0.15f);
+            m.SetFloat("_Smoothness", 0.93f);
+            EditorUtility.SetDirty(m);
+            return m;
         }
 
         internal static Material BuildMaterial(string name, string dir)

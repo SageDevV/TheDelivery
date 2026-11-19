@@ -59,7 +59,7 @@ Transform:
   m_GameObject: {fileID: 6162183954026989987}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.5, y: 0.61, z: 1.9000003}
+  m_LocalPosition: {x: -0.55, y: 0.62, z: 1.9450004}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -90,7 +90,7 @@ Transform:
   m_GameObject: {fileID: 9114527410293860638}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.5, y: 0.61, z: 1.9000003}
+  m_LocalPosition: {x: 0.55, y: 0.62, z: 1.9450004}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -104,10 +104,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6014970312748086459}
     m_Modifications:
-    - target: {fileID: -9122808717135591259, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
     - target: {fileID: -8679921383154817045, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
@@ -152,22 +148,30 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
+    - target: {fileID: -5298041352971934448, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
+    - target: {fileID: -1765097783736378317, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
+    - target: {fileID: -1748203986799191022, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
     - target: {fileID: 919132149155446097, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
       propertyPath: m_Name
       value: CarHatch
       objectReference: {fileID: 0}
-    - target: {fileID: 1187952178879121038, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
+    - target: {fileID: 2291359249194904397, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
-    - target: {fileID: 3646595399949936517, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
+    - target: {fileID: 8029106800918022278, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
-    - target: {fileID: 5794603988168308233, guid: cd5355f68e587b046a6f5375e4ec6d45, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 86ba7a3d16c46cb40aba4a2ca1fdb93f, type: 2}
+      objectReference: {fileID: 2100000, guid: 50eebfd706b50584fbc4b1938f821f3c, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

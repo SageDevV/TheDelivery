@@ -29,6 +29,10 @@ namespace TheDelivery.EditorTools
         private const float FilmLength = 66f;
         private const float LightsLength = 40f;
         private const float BusLength = 42f;
+        private const float PaperLength = 36f;
+        private const float JunkLength = 32f;
+        private const float WallLength = 12f;
+        private const float CarLength = 32f;
 
         // Centro das faixas (pista ± laneOffset 2,2): A (x) e B (z).
         private const float AIda = 249.2f, AVolta = 244.8f, BIda = 374.1f, BVolta = 369.7f;
@@ -45,10 +49,14 @@ namespace TheDelivery.EditorTools
 
         private static void OnPlayReady(string prep)
         {
-            if (prep != "cityfilm" && prep != "lightsfilm" && prep != "busfilm")
+            if (prep != "cityfilm" && prep != "lightsfilm" && prep != "busfilm" && prep != "paperfilm" && prep != "junkfilm" && prep != "walltest" && prep != "carfilm")
                 return;
             bool lightsOnly = prep == "lightsfilm";
             bool busOnly = prep == "busfilm";
+            bool paperOnly = prep == "paperfilm";
+            bool junkOnly = prep == "junkfilm" || prep == "walltest" || prep == "carfilm";
+            bool carFilm = prep == "carfilm";
+            bool wallTest = prep == "walltest";
             void Tick()
             {
                 if (!EditorApplication.isPlaying) { EditorApplication.update -= Tick; return; }
@@ -60,8 +68,8 @@ namespace TheDelivery.EditorTools
                 EditorApplication.update -= Tick;
                 var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
                 Object.DontDestroyOnLoad(rec.gameObject);
-                rec.Begin(Warmup + (busOnly ? BusLength : lightsOnly ? LightsLength : FilmLength) + 1f, 24, true);
-                rec.StartCoroutine(busOnly ? BusFilm(player) : lightsOnly ? LightsFilm(player, cars) : Film(player, cars, peds));
+                rec.Begin(Warmup + (carFilm ? CarLength : wallTest ? WallLength : junkOnly ? JunkLength : paperOnly ? PaperLength : busOnly ? BusLength : lightsOnly ? LightsLength : FilmLength) + 1f, 24, true);
+                rec.StartCoroutine(junkOnly ? JunkFilm(player, wallTest, carFilm) : paperOnly ? PaperFilm(player, cars) : busOnly ? BusFilm(player) : lightsOnly ? LightsFilm(player, cars) : Film(player, cars, peds));
             }
             EditorApplication.update += Tick;
         }
@@ -585,6 +593,447 @@ namespace TheDelivery.EditorTools
             {
                 Vector3 b = bus.transform.position;
                 Pose(new Vector3(-27.1f, Mathf.Lerp(11f, 13f, u), 318f), b + Vector3.up * 1.2f);
+            });
+
+            filming = false;
+            Ev("CORTE_FIM");
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "paperfilm": jornais ao vento na rua B. 4 planos: câmera baixa contra o vento (as folhas vêm
+        /// rolando), acompanhando uma folha, um carro passando e levantando as folhas, close de uma folha
+        /// tremulando. Anoitecer fixo em 0,5. Play pela Road: "300 Assets/Scenes/Road.unity paperfilm".
+        /// </summary>
+        private static IEnumerator PaperFilm(PlayerController player, StreetTrafficCar[] cars)
+        {
+            var log = new StringBuilder();
+            float t0 = Time.time;
+            void Ev(string text) { log.AppendLine($"{Time.time - t0:0.0}  {text}"); Debug.Log($"[RoadCityFilm] {Time.time - t0:0.0}s {text}"); }
+            float T() => Time.time - t0 - Warmup;
+
+            var cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            player.transform.SetPositionAndRotation(new Vector3(258.5f, 0.5f, 200f), Quaternion.identity);
+            if (cc != null) cc.enabled = true;
+
+            Camera gameCam = Camera.main;
+            var camGo = new GameObject("PaperFilmCamera");
+            var cam = camGo.AddComponent<Camera>();
+            cam.CopyFrom(gameCam);
+            cam.fieldOfView = 50f;
+            cam.nearClipPlane = 0.05f;
+            cam.farClipPlane = Mathf.Max(gameCam.farClipPlane, 600f);
+            var src = gameCam.GetUniversalAdditionalCameraData();
+            var dst = cam.GetUniversalAdditionalCameraData();
+            dst.renderPostProcessing = src.renderPostProcessing;
+            dst.antialiasing = src.antialiasing;
+            dst.volumeLayerMask = src.volumeLayerMask;
+            dst.volumeTrigger = camGo.transform;
+            cam.depth = gameCam.depth + 10f;
+            foreach (var l in Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude)) l.enabled = false;
+            camGo.AddComponent<AudioListener>();
+            gameCam.enabled = false;
+            camGo.tag = "MainCamera";
+
+            var nightfall = Object.FindAnyObjectByType<NightfallController>();
+            MethodInfo apply = typeof(NightfallController).GetMethod("Apply", F);
+            var host = Object.FindAnyObjectByType<DemoFrameRecorder>();
+            var papers = Object.FindObjectsByType<WindblownPaper>(FindObjectsSortMode.None);
+            Ev($"{papers.Length} folhas de jornal");
+
+            bool filming = true;
+            IEnumerator Upkeep()
+            {
+                float logAt = 0f;
+                while (filming)
+                {
+                    foreach (var cv in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude))
+                        if (cv.renderMode == RenderMode.ScreenSpaceOverlay && cv.enabled) cv.enabled = false;
+                    if (nightfall != null)
+                    {
+                        if (nightfall.IsRunning) nightfall.Stop();
+                        apply?.Invoke(nightfall, new object[] { 0.5f });
+                    }
+                    if (Time.time - t0 >= logAt)
+                    {
+                        logAt += 2f;
+                        var sb = new StringBuilder();
+                        var wind = CityWind.Instance;
+                        foreach (var p in papers)
+                        {
+                            if (!p.name.Contains("RuaB")) continue;
+                            var rb = p.GetComponent<Rigidbody>();
+                            sb.Append($"{p.name.Substring(p.name.Length - 1)}:({p.transform.position.x:0},{p.transform.position.y:0.0},{p.transform.position.z:0}) v{rb.linearVelocity.magnitude:0.0} | ");
+                        }
+                        Ev($"vento {(wind != null ? wind.Sample(new Vector3(150f, 0f, 371f)).magnitude : 0f):0.0} m/s | {sb}");
+                    }
+                    yield return null;
+                }
+            }
+            host.StartCoroutine(Upkeep());
+
+            void Pose(Vector3 pos, Vector3 lookAt, float smooth = 0f)
+            {
+                Quaternion rot = Quaternion.LookRotation(lookAt - pos, Vector3.up);
+                if (smooth <= 0f) camGo.transform.SetPositionAndRotation(pos, rot);
+                else
+                {
+                    float k = 1f - Mathf.Exp(-smooth * Time.deltaTime);
+                    camGo.transform.SetPositionAndRotation(Vector3.Lerp(camGo.transform.position, pos, k), Quaternion.Slerp(camGo.transform.rotation, rot, k));
+                }
+            }
+            IEnumerator Shot(string title, float from, float to, System.Action<float> frame)
+            {
+                while (T() < from) yield return null;
+                Ev($"PLANO {title}");
+                bool first = true;
+                while (T() < to)
+                {
+                    frame(Mathf.Clamp01((T() - from) / (to - from)));
+                    if (first) { first = false; }
+                    yield return null;
+                }
+            }
+            // Folha da rua B mais perto de um ponto (para planos que seguem uma folha).
+            WindblownPaper Nearest(Vector3 p)
+            {
+                WindblownPaper best = null; float bd = float.MaxValue;
+                foreach (var w in papers)
+                {
+                    if (w == null || !w.name.Contains("RuaB")) continue;
+                    float d = (w.transform.position - p).sqrMagnitude;
+                    if (d < bd) { bd = d; best = w; }
+                }
+                return best;
+            }
+
+            // Coreografia: folhas da rua B posicionadas a favor do vento (que sopra para oeste, -X),
+            // rajadas forçadas nos momentos certos, e um carro passando por cima de duas folhas.
+            var bPapers = System.Array.FindAll(papers, w => w != null && w.name.Contains("RuaB"));
+            var cityWind = CityWind.Instance;
+            void Put(int i, Vector3 at, float yaw)
+            {
+                if (i >= bPapers.Length) return;
+                var rb = bPapers[i].GetComponent<Rigidbody>();
+                if (Physics.Raycast(at + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f, ~0, QueryTriggerInteraction.Ignore))
+                    at.y = hit.point.y + 0.03f;
+                rb.position = at;
+                rb.rotation = Quaternion.Euler(0f, yaw, 0f);
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            IEnumerator GustAt(float at, float seconds, float strength)
+            {
+                while (T() < at) yield return null;
+                cityWind?.ForceGust(seconds, strength);
+                Ev($"rajada {strength:0.0} por {seconds:0}s");
+            }
+
+            while (T() < -1f) yield return null;
+            Put(0, new Vector3(152f, 0f, 371.0f), 20f);
+            Put(1, new Vector3(154.5f, 0f, 373.4f), 110f);
+            Put(2, new Vector3(157f, 0f, 369.6f), 200f);
+            Put(3, new Vector3(159.5f, 0f, 372.2f), 300f);
+            host.StartCoroutine(GustAt(1.5f, 6f, 1f));
+
+            // Plano 1: câmera baixa no meio da rua B, olhando para leste (contra o vento): as folhas vêm.
+            yield return Shot("1 contra o vento", 0f, 10f, u =>
+            {
+                Vector3 pos = new Vector3(Mathf.Lerp(147f, 145f, u), 0.5f, 371.6f);
+                Pose(pos, pos + new Vector3(12f, 0.6f, 0.3f));
+            });
+
+            // Plano 2: uma folha numa rajada longa, a câmera atrás dela (do lado de onde o vento vem).
+            Put(4, new Vector3(175f, 0f, 372f), 45f);
+            host.StartCoroutine(GustAt(10.2f, 7f, 1f));
+            WindblownPaper follow = bPapers.Length > 4 ? bPapers[4] : null;
+            yield return Shot("2 seguindo uma folha", 10f, 18f, u =>
+            {
+                if (follow == null) return;
+                Vector3 p = follow.transform.position;
+                Pose(p + new Vector3(2.6f, 1.1f, 1.2f), p + Vector3.up * 0.15f + Vector3.left * 0.6f, 5f);
+            });
+
+            // Plano 3: um carro passa por cima de duas folhas paradas na faixa dele (o ar levanta).
+            Put(5, new Vector3(130f, 0f, 373.6f), 70f);
+            Put(6, new Vector3(132.5f, 0f, 374.6f), 160f);
+            var carB = System.Array.Find(cars, c => c.name == "Car_Ida_2");
+            if (carB != null)
+            {
+                if (!carB.IsDriving) mLaunch.Invoke(carB, null);
+                var lane = (StreetRoute.LanePath)fLane.GetValue(carB);
+                float best = 0f, bd = float.MaxValue;
+                for (float d = 0f; d < lane.Length; d += 0.5f)
+                {
+                    lane.Evaluate(d, out Vector3 q, out _);
+                    float dd = (new Vector2(q.x, q.z) - new Vector2(131f, BIda)).sqrMagnitude;
+                    if (dd < bd) { bd = dd; best = d; }
+                }
+                float cruise = (float)fCruise.GetValue(carB);
+                fS.SetValue(carB, Mathf.Max(0f, best - cruise * (22.5f - T())));
+                fSpeed.SetValue(carB, cruise);
+                Ev("carro a caminho das folhas (passa em t=22,5)");
+            }
+            yield return Shot("3 carro passando", 18f, 27f, u =>
+            {
+                Pose(new Vector3(127.5f, 1.25f, 366.4f), new Vector3(132f, 0.6f, 374f), 3f);
+            });
+
+            // Plano 4: close numa folha tremulando com rajada moderada.
+            Put(0, new Vector3(118f, 0f, 371.5f), 30f);
+            host.StartCoroutine(GustAt(29f, 5f, 0.5f));
+            WindblownPaper close = bPapers.Length > 0 ? bPapers[0] : null;
+            yield return Shot("4 close", 27f, PaperLength, u =>
+            {
+                if (close == null) return;
+                Vector3 p = close.transform.position;
+                Pose(p + new Vector3(1.0f, 0.75f, -0.9f), p, 4f);
+            });
+
+            filming = false;
+            Ev("CORTE_FIM");
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "junkfilm": lixo e jornais da rua. 4 planos: sarjeta da rua B com lixo rolando numa rajada,
+        /// o jornal esquecido no banco do ponto, um monte de lixo na rua C, uma sacola plástica voando.
+        /// Play pela Road: "300 Assets/Scenes/Road.unity junkfilm".
+        /// </summary>
+        private static IEnumerator JunkFilm(PlayerController player, bool wallTest = false, bool carFilm = false)
+        {
+            var log = new StringBuilder();
+            float t0 = Time.time;
+            void Ev(string text) { log.AppendLine($"{Time.time - t0:0.0}  {text}"); Debug.Log($"[RoadCityFilm] {Time.time - t0:0.0}s {text}"); }
+            float T() => Time.time - t0 - Warmup;
+
+            var cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            player.transform.SetPositionAndRotation(new Vector3(258.5f, 0.5f, 200f), Quaternion.identity);
+            if (cc != null) cc.enabled = true;
+
+            Camera gameCam = Camera.main;
+            var camGo = new GameObject("JunkFilmCamera");
+            var cam = camGo.AddComponent<Camera>();
+            cam.CopyFrom(gameCam);
+            cam.fieldOfView = 50f;
+            cam.nearClipPlane = 0.03f;
+            cam.farClipPlane = Mathf.Max(gameCam.farClipPlane, 600f);
+            var src = gameCam.GetUniversalAdditionalCameraData();
+            var dst = cam.GetUniversalAdditionalCameraData();
+            dst.renderPostProcessing = src.renderPostProcessing;
+            dst.antialiasing = src.antialiasing;
+            dst.volumeLayerMask = src.volumeLayerMask;
+            dst.volumeTrigger = camGo.transform;
+            cam.depth = gameCam.depth + 10f;
+            foreach (var l in Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude)) l.enabled = false;
+            camGo.AddComponent<AudioListener>();
+            gameCam.enabled = false;
+            camGo.tag = "MainCamera";
+
+            var nightfall = Object.FindAnyObjectByType<NightfallController>();
+            MethodInfo apply = typeof(NightfallController).GetMethod("Apply", F);
+            var host = Object.FindAnyObjectByType<DemoFrameRecorder>();
+            var cityWind = CityWind.Instance;
+            // O ônibus da linha passa pela rua B e arrasta a sacola (a câmera ia junto, para dentro dele):
+            // segura o ônibus no ponto inicial durante a gravação.
+            var busGo = GameObject.Find("Bus_Linha");
+            var bus = busGo != null ? busGo.GetComponent<StreetTrafficCar>() : null;
+            if (bus != null) typeof(StreetTrafficCar).GetMethod("BeginWait", F)?.Invoke(bus, new object[] { 9999f });
+            var junkRoot = GameObject.Find("StreetJunk");
+            var junk = junkRoot != null ? junkRoot.GetComponentsInChildren<Rigidbody>() : new Rigidbody[0];
+            Ev($"{junk.Length} objetos de lixo");
+
+            bool filming = true;
+            var tracked = new System.Collections.Generic.List<Rigidbody>();
+            IEnumerator Upkeep()
+            {
+                float logAt = 0f;
+                while (filming)
+                {
+                    foreach (var cv in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude))
+                        if (cv.renderMode == RenderMode.ScreenSpaceOverlay && cv.enabled) cv.enabled = false;
+                    if (nightfall != null)
+                    {
+                        if (nightfall.IsRunning) nightfall.Stop();
+                        apply?.Invoke(nightfall, new object[] { 0.5f });
+                    }
+                    if (Time.time - t0 >= logAt && tracked.Count > 0)
+                    {
+                        logAt += 1f;
+                        var sb = new StringBuilder();
+                        foreach (var r in tracked)
+                            if (r != null) sb.Append($"{r.name}:({r.position.x:0.0},{r.position.y:0.00},{r.position.z:0.0}) v{r.linearVelocity.magnitude:0.0} | ");
+                        Ev(sb.ToString());
+                    }
+                    yield return null;
+                }
+            }
+            host.StartCoroutine(Upkeep());
+
+            void Pose(Vector3 pos, Vector3 lookAt, float smooth = 0f)
+            {
+                Quaternion rot = Quaternion.LookRotation(lookAt - pos, Vector3.up);
+                if (smooth <= 0f) camGo.transform.SetPositionAndRotation(pos, rot);
+                else
+                {
+                    float k = 1f - Mathf.Exp(-smooth * Time.deltaTime);
+                    camGo.transform.SetPositionAndRotation(Vector3.Lerp(camGo.transform.position, pos, k), Quaternion.Slerp(camGo.transform.rotation, rot, k));
+                }
+            }
+            IEnumerator Shot(string title, float from, float to, System.Action<float> frame)
+            {
+                while (T() < from) yield return null;
+                Ev($"PLANO {title}");
+                while (T() < to)
+                {
+                    frame(Mathf.Clamp01((T() - from) / (to - from)));
+                    yield return null;
+                }
+            }
+            Rigidbody Take(string prefix, int skip = 0)
+            {
+                foreach (var r in junk)
+                    if (r.name.StartsWith(prefix) && skip-- <= 0) return r;
+                return null;
+            }
+            void Put(Rigidbody r, Vector3 at, Quaternion rot)
+            {
+                if (r == null) return;
+                if (Physics.Raycast(at + Vector3.up * 3f, Vector3.down, out RaycastHit hit, 6f, ~0, QueryTriggerInteraction.Ignore))
+                    at.y = hit.point.y + 0.05f;
+                r.position = at; r.rotation = rot;
+                r.linearVelocity = Vector3.zero; r.angularVelocity = Vector3.zero;
+                // A área de vida acompanha (senão a reposição do WindblownPaper o devolve à área antiga).
+                var wbp = r.GetComponent<WindblownPaper>();
+                if (wbp != null)
+                {
+                    typeof(WindblownPaper).GetField("areaCenter", F).SetValue(wbp, new Vector3(150f, 0f, 371.5f));
+                    typeof(WindblownPaper).GetField("areaHalf", F).SetValue(wbp, new Vector2(95f, 9f));
+                }
+                if (!tracked.Contains(r)) tracked.Add(r);
+                Ev($"pus {r.name} em ({at.x:0.0},{at.y:0.00},{at.z:0.0})");
+            }
+            IEnumerator GustAt(float at, float seconds, float strength)
+            {
+                while (T() < at) yield return null;
+                cityWind?.ForceGust(seconds, strength);
+                Ev($"rajada {strength:0.0} por {seconds:0}s");
+            }
+
+            if (carFilm)
+            {
+                // Os 4 carros feitos por script (build_car.py): câmera de cinema ao lado de cada um,
+                // do lado do eixo da rua (à esquerda do carro), passando de 3/4 de frente para o lado.
+                string[] models = { "CarHatch", "CarWagon", "CarSedan", "CarPickup" };
+                var all = Object.FindObjectsByType<StreetTrafficCar>(FindObjectsInactive.Exclude);
+                StreetTrafficCar Find(string model)
+                {
+                    foreach (var c in all)
+                        foreach (Transform t in c.GetComponentsInChildren<Transform>(true))
+                            if (t.name.StartsWith(model)) return c;
+                    return null;
+                }
+                float shot = CarLength / models.Length;
+                for (int i = 0; i < models.Length; i++)
+                {
+                    var car = Find(models[i]);
+                    Ev(car != null ? $"{models[i]} = {car.name}" : $"{models[i]} não achado");
+                    if (car != null && car.DwellingAt < 0 && car.CurrentSpeed < 0.5f)
+                        typeof(StreetTrafficCar).GetField("waitTimer", F)?.SetValue(car, 0f);
+                    bool first = true;
+                    yield return Shot(models[i], i * shot, (i + 1) * shot, u =>
+                    {
+                        if (car == null) return;
+                        Transform ct = car.transform;
+                        Vector3 side = -ct.right * 3.6f;
+                        Vector3 along = ct.forward * Mathf.Lerp(4.5f, -1.5f, u);
+                        Vector3 pos = ct.position + side + along + Vector3.up * 1.05f;
+                        Vector3 look = ct.position + Vector3.up * 0.65f + ct.forward * 0.4f;
+                        Pose(pos, look, first ? 0f : 6f);
+                        first = false;
+                    });
+                }
+                filming = false;
+                Ev("CORTE_FIM");
+                Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+                yield break;
+            }
+
+            if (wallTest)
+            {
+                // Teste: lixo na rua A ao norte da parede invisível que cruza a rua (StreetCollider em z≈245,7);
+                // o vento é virado para -Z e o lixo precisa ATRAVESSAR a parede.
+                while (T() < -1f) yield return null;
+                Put(Take("CrumpledPaper"), new Vector3(245f, 0f, 252f), Quaternion.identity);
+                Put(Take("CrushedCan"), new Vector3(247f, 0f, 252.5f), Quaternion.Euler(90f, 30f, 0f));
+                Put(Take("LanchesCup"), new Vector3(249f, 0f, 252f), Quaternion.Euler(90f, 70f, 0f));
+                Put(Take("TornPage"), new Vector3(251f, 0f, 253f), Quaternion.Euler(0f, 40f, 0f));
+                Put(Take("PlasticBag"), new Vector3(243f, 0f, 253f), Quaternion.Euler(0f, 20f, 0f));
+                foreach (var r in tracked)
+                {
+                    var w = r.GetComponent<WindblownPaper>();
+                    if (w == null) continue;
+                    typeof(WindblownPaper).GetField("areaCenter", F).SetValue(w, new Vector3(247f, 0f, 262f));
+                    typeof(WindblownPaper).GetField("areaHalf", F).SetValue(w, new Vector2(20f, 40f));
+                }
+                typeof(CityWind).GetField("directionDeg", F)?.SetValue(cityWind, 185f);
+                typeof(CityWind).GetField("wander", F)?.SetValue(cityWind, 5f);
+                host.StartCoroutine(GustAt(1.5f, 8f, 1f));
+                yield return Shot("parede invisivel", 0f, WallLength, u =>
+                {
+                    Pose(new Vector3(Mathf.Lerp(250.5f, 250f, u), 0.7f, Mathf.Lerp(239f, 238.5f, u)), new Vector3(246.5f, 0.15f, 249f));
+                });
+                filming = false;
+                Ev("CORTE_FIM");
+                Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+                yield break;
+            }
+
+            // Plano 1: sarjeta sul da rua B — lixo variado posto a favor do vento; a rajada o faz rolar.
+            while (T() < -1f) yield return null;
+            Put(Take("CrumpledPaper"), new Vector3(125f, 0f, 366.5f), Quaternion.identity);
+            Put(Take("CrushedCan"), new Vector3(127f, 0f, 366.6f), Quaternion.Euler(90f, 30f, 0f));
+            Put(Take("LanchesCup"), new Vector3(129f, 0f, 366.4f), Quaternion.Euler(90f, 70f, 0f));
+            Put(Take("PlasticBottle"), new Vector3(131.5f, 0f, 366.7f), Quaternion.Euler(90f, 100f, 0f));
+            Put(Take("TornPage"), new Vector3(133f, 0f, 367.2f), Quaternion.Euler(0f, 40f, 0f));
+            Put(Take("CrumpledPaper", 1), new Vector3(135f, 0f, 366.6f), Quaternion.identity);
+            host.StartCoroutine(GustAt(2f, 6f, 1f));
+            yield return Shot("1 sarjeta", 0f, 9f, u =>
+            {
+                Vector3 pos = new Vector3(Mathf.Lerp(119.5f, 118.5f, u), 0.35f, 366.2f);
+                Pose(pos, pos + new Vector3(10f, 0.15f, 0.55f));
+            });
+
+            // Plano 2: jornal esquecido no banco do ponto B.
+            var folded = Take("FoldedNewspaper");
+            Vector3 bench = folded != null ? folded.position : new Vector3(12.7f, 0.6f, 379.25f);
+            yield return Shot("2 banco do ponto", 9f, 16f, u =>
+            {
+                Pose(bench + new Vector3(Mathf.Lerp(-1.6f, -1.2f, u), 0.75f, -1.3f), bench + new Vector3(0f, -0.05f, 0f));
+            });
+
+            // Plano 3: monte de lixo na calçada oeste da rua C.
+            yield return Shot("3 monte de lixo", 16f, 23f, u =>
+            {
+                Vector3 pile = new Vector3(-35.2f, 0.25f, 330.6f);
+                Pose(new Vector3(Mathf.Lerp(-32.0f, -32.6f, u), 1.15f, Mathf.Lerp(327.2f, 327.8f, u)), pile);
+            });
+
+            // Plano 4: sacola plástica numa rajada forte, a câmera atrás dela.
+            var bag = Take("PlasticBag");
+            Put(bag, new Vector3(160f, 0f, 371.8f), Quaternion.Euler(0f, 20f, 0f));
+            host.StartCoroutine(GustAt(23.5f, 8f, 1f));
+            yield return Shot("4 sacola voando", 23f, JunkLength, u =>
+            {
+                if (bag == null) return;
+                Vector3 p = bag.position;
+                Pose(p + new Vector3(3.0f, 0.9f, 1.4f), p + Vector3.left * 0.8f, 4f);
             });
 
             filming = false;

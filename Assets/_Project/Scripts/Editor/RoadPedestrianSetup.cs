@@ -280,7 +280,7 @@ namespace TheDelivery.EditorTools
         /// material importado não as liga no URP — o NPC saía branco. Extrai as texturas, monta um URP/Lit
         /// com elas e remapeia o material do FBX para ele (vale em toda instância do modelo).
         /// </summary>
-        private static void AssignMaterial(string name, string modelPath, ModelImporter importer)
+        internal static void AssignMaterial(string name, string modelPath, ModelImporter importer)
         {
             string textureDir = $"Assets/_Project/Models/{name}/Textures";
             string materialPath = $"Assets/_Project/Models/{name}/{name}_Mat.mat";

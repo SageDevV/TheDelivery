@@ -256,13 +256,18 @@ namespace TheDelivery.EditorTools
                 inst.transform.localRotation = Quaternion.Euler(0f, ShelterYaw, 0f);
                 foreach (Renderer r in inst.GetComponentsInChildren<Renderer>(true))
                     r.sharedMaterials = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Repeat(mat, Mathf.Max(1, r.sharedMaterials.Length))); // todos os slots
-                // Colisão: a Clear não atravessa o abrigo (caixa do modelo).
-                var b = new Bounds(root.transform.position, Vector3.zero);
-                foreach (Renderer r in inst.GetComponentsInChildren<Renderer>(true)) b.Encapsulate(r.bounds);
-                var box = root.AddComponent<BoxCollider>();
-                box.center = b.center;
-                box.size = new Vector3(b.size.x, Mathf.Min(b.size.y, 2.6f), b.size.z) * 0.95f;
-                box.center = new Vector3(b.center.x, box.size.y * 0.5f, b.center.z);
+                // Colisão que segue a FORMA do abrigo (frente aberta): laje, fundo, laterais, banco,
+                // cobertura, poste da placa e lixeira. Medidas do Blender/build_busstop.py convertidas
+                // para o Unity: (x, y, z)_unity = (-x, z, -y)_blender (lado aberto no +Z).
+                void Box(Vector3 c, Vector3 size) { var bc = root.AddComponent<BoxCollider>(); bc.center = c; bc.size = size; }
+                Box(new Vector3(0f, 0.06f, 0f), new Vector3(3.8f, 0.12f, 1.8f));          // laje
+                Box(new Vector3(0f, 1.31f, -0.64f), new Vector3(3.6f, 2.38f, 0.06f));     // vidro do fundo
+                Box(new Vector3(-1.8f, 1.31f, -0.28f), new Vector3(0.1f, 2.38f, 0.75f));  // lateral (vidro)
+                Box(new Vector3(1.8f, 1.31f, -0.28f), new Vector3(0.14f, 2.45f, 0.75f));  // lateral (anúncio)
+                Box(new Vector3(0f, 0.31f, -0.40f), new Vector3(2.4f, 0.38f, 0.36f));     // banco (assento a 0,50 m)
+                Box(new Vector3(0f, 2.53f, 0.05f), new Vector3(3.85f, 0.08f, 1.9f));      // cobertura
+                Box(new Vector3(2.35f, 1.45f, 0.75f), new Vector3(0.1f, 2.9f, 0.1f));     // poste da placa
+                Box(new Vector3(2.30f, 0.45f, 0.30f), new Vector3(0.42f, 0.9f, 0.42f));   // lixeira
                 PrefabUtility.SaveAsPrefabAsset(root, StopPrefab);
             }
             finally

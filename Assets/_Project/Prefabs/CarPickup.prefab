@@ -59,7 +59,7 @@ Transform:
   m_GameObject: {fileID: 910967704695035508}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.49, y: 0.87, z: 2.2500002}
+  m_LocalPosition: {x: 0.58, y: 0.72, z: 2.2950006}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -90,7 +90,7 @@ Transform:
   m_GameObject: {fileID: 2022206797338096785}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.49, y: 0.87, z: 2.2500002}
+  m_LocalPosition: {x: -0.58, y: 0.72, z: 2.2950006}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -104,10 +104,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4488072422007937322}
     m_Modifications:
-    - target: {fileID: -9122808717135591259, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
     - target: {fileID: -8679921383154817045, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
@@ -152,22 +148,30 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
+    - target: {fileID: -5298041352971934448, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
+    - target: {fileID: -1765097783736378317, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
+    - target: {fileID: -1748203986799191022, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
     - target: {fileID: 919132149155446097, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
       propertyPath: m_Name
       value: CarPickup
       objectReference: {fileID: 0}
-    - target: {fileID: 1187952178879121038, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
+    - target: {fileID: 2291359249194904397, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
-    - target: {fileID: 3646595399949936517, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
+    - target: {fileID: 8029106800918022278, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
-    - target: {fileID: 5794603988168308233, guid: 5363a06d0f260734fb9e6bf8642d3903, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: a1c35af65cff3754091ec475dbc93d56, type: 2}
+      objectReference: {fileID: 2100000, guid: 50eebfd706b50584fbc4b1938f821f3c, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
