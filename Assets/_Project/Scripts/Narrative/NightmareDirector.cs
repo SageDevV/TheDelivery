@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -25,31 +25,6 @@ namespace TheDelivery.Narrative
         TheAttack = 4, // Beat 4: ALCANÇADA — o ataque em tela cheia (o outro fim possível)
         TheGrab = 5,   // Beat 5: a parada, a criatura a pegando pelo pescoço, e a queda do alto
         TheCut = 6     // Beat 6: o impacto -> corte para a Cafeteria
-    }
-
-    /// <summary>
-    /// UM ESTADO DO ENCAIXE: onde a cabeça da Clear fica em relação ao OSSO da mão num ponto
-    /// do clipe do agarrão.
-    ///
-    /// O offset é no ESPAÇO DO OSSO, e essa é a diferença que faz a lista ser um ajuste fino
-    /// em vez de um remendo. Um encaixe de osso já acompanha a mão sozinho — fecha, ergue e
-    /// gira o punho com ela —, então os estados existem só para o que o osso não conta: que o
-    /// CONTATO muda ao longo do gesto. No bote a mão fecha no pescoço e a cabeça entra mais
-    /// na palma; erguida no alto, o corpo pende e a cabeça desce em relação ao punho.
-    ///
-    /// As poses são interpoladas com SmoothStep entre chaves vizinhas, ordenadas pelo
-    /// <see cref="clipTime"/>.
-    /// </summary>
-    [System.Serializable]
-    public struct GrabHandKey
-    {
-        [Tooltip("Só um rótulo, para achar o estado na lista. A ferramenta nomeia sozinha pelas fases do clipe.")]
-        public string label;
-        [Range(0f, 1f)]
-        [Tooltip("Em que ponto do clipe do agarrão este encaixe vale, de 0 (primeiro quadro) a 1 (último).")]
-        public float clipTime;
-        [Tooltip("Onde a cabeça da Clear fica em relação ao osso da mão, em metros e NO ESPAÇO DO OSSO.")]
-        public Vector3 offset;
     }
 
     /// <summary>
@@ -646,26 +621,6 @@ namespace TheDelivery.Narrative
         [Tooltip("VOLUME do baque do agarrão.")]
         [SerializeField] private float grabSoundVolume = 1f;
         /// <summary>
-        /// EM QUE PONTO DO CLIPE o som do agarrão toca, de 0 (primeiro quadro) a 1 (último).
-        ///
-        /// O som é um IMPACTO — a mão fechando no pescoço, o grito abafado —, e impacto tem hora: ele
-        /// tem que cair no quadro em que a mão encosta nela. Tocado quando a criatura APARECE, ele
-        /// acontece antes de ela ter feito qualquer coisa, e o ouvido percebe na hora que o som não é
-        /// de nada — o susto vira sonoro em vez de ser da criatura.
-        ///
-        /// Nada toca durante o giro: a criatura está congelada no primeiro quadro esperando ser
-        /// encarada, e o relógio deste campo é o do CLIPE, que só anda depois disso.
-        ///
-        /// Como achar o valor: em Tools ▸ The Delivery ▸ Nightmare - Ajustar a Pegada, vá até a fase "a
-        /// mão pega" e clique em "Marcar o som neste quadro".
-        ///
-        /// Não adianta pôr DEPOIS da soltura: nesse ponto a mão já abriu e o beat toca o som na soltura
-        /// mesmo, para ele não sumir.
-        /// </summary>
-        [Range(0f, 1f)]
-        [Tooltip("EM QUE PONTO DO CLIPE o som do agarrão toca, de 0 (primeiro quadro) a 1 (último).")]
-        [SerializeField] private float grabSoundClipTime = 0.15f;
-        /// <summary>
         /// SOM DO APERTO, EM LOOP — o que soa ENQUANTO ela está presa: o rosnado rente ao ouvido, o
         /// esforço da criatura, o ar que falta. Entra no quadro do CONTATO (o mesmo do Grab Sound) e
         /// morre no quadro em que a mão abre — daí em diante quem sustenta o beat é o vento da queda.
@@ -745,46 +700,6 @@ namespace TheDelivery.Narrative
                  "Vazio = procurado sozinho (mixamorig:Head); sem ele, mira no pivô da criatura.")]
         [SerializeField] private Transform grabHeadBone;
         /// <summary>
-        /// O ENCAIXE: onde a CABEÇA da Clear fica em relação ao osso da mão, em metros e NO ESPAÇO DO
-        /// OSSO — como o BoneAttachment da xícara do Ato 1.
-        ///
-        /// Espaço do OSSO, e não do mundo, e é isso que faz o anexo ser rígido: a mão chega, fecha,
-        /// ergue e gira o punho no caminho, e um offset de mundo iria escorregando para fora da mão a
-        /// cada giro — era por causa disso que o beat precisava de uma lista de estados, um encaixe
-        /// diferente para cada momento. Preso ao osso, um valor só fica certo do primeiro ao último
-        /// quadro.
-        ///
-        /// O GIRO DO PUNHO NÃO GIRA A CÂMERA: quem manda no olhar durante o aperto é o Grab Look At
-        /// Creature, que mira na cara da criatura. Daqui sai só a POSIÇÃO.
-        ///
-        /// Ajuste com os olhos em Tools ▸ The Delivery ▸ Nightmare - Ajustar a Pegada: percorra o
-        /// clipe, arraste a alça no Scene view e o valor é gravado já convertido para o espaço do osso.
-        /// </summary>
-        [Tooltip("O ENCAIXE: onde a CABEÇA da Clear fica em relação ao osso da mão, em metros e NO ESPAÇO DO OSSO — como o BoneAttachment da xícara do Ato 1.")]
-        [SerializeField] private Vector3 grabHandOffset = new Vector3(0f, -0.15f, 0f);
-        /// <summary>
-        /// OS ESTADOS DO ENCAIXE: um encaixe próprio para cada momento do agarrão, todos no espaço do
-        /// OSSO. O beat interpola entre eles ao longo do clipe.
-        ///
-        /// LISTA VAZIA (o normal) = o Grab Hand Offset único, que já acompanha a mão sozinho do
-        /// primeiro ao último quadro. Os estados são para AFINAR por cima disso, quando o contato muda
-        /// de verdade ao longo do gesto: no bote a cabeça dela entra mais na palma, erguida no alto ela
-        /// pende um pouco mais.
-        ///
-        /// Não confunda com a lista antiga: aquela era em eixos de MUNDO e existia para remendar um
-        /// encaixe que escorregava da mão a cada giro de punho. Estes são offsets do OSSO —
-        /// desafinados, deslocam a Clear alguns centímetros; nunca a jogam para fora da mão.
-        ///
-        /// Crie e posicione em Tools ▸ The Delivery ▸ Nightmare - Ajustar a Pegada: a janela acha as
-        /// fases do clipe (o bote, cada levantamento), cria um estado em cada uma e deixa arrastar o
-        /// encaixe de cada um com as duas câmeras na tela.
-        /// </summary>
-        [Tooltip("OS ESTADOS DO ENCAIXE: um encaixe próprio para cada momento do agarrão, todos no espaço do OSSO.")]
-        [SerializeField] private GrabHandKey[] grabHandKeys = new GrabHandKey[0];
-        [Tooltip("Tempo (s) da PUXADA: quanto a Clear leva para sair de onde está de pé e chegar à mão. Curto — é um " +
-                 "puxão, não uma subida. 0 gruda no mesmo frame, o que lê como teletransporte.")]
-        [SerializeField] private float grabAttachBlend = 0.18f;
-        /// <summary>
         /// TRAVAR O OLHAR na cara da criatura durante o aperto inteiro. Deixe LIGADO: é o plano do beat
         /// — erguida pelo pescoço, a Clear encara o que a segura, e não tem como desviar.
         ///
@@ -841,6 +756,32 @@ namespace TheDelivery.Narrative
                  "estourar na mistura.")]
         [SerializeField] private float screamVolume = 1f;
         /// <summary>
+        /// O RISO NA CARA DELA (pedido 2026-11-19): no instante em que a Clear termina de se virar e
+        /// encara a criatura, o olhar FECHA na cara dela (zoom de campo de visão), a tela PISCA EM
+        /// VERMELHO sem parar e a criatura solta uma RISADA DIABÓLICA, com a cabeça sacudindo. Só
+        /// depois a animação do agarrão prossegue. Ver NightmareDirector.GrabLaugh.cs.
+        /// </summary>
+        [Header("Beat 5 — o riso na cara dela (ao se virar)")]
+        [Tooltip("Liga o foco na cara da criatura + tela vermelha piscando + risada, entre o giro e o bote.")]
+        [SerializeField] private bool grabLaughFocus = true;
+        [Tooltip("A RISADA DIABÓLICA da criatura (gerada no ElevenLabs).")]
+        [SerializeField] private AudioClip grabLaughSound;
+        [Range(0f, 1f)]
+        [SerializeField] private float grabLaughVolume = 1f;
+        [Tooltip("Segundos do riso na cara dela. 0 = a duração do clipe da risada (ou 3 s sem clipe).")]
+        [SerializeField] private float grabLaughDuration = 0f;
+        [Tooltip("Campo de visão (graus) do CLOSE na cara da criatura.")]
+        [Range(10f, 60f)]
+        [SerializeField] private float grabLaughFov = 38f;
+        [Tooltip("Distância (m) da câmera do close até a cara da criatura, de frente, na altura dela.")]
+        [SerializeField] private float grabLaughCloseDistance = 1.15f;
+        [Tooltip("Piscadas vermelhas por segundo.")]
+        [SerializeField] private float grabRedFlashRate = 7f;
+        [Tooltip("Cor e opacidade MÁXIMA do vermelho no auge da piscada.")]
+        [SerializeField] private Color grabRedFlashColor = new Color(0.75f, 0f, 0f, 0.6f);
+        [Tooltip("Graus que a cabeça da criatura sacode enquanto ri.")]
+        [SerializeField] private float grabLaughHeadShake = 7f;
+        /// <summary>
         /// Quanto (m) a Clear ESCORREGA para trás enquanto cai, medido de onde a mão a soltou. Ela é
         /// LARGADA, não arremessada: cai praticamente onde estava pendurada, e este valor só a tira de
         /// dentro da criatura para ela ficar caída AOS PÉS dela, com a criatura em pé por cima — que é
@@ -852,33 +793,73 @@ namespace TheDelivery.Narrative
         [SerializeField] private float grabDropSlide = 0.25f;
 
         /// <summary>
-        /// EM QUE PONTO DO CLIPE a mão LARGA a Clear, de 0 (primeiro frame) a 1 (último). Até aqui ela
-        /// está presa ao osso da mão; a partir daqui ela sai do anexo e cai.
-        ///
-        /// É medido no CLIPE, não no relógio, porque a animação tem fases — ela pega, ergue, ergue
-        /// mais, e só então abre a mão. Um tempo em segundos precisa ser reacertado toda vez que o
-        /// clipe é trocado ou a velocidade do Animator muda; uma fração do clipe continua valendo.
-        ///
-        /// Como achar o valor: use Tools ▸ The Delivery ▸ Nightmare - Ajustar a Pegada, ache o quadro
-        /// em que a mão abre e clique em "Marcar a soltura neste quadro". Na mão: 0.8 num clipe de 100
-        /// quadros = solta no 80.
-        ///
-        /// É O QUADRO EM QUE A MÃO ABRE, e a queda começa NELE — não no fim do clipe. A criatura solta
-        /// e continua: o resto da animação (a mão que se afasta, o passo à frente) acontece POR CIMA da
-        /// queda, que é o que faz uma coisa parecer causa da outra. Marcar no último quadro deixa a
-        /// Clear pendurada numa mão já aberta até o clipe acabar, e na tela isso é ela flutuando.
-        ///
-        /// CUIDADO COM VALORES MUITO BAIXOS: num clipe de 280 quadros o quadro 1 é 0.0036, e marcá-lo
-        /// faz a Clear ser largada antes de a criatura ter chegado a pegá-la — na tela isso lê como ela
-        /// sendo cuspida para o chão nos primeiros frames. O beat recusa qualquer valor anterior ao fim
-        /// da puxada, avisa no Console e usa 0.8.
+        /// O MOVIMENTO DO AGARRÃO, MEDIDO NO CLIPE (refeito do zero em 2026-11-19). Todos estes valores
+        /// são escritos pelo Tools ▸ The Delivery ▸ Nightmare - Refazer o Agarrão
+        /// (NightmareGrabRebuild), que amostra o clipe da criatura na escala da cena:
+        /// <list type="bullet">
+        /// <item><b>Contact</b>: o quadro em que a PALMA sobe pela altura do pescoço dela depois do bote
+        /// — e a criatura é posicionada para a palma passar exatamente ali. A mão fecha nesse quadro.</item>
+        /// <item><b>Release</b>: o quadro de MAIOR VELOCIDADE do golpe para baixo — é ali que a mão solta,
+        /// no meio do golpe, e não depois dele (soltar depois deixava a Clear pendurada no alto
+        /// enquanto o braço já tinha descido: o "atraso").</item>
+        /// <item><b>Throw Velocity</b>: a velocidade da palma nesse quadro, no espaço da criatura.</item>
+        /// </list>
+        /// </summary>
+        [Header("Agarrão — movimento (medido no clipe pelo Refazer o Agarrão)")]
+        [Range(0f, 1f)]
+        [Tooltip("Ponto do clipe (0–1) em que a mão FECHA no pescoço dela.")]
+        [SerializeField] private float grabContactNormalizedTime = 0.17f;
+        [Range(0f, 1f)]
+        [Tooltip("Ponto do clipe (0–1) em que a mão SOLTA: o pico de velocidade do golpe para baixo.")]
+        [SerializeField] private float grabReleaseNormalizedTime = 0.54f;
+        /// <summary>
+        /// A PAUSA DRAMÁTICA (pedido 2026-11-19): no ÁPICE da subida — braço reto acima da cabeça, a
+        /// Clear pendurada lá no alto — a criatura desacelera até quase parar e SEGURA por
+        /// <see cref="grabHoldDuration"/> segundos (ela continua se debatendo; a câmera continua
+        /// chegando perto). Depois retoma de uma vez e solta o arco do arremesso.
         /// </summary>
         [Range(0f, 1f)]
-        [Tooltip("EM QUE PONTO DO CLIPE a mão LARGA a Clear, de 0 (primeiro frame) a 1 (último).")]
-        [SerializeField] private float grabReleaseNormalizedTime = 0.8f;
-        [Tooltip("Tempo (s) até soltar, usado SÓ quando não há clipe para medir (Animator sem controller, ou state " +
-                 "sem clipe). Com o clipe presente quem manda é o Grab Release Normalized Time.")]
-        [SerializeField] private float grabReleaseFallbackDelay = 1.2f;
+        [Tooltip("Ponto do clipe (0–1) da pausa dramática: o ápice da subida (escrito pelo Refazer o Agarrão).")]
+        [SerializeField] private float grabHoldNormalizedTime = 0.47f;
+        [Tooltip("Segundos da pausa dramática com ela erguida no alto, antes do arremesso. 0 = sem pausa.")]
+        [SerializeField] private float grabHoldDuration = 2.5f;
+        [Range(0f, 0.3f)]
+        [Tooltip("Velocidade da animação da criatura DURANTE a pausa (0 = congelada; um fio de movimento lê como tensão, não como travamento).")]
+        [SerializeField] private float grabHoldSpeed = 0.012f;
+        [Tooltip("Velocidade (m/s) da palma no quadro da soltura, no espaço da criatura.")]
+        [SerializeField] private Vector3 grabThrowVelocity = new Vector3(0f, -6f, 0f);
+        [Tooltip("Empurrão (m/s) para a FRENTE da criatura na soltura, somado à velocidade da mão: é o que a leva para fora da borda do abismo.")]
+        [SerializeField] private float grabThrowForward = 2.5f;
+        [Tooltip("Quanto (m) a palma fica à frente do pulso, na direção antebraço→mão. É onde o pescoço dela encaixa.")]
+        [SerializeField] private float grabPalmReach = 0.19f;
+        [Tooltip("Altura (m) do olho acima do pescoço — usada só sem o take em 3ª pessoa.")]
+        [SerializeField] private float grabNeckToEye = 0.12f;
+        [Tooltip("Segundos do arremesso visto DE FORA antes de cortar para os olhos dela, já caindo.")]
+        [SerializeField] private float grabTakeFallTime = 0.8f;
+        [Tooltip("Altura (m) acima do chão para onde a câmera do take mira.")]
+        [SerializeField] private float grabTakeLookHeight = 2.4f;
+        /// <summary>
+        /// TAKE EM TERCEIRA PESSOA DO AGARRÃO (pedido 2026-11-19): no quadro em que a mão FECHA no
+        /// pescoço dela (o baque), a imagem corta para uma câmera de fora que mostra a criatura
+        /// erguendo a Clear — o modelo inteiro dela (<see cref="grabTakeModel"/>) pendurado pela mão,
+        /// se debatendo. No quadro em que a mão ABRE, corta de volta para os olhos dela, já caindo.
+        /// Ver NightmareDirector.GrabTake.cs. Vazio/desligado = o agarrão inteiro em 1ª pessoa.
+        /// </summary>
+        [Header("Agarrão — take em 3ª pessoa")]
+        [Tooltip("Liga o corte para 3ª pessoa entre a mão fechar e a mão abrir.")]
+        [SerializeField] private bool grabThirdPerson = true;
+        [Tooltip("Prefab da Clear pendurada (ClearHeld: modelo inteiro + animação se debatendo).")]
+        [SerializeField] private GameObject grabTakeModel;
+        [Tooltip("Distância (m) da câmera ao meio entre a criatura e a Clear.")]
+        [SerializeField] private float grabTakeDistance = 4.2f;
+        [Tooltip("Ângulo (graus) da câmera em torno do eixo criatura→Clear. 90 = de lado.")]
+        [SerializeField] private float grabTakeYaw = 70f;
+        [Tooltip("Altura (m) da câmera em relação ao chão onde a Clear estava — baixa = a criatura parece maior.")]
+        [SerializeField] private float grabTakeHeight = 1.0f;
+        [Tooltip("Campo de visão (graus) do take.")]
+        [SerializeField] private float grabTakeFov = 50f;
+        [Tooltip("Aproximação lenta (m) da câmera durante o take.")]
+        [SerializeField] private float grabTakePush = 0.6f;
         /// <summary>
         /// MARCADOR DE ONDE A QUEDA COMEÇA — um objeto vazio na cena, posicionado onde os PÉS dela
         /// ficam no instante em que a criatura solta.
@@ -2653,13 +2634,15 @@ namespace TheDelivery.Narrative
         /// clipe — e um aperto que começa a soar depois do baque lê como dois acontecimentos
         /// em vez de um.
         ///
-        /// Chamado do <see cref="WaitForRelease"/>, que é quem sabe em que quadro do clipe a
+        /// Chamado do <see cref="WaitForClipTime"/>, que é quem sabe em que quadro do clipe a
         /// mão encosta.
         /// </summary>
         private void PlayGrabContact()
         {
             PlaySfx(grabSound, grabSoundVolume);
             StartGripLoop();
+            // A mão fechou: corta para o take em 3ª pessoa (NightmareDirector.GrabTake.cs).
+            BeginGrabTake();
         }
 
         // ShowThought/PlanarDistance vêm de DirectorUtility (using static).

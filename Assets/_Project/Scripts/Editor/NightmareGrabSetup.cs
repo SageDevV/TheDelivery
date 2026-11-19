@@ -22,10 +22,9 @@ namespace TheDelivery.EditorTools
     /// parada passam em silêncio e parecem um travamento. Nenhum sintoma aponta para a causa.
     ///
     /// Uso: <c>Tools ▸ The Delivery ▸ Nightmare - Beat Final (Pegada)</c>. A cena Nightmare é
-    /// aberta se ainda não estiver. Depois, para acertar onde a Clear fica pendurada e em que
-    /// ponto do clipe ela é solta, use a
-    /// <see cref="NightmareGrabPreviewWindow"/> (<c>Tools ▸ The Delivery ▸ Nightmare - Ajustar
-    /// a Pegada</c>), que faz isso com o clipe scrubável e sem sujar a cena.
+    /// aberta se ainda não estiver. O agarrão em si (clipe da criatura, onde ela fica, contato e
+    /// soltura) é montado pelo <see cref="NightmareGrabRebuild"/> (<c>Tools ▸ The Delivery ▸
+    /// Nightmare - Refazer o Agarrão</c>), que mede tudo no próprio clipe.
     ///
     /// IDEMPOTENTE: rodar de novo reaproveita o que já existe. O controller é reescrito NO
     /// LUGAR (o GUID sobrevive, e com ele as referências), e um pensamento já escrito NÃO é

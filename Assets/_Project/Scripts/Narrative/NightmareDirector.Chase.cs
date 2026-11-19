@@ -203,6 +203,8 @@ namespace TheDelivery.Narrative
             // LateUpdate antes de chegar no que importa. São duas criaturas diferentes.
             if (gripActive)
                 UpdateGrip();
+            UpdateGrabTake(); // depois do aperto: a Clear do take segue onde ele a pôs
+            UpdateLaughHead(); // o riso: a criatura olha para baixo, sacode a cabeça e a câmera do close (depois do Animator)
 
             if (creatureObject == null || !creatureObject.activeInHierarchy)
                 return;

@@ -112,6 +112,7 @@ namespace TheDelivery.EditorTools
 
                 var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
                 Object.DontDestroyOnLoad(rec.gameObject);
+                rec.RenderActiveCamera = true; // 1080p pela câmera ativa (segue o take em 3ª pessoa), com a UI
                 rec.Begin(fallOnly ? 60f : Duration, 24, true);
                 rec.StartCoroutine(Script(director, player));
             }

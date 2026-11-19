@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -70,8 +70,6 @@ namespace TheDelivery.Narrative
         private Transform grabHand;
         private Transform grabHead;
         private bool gripActive;
-        private float gripStartTime;
-        private Vector3 gripFromPosition;
         private Quaternion gripFromHolderRotation;
         // A última direção VÁLIDA do olhar para a criatura. Erguida pelo braço estendido, a
         // cabeça da Clear chega a centímetros da cara dela, e a essa distância a direção
@@ -100,7 +98,7 @@ namespace TheDelivery.Narrative
         /// 2. O AGARRÃO. A <see cref="creatureGrabObject"/> é plantada À FRENTE dela, a
         ///    <see cref="grabDistance"/> metros, encarando-a, e ligada — EM SILÊNCIO. O
         ///    <see cref="grabSound"/> é um impacto e espera o quadro do clipe em que a mão
-        ///    encosta nela (<see cref="grabSoundClipTime"/>); tocado na aparição, ele soaria
+        ///    encosta nela (<see cref="grabContactNormalizedTime"/>); tocado na aparição, ele soaria
         ///    antes de a criatura ter feito qualquer coisa. Ligar é o susto: não há fade,
         ///    não há aproximação —
         ///    num frame o corredor está vazio, no seguinte tem uma criatura com a mão no
@@ -117,7 +115,7 @@ namespace TheDelivery.Narrative
         ///    E O GRITO (<see cref="screamSound"/>) FECHA A ENCARADA: toca no quadro em que
         ///    o giro termina, com a criatura ainda imóvel, e é a última coisa que acontece
         ///    antes de a animação soltar. É a reação de TER VISTO — o baque da mão fechando
-        ///    é outro som, com outra hora (ver <see cref="grabSoundClipTime"/>).
+        ///    é outro som, com outra hora (ver <see cref="grabContactNormalizedTime"/>).
         ///
         ///    E ela é PEGA DE VERDADE: enquanto o aperto dura, o corpo da Clear é
         ///    ANEXADO ao osso da mão da criatura (<see cref="UpdateGrip"/>), com um
@@ -210,31 +208,42 @@ namespace TheDelivery.Narrative
             // dá a partida no bote.
             PlaySfx(screamSound, screamVolume);
 
+            // O RISO NA CARA DELA: foco na cara da criatura, tela piscando em vermelho e a risada
+            // diabólica — ela ainda parada, rindo de quem acabou de vê-la (GrabLaugh.cs).
+            yield return LaughInHerFace();
+
             // E SÓ ENTÃO a animação começa — a criatura esperou ser encarada. O bote fica
             // inteiro dentro do quadro, em vez de acontecer enquanto a cabeça ainda gira.
             ResumeGrabAnimator();
-            BeginGrip();
 
-            // O PENSAMENTO DO AGARRÃO entra JUNTO com a animação, e não antes: antes ele
-            // seria uma reação a uma criatura parada, que ainda não fez nada. Aqui ele nasce
-            // no mesmo quadro em que a mão vem para cima dela e fica na tela enquanto ela é
-            // erguida — o único trecho do ato em que ela pensa sem ter controle de nada.
+            // O PENSAMENTO DO AGARRÃO entra JUNTO com a animação: a criatura se curva e a mão
+            // vem para cima dela.
             ShowThought(grabThought);
 
-            // Esperar O QUADRO EM QUE A MÃO ABRE, medido no clipe e não no relógio: a
-            // animação pega, ergue, ergue de novo, e só então larga.
-            yield return WaitForRelease();
+            // --- 2b. O contato (refeito do zero, 2026-11-19) ---
+            // A criatura foi posicionada para a PALMA passar no pescoço dela exatamente neste
+            // ponto do clipe (NightmareGrabRebuild). Aqui a mão fecha: anexo, baque e o corte
+            // para o take em 3ª pessoa, tudo no mesmo quadro.
+            yield return WaitForClipTime(grabContactNormalizedTime);
+            BeginGrip();
+            PlayGrabContact();
 
-            // --- 3. A queda ---
-            // NO MESMO QUADRO. A mão abriu, o anexo solta, e a queda começa — não há espera
-            // pelo fim do clipe entre uma coisa e outra. É essa simultaneidade que faz a
-            // soltura parecer a CAUSA da queda; um só quadro de folga já lê como a Clear
-            // flutuando numa mão aberta.
-            //
-            // O CLIPE CONTINUA RODANDO por cima da queda: a mão que se afasta e o passo à
-            // frente da criatura acontecem enquanto a Clear despenca, que é como as duas
-            // coisas se encadeiam. Ela cai DE ONDE ESTAVA — nada é reposicionado.
+            // Ela sobe com o braço — o UpdateGrip a mantém na palma — até o ÁPICE, e ali a
+            // criatura a SEGURA no alto: a pausa dramática antes do arremesso.
+            yield return WaitForClipTime(grabHoldNormalizedTime);
+            yield return DramaticHold();
+
+            // O arco: a mão abre no ponto mais rápido dele (medido no clipe).
+            yield return WaitForClipTime(grabReleaseNormalizedTime);
+
+            // --- 3. O arremesso ---
+            // NO MESMO QUADRO da soltura ela sai voando com a velocidade da mão (mais o empurrão
+            // para a frente que a leva para fora da borda). Visto de fora por um instante, depois
+            // corta para os olhos dela, já no ar, continuando a queda de onde ela está.
+            Vector3 throwVelocity = ReleaseVelocity();
             EndGrip();
+            yield return ThrownFall(throwVelocity);
+            EndGrabTake();
             yield return FallFromGrab();
 
             // Normalmente 0: a tontura logo abaixo é que separa o pouso do corte, e um
@@ -593,58 +602,38 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// LIGA O ANEXO: a partir daqui a posição da Clear é a do osso da mão da criatura
-        /// mais o <see cref="grabHandOffset"/>, e é isso que faz ela ser pega DE VERDADE em
-        /// vez de a câmera fingir.
+        /// A MÃO FECHA NO PESCOÇO DELA. Daqui até a soltura, o corpo da Clear é posto TODO QUADRO onde
+        /// a palma da criatura estiver (ver <see cref="UpdateGrip"/>) — ela sobe, balança e desce
+        /// exatamente com o braço, sem nenhum valor afinado à mão.
         ///
-        /// O CHARACTERCONTROLLER É DESLIGADO AQUI, e não é detalhe: o PlayerController
-        /// chama <c>HandleMovement</c> FORA do gate de <c>CanMove</c> justamente para a
-        /// gravidade continuar valendo em cutscene. Com ele ligado, cada frame do aperto
-        /// terminaria com a Clear puxada de volta ao chão — ela subiria e cairia, subiria e
-        /// cairia, e o sintoma pareceria um problema da animação da criatura.
-        ///
-        /// Sem osso de mão encontrado o beat NÃO trava: ela fica de pé onde está e a queda
-        /// acontece do mesmo jeito, só sem a suspensão.
+        /// REFEITO DO ZERO (2026-11-19). O agarrão antigo prendia a Clear a uma lista de posições
+        /// fixas em volta da RAIZ da criatura (o "osso da mão" do Inspector era a raiz), então ela
+        /// subia por interpolação e continuava no alto depois de a mão descer: estava sempre
+        /// atrasada em relação ao braço. Agora a referência é a palma de verdade, e a criatura é
+        /// posicionada (pelo NightmareGrabRebuild) para a palma passar exatamente no pescoço dela no
+        /// quadro do contato — o anexo começa sem salto nenhum.
         /// </summary>
         private void BeginGrip()
         {
-            // Os ossos já foram resolvidos na montagem: o GIRO precisa deles antes daqui,
-            // porque é a cabeça da criatura que ele mira. Resolver de novo só duplicaria os
-            // avisos do Console.
             if (grabHand == null)
                 return;
 
             if (characterController != null)
                 characterController.enabled = false;
 
-            // Marcado JÁ AQUI, e não só na queda: se um salto de debug cortar o beat com
-            // a Clear ainda pendurada, é esta flag que autoriza o EndGrab a devolvê-la ao
-            // chão e a religar o CharacterController. Sem ela, ela ficaria boiando no ar.
+            // Marcado JÁ AQUI: se um salto de debug cortar o beat com a Clear ainda pendurada,
+            // é esta flag que autoriza o EndGrab a devolvê-la ao chão e religar o controller.
             grabBodyTaken = true;
 
             Transform holder = playerController.CameraHolder;
-            gripFromPosition = playerController.transform.position;
             gripFromHolderRotation = holder != null ? holder.rotation : Quaternion.identity;
-            gripStartTime = Time.time;
-
-            // A última direção boa começa sendo a que ela já tinha: é o valor que o
-            // GripLookRotation devolve nos quadros em que a criatura está perto demais para
-            // haver direção.
             gripLastLook = gripFromHolderRotation;
-
             gripActive = true;
         }
 
         /// <summary>
-        /// A MÃO ABRE e a Clear SAI DO ANEXO. O corpo fica exatamente onde o último frame do
-        /// aperto o deixou — no ar, parado —, e é desse ponto que a
-        /// <see cref="FallFromGrab"/> parte, no MESMO quadro. Soltar e cair são o mesmo lugar
-        /// e o mesmo instante, e é por isso que este método é curto: não há nada a calcular,
-        /// nem a esperar, na passagem de um para o outro.
-        ///
-        /// O SOM DO APERTO MORRE AQUI, e não no fim do beat: o que ele diz é que a mão está
-        /// fechada. Deixá-lo entrar na queda seria a criatura continuar segurando alguém que
-        /// ela acabou de largar — e ele cruzaria com o vento, que nasce neste mesmo quadro.
+        /// A MÃO ABRE. O corpo fica onde o último quadro do aperto o deixou; quem o tira dali é o
+        /// arremesso (<see cref="ThrownFall"/>), no mesmo quadro. O som do aperto morre aqui.
         /// </summary>
         private void EndGrip()
         {
@@ -653,146 +642,84 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
-        /// Segura o beat até a mão ABRIR, medido no clipe
-        /// (<see cref="grabReleaseNormalizedTime"/>) e não no relógio.
-        ///
-        /// DEVOLVE NO QUADRO DA SOLTURA, e não no fim do clipe: quem chama larga a Clear e
-        /// começa a queda imediatamente, com o resto da animação da criatura rodando por
-        /// cima. Esperar o clipe acabar deixaria a Clear pendurada numa mão já aberta.
-        ///
-        /// POR QUE NÃO SEGUNDOS: a animação do agarrão tem fases — ela pega, ergue, ergue
-        /// de novo, e só então larga. Um tempo fixo solta a Clear no meio desse arco, e o
-        /// sintoma é exatamente "ela está lá em cima e cai de repente". Pior: o número
-        /// certo muda toda vez que o clipe é trocado ou a velocidade do Animator mexe, e
-        /// nada avisa que ele ficou errado — a cena só volta a parecer estranha.
-        ///
-        /// Uma fração do clipe sobrevive às duas coisas.
-        ///
-        /// TEM TETO. Um clipe que nunca chega ao ponto de soltura (state errado no
-        /// controller, Animator com speed 0) travaria o pesadelo na última cena, para
-        /// sempre, sem erro. O teto é generoso — três vezes a duração do próprio clipe —
-        /// para nunca cortar uma animação legítima, e reclama alto quando dispara.
+        /// Segura o beat até o clipe do agarrão chegar a <paramref name="normalized"/> (0–1), lendo
+        /// o relógio UM QUADRO ADIANTADO (<see cref="FrameLead"/>): a coroutine roda antes de o
+        /// Animator posar o quadro, então sem o avanço o evento sairia um quadro atrasado em relação
+        /// à pose na tela — exatamente o tipo de atraso que este beat existe para não ter.
+        /// Tem teto (3× o clipe): um Animator parado não trava o pesadelo.
         /// </summary>
-        private IEnumerator WaitForRelease()
+        private IEnumerator WaitForClipTime(float normalized)
         {
             if (grabAnimator == null || grabAnimator.runtimeAnimatorController == null || grabAnimator.layerCount == 0)
             {
-                // Sem clipe para medir, a fração do som vira fração do tempo de espera: é a
-                // mesma proporção, no único relógio que sobrou.
-                float delay = Mathf.Max(0f, grabReleaseFallbackDelay);
-                float cue = Mathf.Clamp01(grabSoundClipTime) * delay;
-
-                yield return new WaitForSeconds(cue);
-                PlayGrabContact();
-                yield return new WaitForSeconds(delay - cue);
+                yield return new WaitForSeconds(1f);
                 yield break;
             }
 
-            AnimatorStateInfo state = grabAnimator.GetCurrentAnimatorStateInfo(0);
-            float release = ReleaseClipTime(state.length);
-            float limit = Mathf.Clamp(state.length * 3f, 1f, 15f);
-
-            // O SOM É UM IMPACTO e tem hora: o quadro em que a mão encosta nela. Tocado na
-            // aparição, ele soa antes de a criatura ter feito qualquer coisa — e um impacto
-            // sem impacto o ouvido reconhece na hora.
-            //
-            // O CONTATO É UM INSTANTE, NÃO UM CLIPE: é dele que saem o baque E o começo do
-            // loop do aperto (ver PlayGrabContact). Por isso o "já aconteceu" só nasce
-            // verdadeiro quando NENHUM dos dois foi atribuído — com o Grab Sound vazio e o
-            // Grab Loop Sound preenchido, pular o cue deixaria o aperto inteiro mudo.
-            float soundCue = Mathf.Clamp01(grabSoundClipTime);
-            bool contactDone = grabSound == null && grabLoopSound == null;
-
-            // PISO EM SEGUNDOS: a mão não pode abrir antes de a Clear ter chegado nela. O
-            // anexo leva grabAttachBlend segundos para tirá-la do chão, e uma soltura que
-            // chegue antes disso larga alguém que ainda está de pé — o mesmo sintoma de
-            // cima, por um caminho diferente (um clipe que já entra passado do ponto de
-            // soltura).
-            float floor = Mathf.Max(0f, grabAttachBlend);
-
-            float elapsed = 0f;
-            while (elapsed < limit)
+            float limit = Mathf.Clamp(grabAnimator.GetCurrentAnimatorStateInfo(0).length * 3f, 1f, 20f);
+            for (float elapsed = 0f; elapsed < limit; elapsed += Time.deltaTime)
             {
-                state = grabAnimator.GetCurrentAnimatorStateInfo(0);
-
-                // O RELÓGIO É LIDO UM QUADRO ADIANTADO, e é isso que faz a soltura acontecer
-                // no MESMO quadro em que a mão abre na tela.
-                //
-                // Uma coroutine roda entre o Update e a pose do Animator: o normalizedTime
-                // lido aqui é o do quadro PASSADO — a pose que já está na tela. O
-                // UpdateGrip, que gruda a Clear na mão, roda no LateUpdate, DEPOIS da pose,
-                // ou seja sobre o quadro ATUAL. É a mesma defasagem que aquele método
-                // documenta, vista do outro lado.
-                //
-                // Comparando o valor cru, no quadro em que a mão abre a coroutine ainda lê
-                // "ainda não soltou" e o aperto segura a Clear por mais um quadro inteiro —
-                // justamente o quadro em que a mão está abrindo e se afastando. Na tela isso
-                // é a Clear acompanhando a mão aberta antes de começar a cair: a queda sai
-                // atrasada em relação à soltura, e o atraso cresce quanto pior o framerate.
-                //
-                // Somar o avanço de um quadro desfaz a defasagem. A pergunta deixa de ser
-                // "a mão já abriu?" e passa a ser "a mão vai estar aberta na pose que este
-                // quadro está prestes a montar?".
-                float clock = state.normalizedTime + FrameLead(state.length);
-
-                if (!contactDone && clock >= soundCue)
-                {
-                    PlayGrabContact();
-                    contactDone = true;
-                }
-
-                if (elapsed >= floor && clock >= release)
-                {
-                    // ÚLTIMA CHANCE: um cue marcado depois da soltura nunca chegaria a
-                    // acontecer, e o agarrão inteiro sairia mudo — uma falha que ninguém
-                    // liga a um número no Inspector. Aqui ele toca atrasado, que é ruim, mas
-                    // audível: dá para ouvir que está fora do lugar e consertar.
-                    if (!contactDone)
-                        PlayGrabContact();
-
+                AnimatorStateInfo state = grabAnimator.GetCurrentAnimatorStateInfo(0);
+                if (state.normalizedTime + FrameLead(state.length) >= normalized)
                     yield break;
-                }
-
-                elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            if (!contactDone)
-                PlayGrabContact();
-
-            Debug.LogWarning($"[NightmareDirector] A animação da pegada não chegou a {release:0.##} de clipe em " +
-                             $"{limit:0.#} s — soltando a Clear assim mesmo para o ato não travar. O Animator do " +
-                             "CreatureGrab está com speed 0, ou o state do controller não tem clipe.", creatureGrabObject);
+            Debug.LogWarning($"[NightmareDirector] O clipe do agarrão não chegou a {normalized:0.###} em {limit:0.#} s — " +
+                             "seguindo assim mesmo para o pesadelo não travar.", creatureGrabObject);
         }
 
         /// <summary>
-        /// A Clear ANEXADA À MÃO, um frame por vez. Roda no <see cref="LateUpdate"/>, e
-        /// esse é o ponto: o Animator posa o esqueleto DEPOIS do Update, então uma coroutine
-        /// leria o osso na pose do frame anterior. Um frame de atraso na xícara do Ato 1
-        /// ninguém vê; na CÂMERA, durante um puxão, vira tremor.
+        /// A PAUSA DRAMÁTICA no ápice: a animação da criatura desacelera (0,3 s) até
+        /// <see cref="grabHoldSpeed"/>, fica assim <see cref="grabHoldDuration"/> segundos e volta à
+        /// velocidade normal num estalo (0,1 s) — o arremesso sai com toda a força. Ela continua
+        /// pendurada na palma (o UpdateGrip não para) e o modelo dela continua se debatendo.
+        /// </summary>
+        private IEnumerator DramaticHold()
+        {
+            if (grabAnimator == null || grabHoldDuration <= 0f)
+                yield break;
+
+            float normal = grabAnimator.speed <= 0f ? 1f : grabAnimator.speed;
+            float slow = Mathf.Clamp(grabHoldSpeed, 0f, normal);
+            for (float t = 0f; t < 0.3f; t += Time.deltaTime)
+            {
+                grabAnimator.speed = Mathf.Lerp(normal, slow, Mathf.SmoothStep(0f, 1f, t / 0.3f));
+                yield return null;
+            }
+            grabAnimator.speed = slow;
+            yield return new WaitForSeconds(grabHoldDuration);
+            for (float t = 0f; t < 0.1f; t += Time.deltaTime)
+            {
+                grabAnimator.speed = Mathf.Lerp(slow, normal, t / 0.1f);
+                yield return null;
+            }
+            grabAnimator.speed = normal;
+        }
+
+        /// <summary>
+        /// A PALMA da criatura: o pulso (osso da mão) avançado na direção antebraço→mão. É ali que o
+        /// pescoço da Clear fica. Sem antebraço (rig estranho), o próprio pulso.
+        /// </summary>
+        private Vector3 Palm()
+        {
+            if (grabHand == null)
+                return playerController.transform.position;
+            Transform forearm = grabHand.parent;
+            if (forearm == null)
+                return grabHand.position;
+            Vector3 along = grabHand.position - forearm.position;
+            return along.sqrMagnitude < 1e-6f ? grabHand.position : grabHand.position + along.normalized * grabPalmReach;
+        }
+
+        /// <summary>
+        /// UM QUADRO DO APERTO, no LateUpdate (depois de o Animator posar a mão — ler o osso antes
+        /// daria a pose do quadro anterior, e na câmera isso é tremor).
         ///
-        /// O ENCAIXE É NO ESPAÇO DO OSSO (<c>grabHand.rotation * grabHandOffset</c>), como o
-        /// <see cref="Characters.BoneAttachment"/> da xícara — e é essa linha que resolve o
-        /// beat. Com o offset em eixos de MUNDO, cada giro de punho da animação levava a
-        /// Clear para fora da mão, e o remendo era autorar um encaixe diferente para cada
-        /// trecho do clipe; num deles a discordância entre dois encaixes vizinhos chegava a
-        /// LANÇAR a Clear pelo corredor nos primeiros quadros. Preso ao osso, o encaixe é um
-        /// só e vale do primeiro ao último quadro.
-        ///
-        /// A ESCALA DO RIG NÃO ENTRA (repare: <c>rotation *</c>, e não
-        /// <c>TransformPoint</c>). Os FBX deste projeto vêm em escalas malucas, e deixar a
-        /// escala multiplicar o offset faria um bone de escala 137 jogar a câmera para fora
-        /// do prédio — o mesmo cuidado que o BoneAttachment documenta.
-        ///
-        /// O que é escrito é a posição do CORPO, não a da câmera — e a conta desconta a
-        /// altura do olho (<c>holder.localPosition</c>), para o que encaixa na mão ser a
-        /// CABEÇA dela, não os pés. Escrever a câmera direto deixaria o corpo no chão, e
-        /// qualquer coisa que dependa de onde a Clear está (a queda, o pouso) mediria a
-        /// partir do lugar errado.
-        ///
-        /// A PUXADA É INTERPOLADA a partir de onde ela estava de pé
-        /// (<see cref="grabAttachBlend"/>): grudar no mesmo frame lê como teletransporte, e
-        /// o susto do beat é a criatura aparecer — não a Clear sumir de onde estava.
+        /// Com o take em 3ª pessoa, quem está na mão é o MODELO INTEIRO da Clear: ele vira de frente
+        /// para a criatura e é deslocado para o PESCOÇO dele cair na palma; o corpo do jogador
+        /// acompanha com o olho na cabeça desse modelo, para o corte de volta à 1ª pessoa sair do
+        /// lugar certo. Sem o take, o olho dela vai logo acima da palma e o olhar trava na criatura.
         /// </summary>
         private void UpdateGrip()
         {
@@ -804,169 +731,88 @@ namespace TheDelivery.Narrative
 
             Transform body = playerController.transform;
             Transform holder = playerController.CameraHolder;
+            Vector3 eyeOffset = holder != null ? body.rotation * holder.localPosition : Vector3.up * 1.6f;
+            Vector3 palm = Palm();
 
-            // A cabeça vai para o alvo; o corpo vai para onde a cabeça DELE fica no alvo.
-            Vector3 eyeOffset = holder != null ? body.rotation * holder.localPosition : Vector3.zero;
-
-            // O blend de ENTRADA vale para a posição E para o olhar: virar a cabeça dela
-            // para a criatura no primeiro frame seria um corte seco bem no momento do susto,
-            // e puxar o corpo no mesmo frame seria um teletransporte.
-            float entry = grabAttachBlend <= 0f
-                ? 1f
-                : Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - gripStartTime) / grabAttachBlend));
-
-            Vector3 target = HandAttachEye() - eyeOffset;
-            body.position = Vector3.Lerp(gripFromPosition, target, entry);
-
-            if (holder != null && grabLookAtCreature)
-                AimAtCreature(body, holder, entry);
-        }
-
-        /// <summary>
-        /// Onde o OLHO da Clear fica quando ela está encaixada na mão: a posição do osso
-        /// mais o encaixe do momento, girado pelo osso.
-        ///
-        /// Um método só, e não a conta repetida em três lugares, porque a ferramenta de
-        /// ajuste (<c>Nightmare - Ajustar a Pegada</c>) precisa desenhar exatamente esta
-        /// mesma pose. Duas contas que deveriam concordar e não concordam significam ajustar
-        /// uma cena que não é a que roda.
-        /// </summary>
-        private Vector3 HandAttachEye()
-        {
-            if (grabHand == null)
-                return playerController.transform.position;
-
-            return grabHand.position + grabHand.rotation * ResolveHandOffset(GripClipTime());
-        }
-
-        /// <summary>
-        /// O ENCAIXE QUE VALE NESTE PONTO DO CLIPE, interpolado entre os
-        /// <see cref="grabHandKeys"/> vizinhos. Lista vazia = o <see cref="grabHandOffset"/>
-        /// único, que é o caminho normal.
-        ///
-        /// INTERPOLAR OFFSETS DE OSSO É SEGURO, e é por isso que os estados voltaram a caber
-        /// aqui: eles são pequenas correções sobre um encaixe que já acompanha a mão sozinho
-        /// ("no bote a cabeça dela entra mais na palma; no alto ela pende um pouco mais"), e
-        /// não a compensação de um offset que escorregava a cada giro de punho — que era o
-        /// que a lista antiga, em eixos de MUNDO, existia para remendar. A diferença aparece
-        /// quando alguém troca o clipe: com offsets de osso, estados desafinados deixam a
-        /// Clear alguns centímetros fora do lugar; com os de mundo, a jogavam para fora da
-        /// mão.
-        ///
-        /// SMOOTHSTEP entre chaves, e não Lerp: são poses ESCOLHIDAS, não amostras de um
-        /// movimento contínuo, então a passagem de uma para a outra precisa acelerar e frear.
-        /// Linear entrega uma troca de direção seca em cada chave.
-        ///
-        /// FORA DO INTERVALO a primeira e a última valem por extensão, em vez de
-        /// extrapolarem — e o "depois da última" acontece sempre, porque o clipe continua
-        /// rodando depois da soltura.
-        /// </summary>
-        private Vector3 ResolveHandOffset(float clipNormalized)
-        {
-            if (grabHandKeys == null || grabHandKeys.Length == 0)
-                return grabHandOffset;
-
-            int next = -1;
-            for (int i = 0; i < grabHandKeys.Length; i++)
+            if (grabTakeActor != null)
             {
-                if (grabHandKeys[i].clipTime >= clipNormalized)
-                {
-                    next = i;
-                    break;
-                }
+                Vector3 creature = grabHead != null ? grabHead.position : creatureGrabObject.transform.position;
+                Vector3 face = creature - palm;
+                face.y = 0f;
+                if (face.sqrMagnitude > 1e-4f)
+                    grabTakeActor.transform.rotation = Quaternion.LookRotation(face.normalized, Vector3.up);
+                if (grabTakeActorNeck != null)
+                    grabTakeActor.transform.position += palm - grabTakeActorNeck.position;
+                if (grabTakeActorHead != null)
+                    body.position = grabTakeActorHead.position - eyeOffset;
+                return;
             }
 
-            if (next <= 0)
-                return grabHandKeys[next == 0 ? 0 : grabHandKeys.Length - 1].offset;
-
-            GrabHandKey from = grabHandKeys[next - 1];
-            GrabHandKey to = grabHandKeys[next];
-
-            float span = Mathf.Max(0.0001f, to.clipTime - from.clipTime);
-            float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((clipNormalized - from.clipTime) / span));
-
-            return Vector3.Lerp(from.offset, to.offset, k);
+            body.position = palm + Vector3.up * grabNeckToEye - eyeOffset;
+            if (holder != null && grabLookAtCreature)
+                AimAtCreature(body, holder, 1f);
         }
 
         /// <summary>
-        /// Onde o clipe do agarrão está, de 0 a 1 — o relógio dos estados de encaixe. Sem
-        /// Animator medível cai para o tempo contra o <see cref="grabReleaseFallbackDelay"/>,
-        /// o mesmo fallback do <see cref="WaitForRelease"/>, para os estados e a soltura nunca
-        /// discordarem sobre em que ponto do beat a cena está.
+        /// A VELOCIDADE DO ARREMESSO no quadro da soltura: a da mão no golpe para baixo (medida no
+        /// clipe pelo NightmareGrabRebuild, guardada no espaço da criatura) mais um empurrão para a
+        /// FRENTE dela (<see cref="grabThrowForward"/>) — o golpe do clipe é para baixo e um pouco
+        /// para trás, e sem o empurrão ela cairia de volta no chão do corredor em vez de passar da
+        /// borda do abismo.
         /// </summary>
-        private float GripClipTime()
+        private Vector3 ReleaseVelocity()
         {
-            if (grabAnimator == null || grabAnimator.runtimeAnimatorController == null || grabAnimator.layerCount == 0)
-                return Mathf.Clamp01((Time.time - gripStartTime) / Mathf.Max(0.0001f, grabReleaseFallbackDelay));
-
-            return Mathf.Clamp01(grabAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+            if (creatureGrabObject == null)
+                return Vector3.down * 4f;
+            Transform c = creatureGrabObject.transform;
+            Vector3 forward = c.forward;
+            forward.y = 0f;
+            forward.Normalize();
+            // A parte da velocidade da mão que vai PARA TRÁS (para as pernas da criatura) é
+            // descartada: o golpe a leva para baixo e o empurrão para a frente, nunca de volta.
+            Vector3 v = c.rotation * grabThrowVelocity;
+            float back = Vector3.Dot(v, forward);
+            if (back < 0f) v -= forward * back;
+            return v + forward * grabThrowForward;
         }
 
         /// <summary>
-        /// O ponto do clipe em que a mão ABRE, já conferido contra a PUXADA.
-        ///
-        /// A GUARDA NÃO É CONTRA O ZERO, e essa é a diferença que importa: barrar só o zero
-        /// exato não serve de nada. Num clipe de 280 quadros, o quadro 1 é 0,0036 — passa por
-        /// qualquer teste contra zero e produz exatamente o mesmo desastre, que é a Clear ser
-        /// largada antes de a criatura ter chegado a segurá-la. (Era literalmente o valor que
-        /// estava na cena quando este beat foi reescrito: alguém clicou em "marcar a soltura"
-        /// no primeiro quadro, e o sintoma na tela era a Clear indo para o chão no susto.)
-        ///
-        /// O que define "cedo demais" não é um número escolhido: é o tempo que o anexo leva
-        /// para tirar a Clear do chão, o <see cref="grabAttachBlend"/>, convertido para
-        /// fração do clipe. Soltar antes disso é soltar alguém que ainda está de pé, e o
-        /// valor é então CORRIGIDO para 0,8 em vez de respeitado.
-        ///
-        /// 0,8 É UM CHUTE HONESTO, e o aviso diz isso: o quadro em que a mão abre é uma pose,
-        /// e pose não se deduz de fórmula nenhuma — quem acha é o olho, na ferramenta de
-        /// ajuste. O conserto só existe para o beat não sair quebrado enquanto ninguém foi
-        /// lá marcar.
-        ///
-        /// Corrigir em vez de obedecer é o mesmo tratamento do startBeat em None: é um estado
-        /// morto alcançável pelo Inspector, e obedecê-lo entrega uma cena quebrada que não
-        /// denuncia a causa.
+        /// O ARREMESSO VISTO DE FORA: <see cref="grabTakeFallTime"/> segundos da Clear voando para
+        /// baixo a partir da mão, com a velocidade do golpe e gravidade, girando para trás (ela
+        /// cai de costas, longe de quem a jogou). O corpo do jogador vai junto, com o olho na
+        /// cabeça do modelo — é dali que a queda em 1ª pessoa continua, sem teletransporte.
+        /// Sem o take (desligado ou sem modelo), não há nada para mostrar: devolve na hora.
         /// </summary>
-        /// <param name="clipLength">Duração (s) do clipe do agarrão, para converter a puxada em fração.</param>
-        private float ReleaseClipTime(float clipLength)
+        private IEnumerator ThrownFall(Vector3 velocity)
         {
-            float release = Mathf.Clamp01(grabReleaseNormalizedTime);
+            if (grabTakeActor == null || grabTakeFallTime <= 0f)
+                yield break;
 
-            // O teto de 0,5 é o que impede um clipe curtíssimo (ou uma puxada absurda no
-            // Inspector) de declarar o clipe inteiro "cedo demais" e corrigir uma soltura
-            // que estava certa.
-            float floor = clipLength > 0.0001f
-                ? Mathf.Clamp(Mathf.Max(0f, grabAttachBlend) / clipLength, 0.01f, 0.5f)
-                : 0.01f;
+            grabTakeThrown = true;
+            Transform body = playerController.transform;
+            Transform holder = playerController.CameraHolder;
+            Transform actor = grabTakeActor.transform;
+            Vector3 axis = actor.right;
+            for (float t = 0f; t < grabTakeFallTime; t += Time.deltaTime)
+            {
+                float dt = Time.deltaTime;
+                velocity += Physics.gravity * dt;
+                actor.position += velocity * dt;
+                // Tomba para trás em volta do próprio peito, acelerando.
+                Vector3 pivot = grabTakeActorNeck != null ? grabTakeActorNeck.position : actor.position;
+                actor.RotateAround(pivot, axis, -Mathf.Lerp(120f, 260f, t / grabTakeFallTime) * dt);
 
-            if (release > floor)
-                return release;
-
-            Debug.LogWarning($"[NightmareDirector] Grab Release Normalized Time está em {release:0.####}, que é ANTES " +
-                             $"de a Clear terminar de chegar à mão (a puxada leva {grabAttachBlend:0.##} s, ou seja, " +
-                             $"até {floor:0.###} do clipe). Assim ela é largada sem nunca ter sido erguida. " +
-                             "Usando 0.8 para o beat não sair quebrado.\n" +
-                             "Marque o ponto certo em Tools ▸ The Delivery ▸ Nightmare - Ajustar a Pegada: ache o " +
-                             "quadro em que a mão abre e clique em \"Marcar a soltura neste quadro\".", this);
-            return 0.8f;
+                if (grabTakeActorHead != null && holder != null)
+                    body.position = grabTakeActorHead.position - body.rotation * holder.localPosition;
+                yield return null;
+            }
         }
 
         /// <summary>
-        /// QUANTO O CLIPE DO AGARRÃO ANDA NESTE QUADRO, em fração de clipe.
-        ///
-        /// É a compensação da defasagem entre a coroutine e o Animator (ver
-        /// <see cref="WaitForRelease"/>): somado ao normalizedTime lido ANTES da pose, dá o
-        /// ponto em que o clipe VAI estar quando este quadro for desenhado.
-        ///
-        /// A CONTA USA A VELOCIDADE DO ANIMATOR porque ela não é sempre 1 aqui — o beat
-        /// congela a criatura em speed 0 até o giro terminar (<see cref="HoldGrabAnimator"/>)
-        /// e só então devolve a velocidade original. Com speed 0 o avanço é zero, que é o
-        /// certo: um clipe parado não chega a soltura nenhuma, e quem resolve isso é o teto
-        /// do laço, não uma antecipação.
-        ///
-        /// Sem clipe medível o avanço é zero e o teste volta a ser o cru — um quadro de
-        /// atraso é melhor que uma divisão por zero.
+        /// QUANTO O CLIPE DO AGARRÃO ANDA NESTE QUADRO, em fração de clipe — a compensação da
+        /// defasagem entre a coroutine e o Animator (ver <see cref="WaitForClipTime"/>). Usa a
+        /// velocidade do Animator: congelado (speed 0, antes do giro), o avanço é zero.
         /// </summary>
-        /// <param name="clipLength">Duração (s) do clipe, como o Animator a reporta.</param>
         private float FrameLead(float clipLength)
         {
             if (grabAnimator == null || clipLength <= 0.0001f)
@@ -1030,7 +876,7 @@ namespace TheDelivery.Narrative
         /// blend, o olhar fica GRUDADO — ela não tem mais como desviar, que é o ponto.
         ///
         /// O PUNHO NÃO ENTRA NESTA CONTA, e é de propósito. A posição da Clear é anexada ao
-        /// osso (<see cref="HandAttachEye"/>), mas o OLHAR não: herdar o giro do pulso
+        /// osso (<see cref="Palm"/>), mas o OLHAR não: herdar o giro do pulso
         /// rodaria a câmera do jogador junto com a animação, e a câmera é o olho dele. O
         /// corpo vai onde a mão for; o olhar fica na cara da criatura.
         /// </summary>
@@ -1153,7 +999,7 @@ namespace TheDelivery.Narrative
         /// pouso sai dela.
         ///
         /// QUEM DECIDE A ALTURA É O CLIPE — ou o marcador, quando existe. Quanto mais alto a
-        /// criatura erguer a Clear (ver <see cref="grabHandKeys"/>), mais longa a queda, sem
+        /// criatura erguer a Clear (ver <see cref="grabReleaseNormalizedTime"/>), mais longa a queda, sem
         /// ninguém reacertar número nenhum. A duração sai da altura, e não do Inspector:
         /// <c>t = √(2h / |g|)</c>. Para mudar o tempo sem mudar a altura existe o
         /// <see cref="grabDropGravityScale"/>, e para dizer o tempo direto existe o
@@ -2218,6 +2064,8 @@ namespace TheDelivery.Narrative
         private void EndGrab()
         {
             StopDazeRing();
+            EndLaugh();
+            EndGrabTake();
             if (!grabStaged)
                 return;
 

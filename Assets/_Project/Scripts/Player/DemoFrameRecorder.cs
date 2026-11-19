@@ -76,7 +76,8 @@ namespace TheDelivery.Player
 
                 // A captura pode vir nula num quadro sem Game View pronta (troca de cena, saída
                 // do Play): pula o quadro em vez de matar a gravação inteira.
-                Texture2D tex = ScreenCapture.CaptureScreenshotAsTexture();
+                Texture2D tex = RenderCamera != null || RenderActiveCamera ? CaptureFromCamera() : ScreenCapture.CaptureScreenshotAsTexture();
+                if (tex == null) tex = ScreenCapture.CaptureScreenshotAsTexture();
                 if (tex == null)
                     continue;
                 File.WriteAllBytes(Path.Combine(OutputDir, $"f{frame:0000}.jpg"), tex.EncodeToJPG(90));
@@ -128,11 +129,78 @@ namespace TheDelivery.Player
                 w.Write((short)Mathf.Clamp(Mathf.RoundToInt(s * 32767f), short.MinValue, short.MaxValue));
         }
 
+        /// <summary>
+        /// OPCIONAL: grava desta câmera num RenderTexture de <see cref="RenderSize"/>, em vez de
+        /// capturar a Game View. A Game View segue o layout do Editor — encolhida, ela dava quadros
+        /// de 875×237. Overlays de UI não entram (as gravações de cinema já os desligam).
+        /// </summary>
+        public Camera RenderCamera;
+        /// <summary>Sem <see cref="RenderCamera"/>: grava a câmera LIGADA de maior depth em cada quadro
+        /// (segue cortes de câmera de cutscene, como o take em 3ª pessoa do agarrão).</summary>
+        public bool RenderActiveCamera;
+        public Vector2Int RenderSize = new Vector2Int(1920, 1080);
+        private RenderTexture renderTarget;
+        private readonly List<Canvas> overlayCanvases = new List<Canvas>();
+
+        /// <summary>
+        /// Desenha a câmera de novo, sob demanda, num RenderTexture do tamanho pedido — COM a UI:
+        /// os Canvas em Overlay (pensamentos, pálpebras, fade) não aparecem num render de câmera,
+        /// então viram Screen Space - Camera só durante este render e voltam em seguida.
+        /// </summary>
+        private Texture2D CaptureFromCamera()
+        {
+            Camera cam = RenderCamera;
+            if (cam == null || !cam.isActiveAndEnabled)
+            {
+                cam = null;
+                foreach (var c in Camera.allCameras)
+                    if (c.targetTexture == null && (cam == null || c.depth > cam.depth)) cam = c;
+            }
+            if (cam == null) return null;
+
+            if (renderTarget == null || renderTarget.width != RenderSize.x || renderTarget.height != RenderSize.y)
+            {
+                if (renderTarget != null) renderTarget.Release();
+                renderTarget = new RenderTexture(RenderSize.x, RenderSize.y, 24, RenderTextureFormat.ARGB32);
+            }
+
+            overlayCanvases.Clear();
+            foreach (var cv in FindObjectsByType<Canvas>(FindObjectsInactive.Exclude))
+                if (cv.isRootCanvas && cv.enabled && cv.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    overlayCanvases.Add(cv);
+                    cv.renderMode = RenderMode.ScreenSpaceCamera;
+                    cv.worldCamera = cam;
+                    cv.planeDistance = cam.nearClipPlane + 0.02f;
+                }
+            Canvas.ForceUpdateCanvases();
+
+            var prevTarget = cam.targetTexture;
+            cam.targetTexture = renderTarget;
+            cam.Render();
+            cam.targetTexture = prevTarget;
+
+            foreach (var cv in overlayCanvases)
+            {
+                cv.renderMode = RenderMode.ScreenSpaceOverlay;
+                cv.worldCamera = null;
+            }
+
+            var prev = RenderTexture.active;
+            RenderTexture.active = renderTarget;
+            var tex = new Texture2D(RenderSize.x, RenderSize.y, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, RenderSize.x, RenderSize.y), 0, 0);
+            tex.Apply(false);
+            RenderTexture.active = prev;
+            return tex;
+        }
+
         private bool audioOpen;
 
         private void OnDestroy()
         {
             Time.captureFramerate = 0;
+            if (renderTarget != null) renderTarget.Release();
             if (audioOpen)
             {
                 AudioRenderer.Stop(); // não deixa o AudioRenderer aberto para a próxima gravação
