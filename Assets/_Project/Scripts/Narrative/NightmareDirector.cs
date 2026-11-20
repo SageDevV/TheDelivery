@@ -1514,6 +1514,8 @@ namespace TheDelivery.Narrative
 
         private void Start()
         {
+            PrepareRedWorld(); // o céu do mundo vermelho fica pronto muito antes do agarrão (GrabRedWorld.cs)
+            PrepareMoon(); // texturas da lua e do chão do fim do mundo (GrabMoon.cs)
             if (playerController == null)
             {
                 Debug.LogError("[NightmareDirector] playerController não atribuído no Inspector.", this);
@@ -2641,6 +2643,8 @@ namespace TheDelivery.Narrative
         {
             PlaySfx(grabSound, grabSoundVolume);
             StartGripLoop();
+            // E O MUNDO SOME: no lugar do cenário, o vazio vermelho de nuvens negras (GrabRedWorld.cs).
+            BeginRedWorld();
             // A mão fechou: corta para o take em 3ª pessoa (NightmareDirector.GrabTake.cs).
             BeginGrabTake();
         }

@@ -201,6 +201,8 @@ namespace TheDelivery.Narrative
             // O APERTO VEM PRIMEIRO, e de fora da guarda logo abaixo: durante a pegada a
             // criatura que PERSEGUE está desativada, então essa guarda abortaria o
             // LateUpdate antes de chegar no que importa. São duas criaturas diferentes.
+            UpdateRedWorld();
+            UpdateHoldTremor(); // ANTES do aperto: o tremor do braço move a palma, e ela vai junto
             if (gripActive)
                 UpdateGrip();
             UpdateGrabTake(); // depois do aperto: a Clear do take segue onde ele a pôs

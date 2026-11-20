@@ -193,9 +193,14 @@ namespace TheDelivery.Narrative
             // mão encosta nela (ver WaitForRelease), não quando ela surge.
             StageGrab();
             ResolveGrabBones();
+            PrepareRedWorld(); // gera o céu vermelho em segundo plano enquanto ela se vira (GrabRedWorld.cs)
 
             // A CLEAR VIRA PARA ELA. É o giro que faz o susto ser dela e não da câmera: o
             // jogador não escolhe olhar, mas o olhar chega lá com peso, não num corte.
+            // O MUNDO JÁ MUDOU QUANDO ELA VÊ A CRIATURA (pedido 2026-11-20): a troca acontece no MEIO do
+            // giro, com a câmera varrendo rápido — o corredor some no borrão do movimento, e o primeiro
+            // olhar dela para a criatura já é no vazio vermelho.
+            StartCoroutine(RedWorldMidTurn());
             yield return TurnToFaceCreature();
 
             // O GRITO, NO QUADRO EM QUE ELA VÊ: o giro acabou de terminar e a criatura está
@@ -241,6 +246,10 @@ namespace TheDelivery.Narrative
             // para a frente que a leva para fora da borda). Visto de fora por um instante, depois
             // corta para os olhos dela, já no ar, continuando a queda de onde ela está.
             Vector3 throwVelocity = ReleaseVelocity();
+            // O INSTANTE DA SOLTURA: câmera lenta curta, golpe de ar e solavanco de câmera.
+            StartCoroutine(SlowMoRelease());
+            PlayThrowWhoosh();
+            CinemaKick(1f);
             EndGrip();
             yield return ThrownFall(throwVelocity);
             EndGrabTake();
@@ -254,6 +263,10 @@ namespace TheDelivery.Narrative
             // --- 4. O chão ---
             // Ela fica ali, zonza, até apagar. O corte espera os olhos fecharem.
             yield return GroundDaze();
+
+            // --- 5. O fim do mundo ---
+            // Ela abre os olhos de novo no mundo vermelho e vê a lua se chocar com o planeta (GrabMoon.cs).
+            yield return MoonApocalypse();
 
             AdvanceToBeat(NightmareBeat.TheCut);
         }
@@ -688,7 +701,9 @@ namespace TheDelivery.Narrative
                 yield return null;
             }
             grabAnimator.speed = slow;
+            holdTremor = true; // respiração e tremor de força no braço durante a pausa (UpdateHoldTremor)
             yield return new WaitForSeconds(grabHoldDuration);
+            holdTremor = false;
             for (float t = 0f; t < 0.1f; t += Time.deltaTime)
             {
                 grabAnimator.speed = Mathf.Lerp(slow, normal, t / 0.1f);
@@ -739,8 +754,13 @@ namespace TheDelivery.Narrative
                 Vector3 creature = grabHead != null ? grabHead.position : creatureGrabObject.transform.position;
                 Vector3 face = creature - palm;
                 face.y = 0f;
-                if (face.sqrMagnitude > 1e-4f)
-                    grabTakeActor.transform.rotation = Quaternion.LookRotation(face.normalized, Vector3.up);
+                Quaternion yaw = face.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(face.normalized, Vector3.up) : grabTakeActor.transform.rotation;
+                // O CORPO PENDE COMO PÊNDULO da palma (refino 2026-11-19): rígido na vertical, ela
+                // parecia um boneco. A direção pescoço→pés segue a gravidade APARENTE (gravidade menos
+                // a aceleração da mão) com mola e amortecimento — atrasa na subida, balança no alto,
+                // é puxada para trás no arco.
+                UpdateHang(palm);
+                grabTakeActor.transform.rotation = Quaternion.FromToRotation(Vector3.down, hangDir) * yaw;
                 if (grabTakeActorNeck != null)
                     grabTakeActor.transform.position += palm - grabTakeActorNeck.position;
                 if (grabTakeActorHead != null)
@@ -751,6 +771,46 @@ namespace TheDelivery.Narrative
             body.position = palm + Vector3.up * grabNeckToEye - eyeOffset;
             if (holder != null && grabLookAtCreature)
                 AimAtCreature(body, holder, 1f);
+        }
+
+        // O PÊNDULO dela na mão: direção pescoço→pés, velocidade dessa direção e a memória da palma
+        // para estimar a aceleração da mão.
+        private Vector3 hangDir = Vector3.down, hangVel;
+        private Vector3 hangPalmPrev, hangPalmVel;
+        private bool hangPrimed;
+        // Ajustado no vídeo: com 70° e a aceleração inteira, o arco da subida a deixava na HORIZONTAL.
+        // A mão aperta o pescoço (não é uma corda): o corpo pende no máximo 35° e sente metade do tranco.
+        private const float HangStiffness = 22f, HangDamping = 5f, HangMaxAngle = 35f, HangAccelGain = 0.45f;
+
+        private void ResetHang()
+        {
+            hangDir = Vector3.down;
+            hangVel = Vector3.zero;
+            hangPalmVel = Vector3.zero;
+            hangPrimed = false;
+        }
+
+        private void UpdateHang(Vector3 palm)
+        {
+            float dt = Mathf.Max(1e-4f, Time.deltaTime);
+            if (!hangPrimed)
+            {
+                hangPalmPrev = palm;
+                hangPrimed = true;
+                return;
+            }
+            Vector3 v = Vector3.Lerp(hangPalmVel, (palm - hangPalmPrev) / dt, 0.3f);
+            Vector3 accel = Vector3.ClampMagnitude((v - hangPalmVel) / dt, 25f);
+            hangPalmVel = v;
+            hangPalmPrev = palm;
+
+            Vector3 apparent = Physics.gravity - accel * HangAccelGain;
+            Vector3 target = apparent.sqrMagnitude > 0.01f ? apparent.normalized : Vector3.down;
+            hangVel += ((target - hangDir) * HangStiffness - hangVel * HangDamping) * dt;
+            hangDir = (hangDir + hangVel * dt).normalized;
+            float angle = Vector3.Angle(Vector3.down, hangDir);
+            if (angle > HangMaxAngle)
+                hangDir = Vector3.Slerp(Vector3.down, hangDir, HangMaxAngle / angle).normalized;
         }
 
         /// <summary>
@@ -792,15 +852,21 @@ namespace TheDelivery.Narrative
             Transform body = playerController.transform;
             Transform holder = playerController.CameraHolder;
             Transform actor = grabTakeActor.transform;
-            Vector3 axis = actor.right;
+            // O GIRO SAI DO EMBALO (refino 2026-11-19): o eixo e a velocidade de tombo vêm do pêndulo
+            // no instante da soltura (o corpo vinha balançando com o arco) mais um tombo para trás;
+            // e ela se debate mais rápido — a animação de luta acelera para virar desespero no ar.
+            Vector3 swingAxis = Vector3.Cross(hangDir, hangVel);
+            Vector3 axis = swingAxis.sqrMagnitude > 1e-4f ? Vector3.Slerp(actor.right, swingAxis.normalized, 0.5f).normalized : actor.right;
+            float spin = 140f + Mathf.Min(hangVel.magnitude * 90f, 220f);
+            var flail = grabTakeActor.GetComponentInChildren<Animator>();
+            if (flail != null) flail.speed = 1.8f;
             for (float t = 0f; t < grabTakeFallTime; t += Time.deltaTime)
             {
                 float dt = Time.deltaTime;
                 velocity += Physics.gravity * dt;
                 actor.position += velocity * dt;
-                // Tomba para trás em volta do próprio peito, acelerando.
                 Vector3 pivot = grabTakeActorNeck != null ? grabTakeActorNeck.position : actor.position;
-                actor.RotateAround(pivot, axis, -Mathf.Lerp(120f, 260f, t / grabTakeFallTime) * dt);
+                actor.RotateAround(pivot, axis, -spin * Mathf.Lerp(1f, 1.4f, t / grabTakeFallTime) * dt);
 
                 if (grabTakeActorHead != null && holder != null)
                     body.position = grabTakeActorHead.position - body.rotation * holder.localPosition;
@@ -1187,6 +1253,7 @@ namespace TheDelivery.Narrative
 
                 if (!hidden && t >= hideAt)
                 {
+                    EndRedWorld(); // o mundo vermelho sai com o olho fechado (GrabRedWorld.cs)
                     HideFallObjects();
                     hidden = true;
                 }
@@ -2063,7 +2130,11 @@ namespace TheDelivery.Narrative
 
         private void EndGrab()
         {
+            EndMoonScene();
+            EndRedWorld();
             StopDazeRing();
+            EndSlowMo();
+            holdTremor = false;
             EndLaugh();
             EndGrabTake();
             if (!grabStaged)

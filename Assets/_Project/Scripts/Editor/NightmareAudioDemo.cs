@@ -113,7 +113,7 @@ namespace TheDelivery.EditorTools
                 var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
                 Object.DontDestroyOnLoad(rec.gameObject);
                 rec.RenderActiveCamera = true; // 1080p pela câmera ativa (segue o take em 3ª pessoa), com a UI
-                rec.Begin(fallOnly ? 60f : Duration, 24, true);
+                rec.Begin(fallOnly ? 85f : Duration, 24, true); // 85: cabe a cena da lua (lenta) no fim (2026-11-20)
                 rec.StartCoroutine(Script(director, player));
             }
             EditorApplication.update += Tick;

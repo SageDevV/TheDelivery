@@ -19,6 +19,9 @@ namespace TheDelivery.Narrative
     public sealed partial class NightmareDirector
     {
         private const float LaughLookDownTime = 0.9f;
+        // Fração do grito em que o riso entra: no ClearScream_Grab (2,85 s, fade nos últimos 0,6 s) o grito sustenta até ~2,2 s e
+        // depois some.
+        private const float ScreamLaughCue = 0.75f;
         private const float LaughZoomTime = 0.85f;
 
         private Canvas redFlashCanvas;
@@ -47,10 +50,14 @@ namespace TheDelivery.Narrative
             Transform holder = playerController.CameraHolder;
 
             // --- 1. A criatura abaixa a cabeça e olha para ela (nos olhos da Clear) ---
+            // ENQUANTO ELA GRITA: o grito acabou de começar (BeatTheGrab). A cabeça desce em
+            // LaughLookDownTime e a encarada se sustenta até o grito virar soluço (ScreamLaughCue do
+            // clipe) — o riso entra por cima do fim do grito, não atropelando o pico dele.
+            float lookHold = Mathf.Max(LaughLookDownTime, screamSound != null ? screamSound.length * ScreamLaughCue : 0f);
             Quaternion eyes = holder != null ? holder.rotation : Quaternion.identity;
-            for (float t = 0f; t < LaughLookDownTime; t += Time.deltaTime)
+            for (float t = 0f; t < lookHold; t += Time.deltaTime)
             {
-                laughLookWeight = Mathf.SmoothStep(0f, 1f, t / LaughLookDownTime);
+                laughLookWeight = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / LaughLookDownTime));
                 if (holder != null)
                 {
                     Vector3 dir = FaceCenter() - holder.position;
@@ -72,12 +79,10 @@ namespace TheDelivery.Narrative
             PlaySfx(grabLaughSound, grabLaughVolume);
             laughShaking = true;
             laughStart = Time.time;
-            EnsureRedFlashOverlay();
             float total = Mathf.Max(LaughZoomTime + 1.2f, laughLength);
             for (float t = 0f; t < total; t += Time.deltaTime)
             {
                 laughZoom = Mathf.SmoothStep(0f, 1f, t / LaughZoomTime);
-                SetRedFlash(RedFlashAmount(t));
                 yield return null;
             }
 
@@ -144,7 +149,8 @@ namespace TheDelivery.Narrative
                 Vector3 pos = Vector3.Lerp(laughCamFrom, end, laughZoom);
                 Quaternion lookFace = Quaternion.LookRotation(center - pos, Vector3.up);
                 Quaternion rot = Quaternion.Slerp(laughCamFromRot, lookFace, Mathf.Clamp01(laughZoom * 3f));
-                laughCloseCamera.transform.SetPositionAndRotation(pos, rot);
+                CinemaUpdate(laughCloseCamera, center, out Vector3 shakePos, out Quaternion shakeRot);
+                laughCloseCamera.transform.SetPositionAndRotation(pos + shakePos * laughZoom, rot * Quaternion.Slerp(Quaternion.identity, shakeRot, laughZoom));
                 laughCloseCamera.fieldOfView = Mathf.Lerp(laughCloseFovFrom, grabLaughFov, laughZoom);
             }
         }
@@ -192,6 +198,7 @@ namespace TheDelivery.Narrative
                 laughHiddenCamera = dream;
             }
             laughCloseCamera.nearClipPlane = 0.03f;
+            CinemaBegin(laughCloseCamera, 0.7f, 2.5f); // luz por baixo (do lado dela) e contorno vermelho atrás da cabeça
             go.transform.SetPositionAndRotation(laughCamFrom, laughCamFromRot);
             laughZoom = 0f;
 
@@ -203,6 +210,7 @@ namespace TheDelivery.Narrative
 
         private void EndLaughClose()
         {
+            CinemaEnd();
             laughShaking = false;
             SetRedFlash(0f);
             if (laughHiddenCamera != null)

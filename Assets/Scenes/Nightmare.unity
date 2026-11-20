@@ -716,6 +716,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f73eee77128684d48b0074902471593f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Narrative.PesadeloDirector
+  moonEnding: 1
+  moonRumbleSound: {fileID: 8300000, guid: 65e2b03dc72725d489af33fb1d03735b, type: 3}
+  moonImpactSound: {fileID: 0}
+  moonPantingSound: {fileID: 8300000, guid: d1c5d6aaa1e1a45488fe3fc8421af8a2, type: 3}
+  moonScreamSound: {fileID: 8300000, guid: 81cd4fe2ad638ab4c900ef19c900237f, type: 3}
+  moonWindSound: {fileID: 8300000, guid: 667582f5c7cff9045b56c354ecede86a, type: 3}
+  moonRequiem: {fileID: 8300000, guid: b51fe715f97b8af4bba9a61f3dfa0742, type: 3}
   playerController: {fileID: 1506943491}
   playerInteraction: {fileID: 1506943486}
   standUpPrompt: {fileID: 0}
@@ -806,8 +813,17 @@ MonoBehaviour:
   grabHeadBone: {fileID: 1720468500}
   grabLookAtCreature: 1
   grabTurnDuration: 0.5
-  screamSound: {fileID: 8300000, guid: 2aaabeb67515d4942b1ea357991e8963, type: 3}
+  screamSound: {fileID: 8300000, guid: 79649535ec92c284b90b33fed218ef3f, type: 3}
   screamVolume: 1
+  grabLaughFocus: 1
+  grabLaughSound: {fileID: 8300000, guid: 5d9ecf834e16ef847bef16ee6517ae3d, type: 3}
+  grabLaughVolume: 1
+  grabLaughDuration: 4.6
+  grabLaughFov: 38
+  grabLaughCloseDistance: 1.15
+  grabRedFlashRate: 7
+  grabRedFlashColor: {r: 0.75, g: 0, b: 0, a: 0.6}
+  grabLaughHeadShake: 7
   grabDropSlide: 0.25
   grabContactNormalizedTime: 0.27751195
   grabReleaseNormalizedTime: 0.4832536

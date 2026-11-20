@@ -164,6 +164,12 @@ namespace TheDelivery.Player
                 renderTarget = new RenderTexture(RenderSize.x, RenderSize.y, 24, RenderTextureFormat.ARGB32);
             }
 
+            // O quadro de destino ANTES de converter as telas sobrepostas: com a câmera ainda na janela do
+            // Editor (achatada), o canvas era dimensionado para ela e cobria só uma faixa do quadro 16:9
+            // (o clarão aparecia como um retângulo). 2026-11-20.
+            var prevTarget = cam.targetTexture;
+            cam.targetTexture = renderTarget;
+
             overlayCanvases.Clear();
             foreach (var cv in FindObjectsByType<Canvas>(FindObjectsInactive.Exclude))
                 if (cv.isRootCanvas && cv.enabled && cv.renderMode == RenderMode.ScreenSpaceOverlay)
@@ -171,12 +177,13 @@ namespace TheDelivery.Player
                     overlayCanvases.Add(cv);
                     cv.renderMode = RenderMode.ScreenSpaceCamera;
                     cv.worldCamera = cam;
-                    cv.planeDistance = cam.nearClipPlane + 0.02f;
+                    cv.planeDistance = cam.nearClipPlane + 0.001f; // colado na lente: nada da cena passa na frente da UI
                 }
             Canvas.ForceUpdateCanvases();
 
-            var prevTarget = cam.targetTexture;
-            cam.targetTexture = renderTarget;
+            // limpa de preto: uma câmera com recorte (tela larga) não pinta as faixas
+            var prevActive = RenderTexture.active;
+            RenderTexture.active = renderTarget; GL.Clear(true, true, Color.black); RenderTexture.active = prevActive;
             cam.Render();
             cam.targetTexture = prevTarget;
 

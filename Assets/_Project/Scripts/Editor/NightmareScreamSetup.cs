@@ -28,7 +28,7 @@ namespace TheDelivery.EditorTools
     /// </summary>
     public static class NightmareScreamSetup
     {
-        private const string ClipPath = "Assets/_Project/SoundEffects/WomanScream.mp3";
+        private const string ClipPath = "Assets/_Project/SoundEffects/ClearScream_Grab.wav"; // regravado 2026-11-19 (ElevenLabs); o antigo WomanScream estourava
 
         [MenuItem("Tools/The Delivery/Nightmare - Grito ao Ver a Criatura")]
         private static void Run()

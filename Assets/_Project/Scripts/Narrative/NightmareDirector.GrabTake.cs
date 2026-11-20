@@ -20,6 +20,8 @@ namespace TheDelivery.Narrative
         private bool grabTakeThrown;
         private Vector3 grabTakeFrom, grabTakeTo, grabTakeLook;
         private float grabTakeStart;
+        private Vector3 grabTakeLookNow;
+        private bool grabTakeLookPrimed;
         // A NÉVOA DO SONHO (DreamFog) segue o jogador — que no take está pendurado com a Clear — e
         // vira bolhas brancas entre a câmera de fora e a cena. Escondida só durante o take.
         private readonly System.Collections.Generic.List<ParticleSystemRenderer> grabTakeHiddenFog = new System.Collections.Generic.List<ParticleSystemRenderer>();
@@ -43,6 +45,8 @@ namespace TheDelivery.Narrative
             grabTakeActorHead = FindHeadBone(grabTakeActor.transform);
             grabTakeActorNeck = grabTakeActorHead != null ? grabTakeActorHead.parent : null;
             grabTakeThrown = false;
+            grabTakeLookPrimed = false;
+            ResetHang();
 
             var go = new GameObject("GrabTakeCamera");
             grabTakeCamera = go.AddComponent<Camera>();
@@ -67,6 +71,8 @@ namespace TheDelivery.Narrative
                     if (r.enabled) { r.enabled = false; grabTakeHiddenFog.Add(r); }
 
             FrameGrabTake();
+            CinemaBegin(grabTakeCamera, 1.6f, 3f);
+            CinemaKick(0.6f); // a mão fechando no pescoço dela
             grabTakeCamera.transform.SetPositionAndRotation(grabTakeFrom, Quaternion.LookRotation(grabTakeLook - grabTakeFrom, Vector3.up));
 
             if (dream != null)
@@ -127,17 +133,22 @@ namespace TheDelivery.Narrative
             // a criatura a segura no alto.
             float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - grabTakeStart) / (2f + Mathf.Max(0f, grabHoldDuration))));
             Vector3 pos = Vector3.Lerp(grabTakeFrom, grabTakeTo, k);
-            Vector3 look = grabTakeLook;
-            if (grabTakeThrown && grabTakeActorNeck != null)
-                look = Vector3.Lerp(grabTakeLook, grabTakeActorNeck.position, 0.75f);
-            Quaternion want = Quaternion.LookRotation(look - pos, Vector3.up);
-            Quaternion now = grabTakeCamera.transform.rotation;
-            grabTakeCamera.transform.SetPositionAndRotation(pos, grabTakeThrown ? Quaternion.Slerp(now, want, 1f - Mathf.Exp(-8f * Time.deltaTime)) : want);
+            // A CÂMERA ACOMPANHA A CLEAR (refino): o olhar puxa 40% na direção dela enquanto ela sobe e
+            // fica no alto, e 75% quando ela voa — sem perder a criatura do quadro.
+            Vector3 her = grabTakeActorNeck != null ? grabTakeActorNeck.position : grabTakeLook;
+            Vector3 wantLook = Vector3.Lerp(grabTakeLook, her, grabTakeThrown ? 0.75f : 0.4f);
+            grabTakeLookNow = grabTakeLookPrimed ? Vector3.Lerp(grabTakeLookNow, wantLook, 1f - Mathf.Exp(-(grabTakeThrown ? 8f : 3f) * Time.deltaTime)) : wantLook;
+            grabTakeLookPrimed = true;
+            Vector3 subject = Vector3.Lerp(grabHead != null ? grabHead.position : grabTakeLook, her, 0.5f);
+            CinemaUpdate(grabTakeCamera, subject, out Vector3 shakePos, out Quaternion shakeRot);
+            Quaternion want = Quaternion.LookRotation(grabTakeLookNow - pos, Vector3.up);
+            grabTakeCamera.transform.SetPositionAndRotation(pos + shakePos, want * shakeRot);
         }
 
         /// <summary>VOLTA PARA OS OLHOS DELA (e desmonta o take em qualquer saída do beat).</summary>
         private void EndGrabTake()
         {
+            CinemaEnd();
             if (grabTakeHiddenCamera != null)
             {
                 grabTakeHiddenCamera.enabled = true;
