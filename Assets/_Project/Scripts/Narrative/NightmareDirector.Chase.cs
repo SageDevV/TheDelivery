@@ -202,6 +202,7 @@ namespace TheDelivery.Narrative
             // criatura que PERSEGUE está desativada, então essa guarda abortaria o
             // LateUpdate antes de chegar no que importa. São duas criaturas diferentes.
             UpdateRedWorld();
+            UpdateArmExtend(); // braço estendido à frente (antes do tremor e do aperto)
             UpdateHoldTremor(); // ANTES do aperto: o tremor do braço move a palma, e ela vai junto
             if (gripActive)
                 UpdateGrip();
@@ -328,6 +329,10 @@ namespace TheDelivery.Narrative
         /// </summary>
         private bool HasCaughtPlayer(float planarDistance)
         {
+            // Perto o bastante = ataque (2026-11-22): a criatura nova tem ~4,5 m e o braço alcança antes de o corpo encostar.
+            if (attackTriggerDistance > 0f && planarDistance <= attackTriggerDistance)
+                return true;
+
             if (UseContactCatch())
                 return CreatureTouchesPlayer(creatureCollider);
 

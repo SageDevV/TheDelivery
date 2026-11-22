@@ -235,23 +235,17 @@ namespace TheDelivery.Narrative
 
             // Ela sobe com o braço — o UpdateGrip a mantém na palma — até o ÁPICE, e ali a
             // criatura a SEGURA no alto: a pausa dramática antes do arremesso.
+            // --- 3. A SOLTURA (refeito 2026-11-20, animação nova do Meshy): a criatura a ergue com o braço
+            // estendido À FRENTE, sustenta (pausa dramática) e ABRE A MÃO no ponto medido no clipe
+            // (NightmareGrabExtendRebuild). Sem arremesso: ela só cai.
             yield return WaitForClipTime(grabHoldNormalizedTime);
             yield return DramaticHold();
-
-            // O arco: a mão abre no ponto mais rápido dele (medido no clipe).
             yield return WaitForClipTime(grabReleaseNormalizedTime);
-
-            // --- 3. O arremesso ---
-            // NO MESMO QUADRO da soltura ela sai voando com a velocidade da mão (mais o empurrão
-            // para a frente que a leva para fora da borda). Visto de fora por um instante, depois
-            // corta para os olhos dela, já no ar, continuando a queda de onde ela está.
-            Vector3 throwVelocity = ReleaseVelocity();
-            // O INSTANTE DA SOLTURA: câmera lenta curta, golpe de ar e solavanco de câmera.
+            Vector3 dropVelocity = DropVelocity();
             StartCoroutine(SlowMoRelease());
-            PlayThrowWhoosh();
-            CinemaKick(1f);
+            CinemaKick(0.35f);
             EndGrip();
-            yield return ThrownFall(throwVelocity);
+            yield return ThrownFall(dropVelocity, gentle: true);
             EndGrabTake();
             yield return FallFromGrab();
 
@@ -688,7 +682,7 @@ namespace TheDelivery.Narrative
         /// velocidade normal num estalo (0,1 s) — o arremesso sai com toda a força. Ela continua
         /// pendurada na palma (o UpdateGrip não para) e o modelo dela continua se debatendo.
         /// </summary>
-        private IEnumerator DramaticHold()
+        private IEnumerator DramaticHold(bool keepFrozen = false)
         {
             if (grabAnimator == null || grabHoldDuration <= 0f)
                 yield break;
@@ -704,6 +698,12 @@ namespace TheDelivery.Narrative
             holdTremor = true; // respiração e tremor de força no braço durante a pausa (UpdateHoldTremor)
             yield return new WaitForSeconds(grabHoldDuration);
             holdTremor = false;
+            if (keepFrozen)
+            {
+                // congela no ápice: o braço fica estendido no alto depois que a mão abre
+                grabAnimator.speed = 0f;
+                yield break;
+            }
             for (float t = 0f; t < 0.1f; t += Time.deltaTime)
             {
                 grabAnimator.speed = Mathf.Lerp(slow, normal, t / 0.1f);
@@ -814,6 +814,35 @@ namespace TheDelivery.Narrative
         }
 
         /// <summary>
+        /// A VELOCIDADE DA SOLTURA (sem arremesso): zero, ela só cai. Se a palma ainda estiver sobre o
+        /// chão do corredor, um deslize horizontal mínimo na direção do abismo (o bastante para passar
+        /// da borda em ~0,7 s, no máximo 3,5 m/s) — senão ela cairia no corredor.
+        /// </summary>
+        private Vector3 DropVelocity()
+        {
+            if (creatureGrabObject == null) return Vector3.zero;
+            Vector3 palm = Palm();
+            Vector3 forward = creatureGrabObject.transform.forward; forward.y = 0f;
+            if (forward.sqrMagnitude < 1e-4f) return Vector3.zero;
+            forward.Normalize();
+            for (float s = 0f; s <= 6f; s += 0.2f)
+            {
+                Vector3 p = palm + forward * s;
+                bool floor = false;
+                foreach (var h in Physics.RaycastAll(p, Vector3.down, 12f, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    Transform tr = h.collider.transform;
+                    if (tr.IsChildOf(creatureGrabObject.transform)) continue;
+                    if (playerController != null && tr.IsChildOf(playerController.transform)) continue;
+                    floor = true; break;
+                }
+                if (!floor)
+                    return s <= 0f ? Vector3.zero : forward * Mathf.Min((s + 0.5f) / 0.7f, 3.5f);
+            }
+            return forward * 3.5f;
+        }
+
+        /// <summary>
         /// A VELOCIDADE DO ARREMESSO no quadro da soltura: a da mão no golpe para baixo (medida no
         /// clipe pelo NightmareGrabRebuild, guardada no espaço da criatura) mais um empurrão para a
         /// FRENTE dela (<see cref="grabThrowForward"/>) — o golpe do clipe é para baixo e um pouco
@@ -843,7 +872,7 @@ namespace TheDelivery.Narrative
         /// cabeça do modelo — é dali que a queda em 1ª pessoa continua, sem teletransporte.
         /// Sem o take (desligado ou sem modelo), não há nada para mostrar: devolve na hora.
         /// </summary>
-        private IEnumerator ThrownFall(Vector3 velocity)
+        private IEnumerator ThrownFall(Vector3 velocity, bool gentle = false)
         {
             if (grabTakeActor == null || grabTakeFallTime <= 0f)
                 yield break;
@@ -857,9 +886,10 @@ namespace TheDelivery.Narrative
             // e ela se debate mais rápido — a animação de luta acelera para virar desespero no ar.
             Vector3 swingAxis = Vector3.Cross(hangDir, hangVel);
             Vector3 axis = swingAxis.sqrMagnitude > 1e-4f ? Vector3.Slerp(actor.right, swingAxis.normalized, 0.5f).normalized : actor.right;
-            float spin = 140f + Mathf.Min(hangVel.magnitude * 90f, 220f);
+            // solta (não lançada): gira pouco, só o que o balanço do corpo traz
+            float spin = gentle ? 35f + Mathf.Min(hangVel.magnitude * 30f, 60f) : 140f + Mathf.Min(hangVel.magnitude * 90f, 220f);
             var flail = grabTakeActor.GetComponentInChildren<Animator>();
-            if (flail != null) flail.speed = 1.8f;
+            if (flail != null) flail.speed = gentle ? 1.4f : 1.8f;
             for (float t = 0f; t < grabTakeFallTime; t += Time.deltaTime)
             {
                 float dt = Time.deltaTime;
@@ -2130,6 +2160,7 @@ namespace TheDelivery.Narrative
 
         private void EndGrab()
         {
+            EndArmExtend();
             EndMoonScene();
             EndRedWorld();
             StopDazeRing();

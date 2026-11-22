@@ -106,16 +106,20 @@ namespace TheDelivery.Narrative
 
             Vector3 best = Vector3.zero; float bestFree = -1f;
             foreach (float side in new[] { 1f, -1f })
-            foreach (float yaw in new[] { grabTakeYaw, grabTakeYaw * 0.6f, 0f })
+            // DE PERFIL (2026-11-20): com o braço estendido à frente, de frente ele apontava para a lente e
+            // sumia em perspectiva; de lado ele aparece reto, com a Clear pendurada na ponta.
+            foreach (float yaw in new[] { 80f, 70f, 55f })
             {
                 Vector3 dir = Quaternion.AngleAxis(side * yaw, Vector3.up) * forward;
                 Vector3 target = new Vector3(mid.x, floorY + grabTakeHeight, mid.z) + dir * grabTakeDistance;
-                float free = FreeDistance(grabTakeLook, target);
+                // no mundo vermelho o cenário está invisível: paredes não atrapalham a vista
+                float free = redWorldActive ? grabTakeDistance : FreeDistance(grabTakeLook, target);
                 if (free > bestFree) { bestFree = free; best = dir; }
                 if (free >= grabTakeDistance * 0.95f) goto Found;
             }
             Found:
-            float dist = Mathf.Max(2f, Mathf.Min(grabTakeDistance, bestFree));
+            // de perfil, mais perto (a 7 m a ação ficava pequena na tela)
+            float dist = Mathf.Max(2f, Mathf.Min(grabTakeDistance * 0.68f, bestFree));
             grabTakeFrom = new Vector3(mid.x, floorY + grabTakeHeight, mid.z) + best * dist;
             grabTakeTo = grabTakeFrom - best * Mathf.Min(grabTakePush, dist * 0.15f);
             grabTakeStart = Time.time;

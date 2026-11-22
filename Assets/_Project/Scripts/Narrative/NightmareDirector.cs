@@ -280,6 +280,8 @@ namespace TheDelivery.Narrative
         /// </summary>
         [Tooltip("CASA A CADÊNCIA DA ANIMAÇÃO com o Creature Speed, para o pé parar de patinar no chão.")]
         [SerializeField] private bool matchCreatureStride = true;
+        [Tooltip("Passada do clipe de caminhada em m/s NO MUNDO, medida pelo NightmareCreatureSwap pelos pés (o clipe do Meshy anda no lugar, sem root motion). Usada quando o root motion não dá a passada. 0 = não usar.")]
+        [SerializeField] private float creatureClipStrideSpeed = 0f;
         /// <summary>
         /// ALCANÇAR POR CONTATO: a criatura pega a Clear quando os CORPOS se tocam de verdade — o
         /// colisor dela contra a cápsula do CharacterController do player —, em vez de quando os dois
@@ -298,6 +300,8 @@ namespace TheDelivery.Narrative
                  "não decide mais nada disso — vira só a régua do volume do loop da perseguição (o ponto em que ele " +
                  "está no máximo) e a rede de segurança para quando não há colisor.")]
         [SerializeField] private float catchDistance = 1.2f;
+        [Tooltip("ATAQUE POR PROXIMIDADE (2026-11-22): a criatura parte para o ataque assim que chega a esta distância (m, no plano) da Clear — sem precisar encostar. Vale junto com o contato: o que acontecer primeiro.")]
+        [SerializeField] private float attackTriggerDistance = 2.2f;
         [Tooltip("Ser alcançada ENCERRA o sonho: corta direto para o despertar, pulando a queda. É o que impede o beco " +
                  "sem saída de o jogador simplesmente parar e ficar com a criatura grudada nele para sempre. " +
                  "Desligue para um cold open à prova de falha: a criatura passa a frear na Catch Distance e nunca encosta.")]

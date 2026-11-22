@@ -435,6 +435,8 @@ namespace TheDelivery.Narrative
             // Passada ~0 = clipe sem root motion extraído: o avanço está no osso e quem
             // resolve é a reancoragem, não a cadência. Acelerar o Animator por uma
             // divisão por quase-zero mandaria a velocidade para o infinito.
+            if (stride < 0.05f && creatureClipStrideSpeed > 0.05f)
+                stride = creatureClipStrideSpeed; // medida pelos pés no editor (clipe do Meshy, no lugar)
             if (stride < 0.05f)
             {
                 Debug.Log("[NightmareDirector] Passada do clipe não medível pelo root motion (o avanço está no osso). " +

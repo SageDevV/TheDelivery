@@ -52,12 +52,16 @@ namespace TheDelivery.EditorTools
         // "nightmarefallvideo": o mesmo caminho, mas salta direto para a pegada depois do
         // aquecimento — só o fim do prelúdio (pegada, queda, baque, tontura, corte, cafeteria).
         private static bool fallOnly;
+        // "nightmarecaughtvideo" (2026-11-22): anda até o rosnado e NÃO foge — fica parada esperando a
+        // criatura chegar perto, para gravar a caminhada dela e o ataque por proximidade.
+        private static bool caught;
 
         private static void OnPlayReady(string prep)
         {
-            if (prep != "nightmarevideo" && prep != "nightmarefallvideo")
+            if (prep != "nightmarevideo" && prep != "nightmarefallvideo" && prep != "nightmarecaughtvideo")
                 return;
             fallOnly = prep == "nightmarefallvideo";
+            caught = prep == "nightmarecaughtvideo";
 
             // Gravação muda já aconteceu com o "Mute Audio" da Game view ligado: registra o
             // estado e, se estiver mudo, libera só durante a gravação (restaurado ao sair do Play).
@@ -113,7 +117,7 @@ namespace TheDelivery.EditorTools
                 var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
                 Object.DontDestroyOnLoad(rec.gameObject);
                 rec.RenderActiveCamera = true; // 1080p pela câmera ativa (segue o take em 3ª pessoa), com a UI
-                rec.Begin(fallOnly ? 85f : Duration, 24, true); // 85: cabe a cena da lua (lenta) no fim (2026-11-20)
+                rec.Begin(caught ? 75f : fallOnly ? 85f : Duration, 24, true); // 85: cabe a cena da lua (lenta) no fim (2026-11-20)
                 rec.StartCoroutine(Script(director, player));
             }
             EditorApplication.update += Tick;
@@ -159,6 +163,27 @@ namespace TheDelivery.EditorTools
 
             // 2. Espera a corrida ser liberada e FOGE pelo corredor até o fim.
             yield return new WaitUntil(() => director.CurrentBeat != NightmareBeat.TheGrowl || Time.time - t0 > 50f);
+            if (caught)
+            {
+                Ev($"beat {director.CurrentBeat}: parada, esperando a criatura chegar perto");
+                float waitStart = Time.time;
+                var cr = GetPrivate<GameObject>(director, "creatureObject");
+                while (director.CurrentBeat == NightmareBeat.TheChase && Time.time - waitStart < 40f)
+                {
+                    // vira o corpo para a criatura (o take mostra ela vindo), sem andar
+                    if (cr != null) { Vector3 to = cr.transform.position - player.transform.position; to.y = 0f; if (to.sqrMagnitude > 0.01f) player.transform.rotation = Quaternion.RotateTowards(player.transform.rotation, Quaternion.LookRotation(to), 180f * Time.deltaTime); }
+                    yield return null;
+                }
+                Ev($"beat {director.CurrentBeat}: alcançada");
+                InputSystem.RemoveDevice(pad);
+                yield return new WaitUntil(() => director.CurrentBeat == NightmareBeat.TheCut || Time.time - t0 > 68f);
+                Ev($"beat {director.CurrentBeat}");
+                yield return new WaitForSeconds(4f);
+                Ev("CORTE_FIM");
+                Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+                File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+                yield break;
+            }
             Ev($"beat {director.CurrentBeat}: corre (camada da perseguição)");
             float chaseStart = Time.time;
             while ((director.CurrentBeat == NightmareBeat.TheChase) && Time.time - chaseStart < ChaseSeconds)
