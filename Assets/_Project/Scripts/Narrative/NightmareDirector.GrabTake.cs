@@ -46,7 +46,9 @@ namespace TheDelivery.Narrative
             grabTakeActorNeck = grabTakeActorHead != null ? grabTakeActorHead.parent : null;
             grabTakeThrown = false;
             grabTakeLookPrimed = false;
+            grabShot = GrabShot.Master; grabShotActive = false; // v16: a decupagem começa no plano geral
             ResetHang();
+            SetupGrabStruggle(); // v10: ela luta na mão dele (GrabStruggle.cs)
 
             var go = new GameObject("GrabTakeCamera");
             grabTakeCamera = go.AddComponent<Camera>();
@@ -133,6 +135,16 @@ namespace TheDelivery.Narrative
         private void UpdateGrabTake()
         {
             if (grabTakeCamera == null) return;
+            // v16: a DECUPAGEM — no enforcamento, na sacudida, na gargalhada e na encarada a câmera corta para o
+            // plano daquela ação (GrabShots.cs). Fora deles segue o plano geral abaixo.
+            if (UpdateGrabShot(out Vector3 shotPos, out Quaternion shotRot, out float shotFov, out Vector3 shotSubject))
+            {
+                CinemaUpdate(grabTakeCamera, shotSubject, out Vector3 sp, out Quaternion sr);
+                grabTakeCamera.fieldOfView = shotFov;
+                grabTakeCamera.transform.SetPositionAndRotation(shotPos + sp, shotRot * sr);
+                return;
+            }
+            grabTakeCamera.fieldOfView = grabTakeFov;
             // A aproximação dura a subida inteira MAIS a pausa dramática: a câmera chega perto enquanto
             // a criatura a segura no alto.
             float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - grabTakeStart) / (2f + Mathf.Max(0f, grabHoldDuration))));
@@ -164,6 +176,8 @@ namespace TheDelivery.Narrative
             if (grabTakeActor != null) Destroy(grabTakeActor);
             grabTakeCamera = null;
             grabTakeActor = null;
+            grabStruggle = null;
+            CleanupGrabBlood();
             grabTakeActorHead = null;
             grabTakeActorNeck = null;
             grabTakeThrown = false;

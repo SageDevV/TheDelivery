@@ -206,6 +206,7 @@ namespace TheDelivery.Narrative
             UpdateHoldTremor(); // ANTES do aperto: o tremor do braço move a palma, e ela vai junto
             if (gripActive)
                 UpdateGrip();
+            UpdateGrabBlood(); // v13: gotas de sangue do pescoço dela (depois do aperto: o pescoço já no lugar)
             UpdateGrabTake(); // depois do aperto: a Clear do take segue onde ele a pôs
             UpdateLaughHead(); // o riso: a criatura olha para baixo, sacode a cabeça e a câmera do close (depois do Animator)
 

@@ -831,6 +831,10 @@ namespace TheDelivery.Narrative
         [SerializeField] private float grabWindupNormalizedTime = 0.62f;
         [Tooltip("Tempo normalizado em que a criatura solta o pescoço e GARGALHA com ela ainda no ar (v5). Medido pelo NightmareGrabExtendRebuild.")]
         [SerializeField] private float grabHeldLaughNormalizedTime = 0.47f;
+        [Tooltip("Tempo normalizado em que a criatura SACODE a Clear no meio do enforcamento (tranco de câmera). Medido pelo NightmareGrabExtendRebuild.")]
+        [SerializeField] private float grabShakeNormalizedTime = 0.32f;
+        [Tooltip("Tempo normalizado em que a gargalhada corta e a cabeça volta a encará-la. Medido pelo NightmareGrabExtendRebuild.")]
+        [SerializeField] private float grabLaughEndNormalizedTime = 0.64f;
         [Tooltip("A gargalhada da criatura com ela suspensa (entre o enforcamento e o arremesso).")]
         [SerializeField] private AudioClip grabHeldLaughSound;
         [SerializeField, Range(0f, 1f)] private float grabHeldLaughVolume = 0.85f;
@@ -872,6 +876,29 @@ namespace TheDelivery.Narrative
         [SerializeField] private bool grabThirdPerson = true;
         [Tooltip("Prefab da Clear pendurada (ClearHeld: modelo inteiro + animação se debatendo).")]
         [SerializeField] private GameObject grabTakeModel;
+        /// <summary>
+        /// v10 (2026-11-23): a Clear do take LUTA por cima do clipe — mãos no pulso dele, chutes, corpo
+        /// mole na sacudida, cada vez mais fraca na gargalhada, debatendo-se no voo (ClearStruggle +
+        /// NightmareDirector.GrabStruggle.cs). Desligado = só o clipe "Held".
+        /// </summary>
+        [Tooltip("Liga a luta procedural da Clear no take (mãos no pulso dele, chutes, voo).")]
+        [SerializeField] private bool grabTakeStruggle = true;
+        /// <summary>
+        /// v13/v14 (2026-11-23): no enforcamento as garras ferem o pescoço dela e sai sangue — respingos no aperto,
+        /// na sacudida e no giro, um filete escorrendo da nuca, gotejar e uma mancha que cresce no moletom
+        /// (NightmareDirector.GrabBlood.cs). A quantidade foi aumentada a pedido do usuário ("deve sair mais sangue").
+        /// </summary>
+        /// <summary>
+        /// v16 (2026-11-23): DECUPAGEM do take — a câmera corta para o plano de cada ação (plano a dois no
+        /// enforcamento, contra-plongée aberto na sacudida, close de baixo na gargalhada, por cima do ombro
+        /// dele na encarada); bote, subida, arremesso e voo ficam no plano geral. NightmareDirector.GrabShots.cs.
+        /// </summary>
+        [Tooltip("Liga a decupagem do take (cortes para o plano de cada ação do agarrão).")]
+        [SerializeField] private bool grabTakeShots = true;
+        [Tooltip("Liga as gotas de sangue do pescoço dela no enforcamento.")]
+        [SerializeField] private bool grabBlood = true;
+        [Tooltip("Material das gotas (BloodDrop, criado pelo NightmareBloodSetup). Vazio = um material simples criado na hora.")]
+        [SerializeField] private Material grabBloodMaterial;
         [Tooltip("Distância (m) da câmera ao meio entre a criatura e a Clear.")]
         [SerializeField] private float grabTakeDistance = 4.2f;
         [Tooltip("Ângulo (graus) da câmera em torno do eixo criatura→Clear. 90 = de lado.")]

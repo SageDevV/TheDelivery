@@ -169,13 +169,17 @@ namespace TheDelivery.Narrative
         private IEnumerator SlowMoRelease()
         {
             slowMoActive = true;
-            float[] dur = { 0.08f, 0.35f, 0.3f };
-            for (int phase = 0; phase < 3; phase++)
+            // v11: 0,1 s em velocidade NORMAL antes de desacelerar. Com a câmera lenta no quadro da soltura,
+            // os pés dela (o corpo vem atrasado no chicote, apontando para ele) ficavam "parados" em cima da
+            // cabeça da criatura — parecia que ela estava em pé nela. Assim a soltura sai com toda a força,
+            // ela se afasta, e o tempo para já com ela no ar.
+            float[] dur = { 0.1f, 0.08f, 0.35f, 0.3f };
+            for (int phase = 0; phase < 4; phase++)
             {
                 for (float t = 0f; t < dur[phase]; t += Time.unscaledDeltaTime)
                 {
                     float k = t / dur[phase];
-                    Time.timeScale = phase == 0 ? Mathf.Lerp(1f, 0.3f, k) : phase == 1 ? 0.3f : Mathf.Lerp(0.3f, 1f, Mathf.SmoothStep(0f, 1f, k));
+                    Time.timeScale = phase == 0 ? 1f : phase == 1 ? Mathf.Lerp(1f, 0.3f, k) : phase == 2 ? 0.3f : Mathf.Lerp(0.3f, 1f, Mathf.SmoothStep(0f, 1f, k));
                     yield return null;
                 }
             }

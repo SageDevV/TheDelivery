@@ -176,6 +176,8 @@ namespace TheDelivery.EditorTools
                 so.FindProperty("grabChokeNormalizedTime").floatValue = lastChokeN;
                 so.FindProperty("grabWindupNormalizedTime").floatValue = lastWindupN;
                 so.FindProperty("grabHeldLaughNormalizedTime").floatValue = lastHeldLaughN;
+                so.FindProperty("grabShakeNormalizedTime").floatValue = lastShakeN;
+                so.FindProperty("grabLaughEndNormalizedTime").floatValue = lastLaughEndN;
                 so.FindProperty("grabHoldSpeed").floatValue = 0.05f;
                 so.FindProperty("grabHoldDuration").floatValue = 0f; // a sustentação (com tremor) já está no clipe
                 so.FindProperty("grabThrowVelocity").vector3Value = throwVel;
@@ -215,7 +217,7 @@ namespace TheDelivery.EditorTools
                                     out Vector3 palmAtContact, out Vector3 palmAtRelease, out Vector3 throwVel, out float apexH, out float holdN, StringBuilder report)
             => Measure(model, clip, out contactN, out releaseN, out palmAtContact, out palmAtRelease, out throwVel, out apexH, out holdN, out _, out _, report);
 
-        private static float lastChokeN, lastWindupN, lastHeldLaughN;
+        private static float lastChokeN, lastWindupN, lastHeldLaughN, lastShakeN, lastLaughEndN;
         private static bool Measure(GameObject model, AnimationClip clip, out float contactN, out float releaseN,
                                     out Vector3 palmAtContact, out Vector3 palmAtRelease, out Vector3 throwVel, out float apexH, out float holdN, out float chokeN, out float windupN, StringBuilder report)
         {
@@ -255,20 +257,26 @@ namespace TheDelivery.EditorTools
                 // embalo 5,55 · ARREMESSO para o alto, solta em 6,30 (a mão subindo rápido).
                 // v5 (2026-11-22, motion2/authorgrab3.py): depois do enforcamento ela continua no ar e a criatura GARGALHA
                 // (5,5–8,4: solta o pescoço, cabeça e tronco para trás, braço esquerdo aberto) · embalo 8,55 · solta em 9,20.
-                int contact = At(1.35f), hold = At(2.5f), release = At(9.47f), apex = release; // v6: GESTO DE ARREMESSO — arma o braço por cima do ombro 8,3–9,4 e chicoteia para a frente; solta no meio do chicote // no MEIO do arremesso (a mão no auge da velocidade; nas chaves ela para)
-                chokeN = At(3.25f) / (float)n; windupN = At(9.25f) / (float)n; /* rugido no chicote */ lastHeldLaughN = At(5.70f) / (float)n;
+                int contact = At(1.35f), hold = At(2.5f), release = At(9.54f), apex = release; // v8: o pico do chicote (com a mola) caiu em 9,57–9,60 // v6: GESTO DE ARREMESSO — arma o braço por cima do ombro 8,3–9,4 e chicoteia para a frente; solta no meio do chicote // no MEIO do arremesso (a mão no auge da velocidade; nas chaves ela para)
+                chokeN = At(3.25f) / (float)n; windupN = At(9.05f) / (float)n; /* v9: o rugido cresce ~0,45 s -> pico na soltura */ /* rugido no chicote */ lastHeldLaughN = At(5.70f) / (float)n;
+                // v8 (motion2/authorgrab5.py): SACODE no meio do enforcamento (3,95) e a gargalhada CORTA seco e encara (7,95)
+                lastShakeN = At(3.95f) / (float)n; lastLaughEndN = At(8.0f) / (float)n; // v15: a última sílaba da risada nova cai em ~8,0 s
                 contactN = contact / (float)n;
                 releaseN = release / (float)n;
                 holdN = hold / (float)n;
                 palmAtContact = palm[contact];
                 palmAtRelease = palm[release];
-                throwVel = (palm[Mathf.Min(n, release + 1)] - palm[Mathf.Max(0, release - 1)]) / (2f * dt) * 0.85f; // v6: arremesso para LONGE // a velocidade da mão no arremesso (60%: a criatura a lança, mas ela não vira projétil)
+                Vector3 hv = (palm[Mathf.Min(n, release + 1)] - palm[Mathf.Max(0, release - 1)]) / (2f * dt);
+                // v9: o chicote termina cruzando para DENTRO -> ela passava por cima da cabeça da criatura. Fica só
+                // frente + cima da mão, com um leve desvio para FORA (do lado da mão), força fixa de 9,3 m/s.
+                float outward = Mathf.Sign(palm[release].x == 0f ? 1f : palm[release].x) * 0.12f * new Vector2(hv.y, hv.z).magnitude;
+                throwVel = new Vector3(outward, hv.y, hv.z).normalized * 9.3f;
                 apexH = palm[apex].y;
                 report.AppendLine($"Clipe '{clip.name}': {clip.length:0.00} s, {n} amostras.");
                 report.AppendLine($"CONTATO t={contact * dt:0.00}s (norm {contactN:0.000}), palma {palmAtContact:F2}.");
                 report.AppendLine($"SUSTENTAÇÃO t={hold * dt:0.00}s (norm {holdN:0.000}); ÁPICE {apexH:0.00} m em t={apex * dt:0.00}s.");
                 lastChokeN = chokeN; lastWindupN = windupN;
-                report.AppendLine($"ENFORCA norm {chokeN:0.000}; GARGALHADA norm {lastHeldLaughN:0.000}; EMBALO norm {windupN:0.000}; velocidade da mão na soltura {throwVel:F2} m/s.");
+                report.AppendLine($"ENFORCA norm {chokeN:0.000}; SACODE norm {lastShakeN:0.000}; GARGALHADA norm {lastHeldLaughN:0.000}–{lastLaughEndN:0.000}; EMBALO norm {windupN:0.000}; velocidade da mão na soltura {throwVel:F2} m/s.");
                 report.AppendLine($"SOLTURA t={release * dt:0.00}s (norm {releaseN:0.000}), palma {palmAtRelease:F2}.");
                 return true;
             }

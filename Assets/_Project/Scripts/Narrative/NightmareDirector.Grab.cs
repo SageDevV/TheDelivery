@@ -245,19 +245,31 @@ namespace TheDelivery.Narrative
             PlaySfx(grabChokeSound, grabChokeVolume);
             PlaySfx(grabChokeVoice, grabChokeVoiceVolume);
             CinemaKick(0.2f);
+            StruggleJolt(1f); // v10: o aperto fecha e o corpo dela convulsiona
+            BeginGrabBlood(); // v13: as garras ferem o pescoço — o primeiro respingo e o gotejar (GrabBlood.cs)
+            // v8: no meio do enforcamento ele a SACODE (o movimento está no clipe)
+            yield return WaitForClipTime(grabShakeNormalizedTime);
+            CinemaKick(0.25f);
+            PlaySfx(grabChokeSound, grabChokeVolume * 0.85f); // o aperto range de novo na sacudida
+            BloodBurst(16, 0.6f, 1.6f); // v14: a sacudida joga sangue (as gotas herdam a velocidade do pescoço)
             // v5: solta o pescoço e GARGALHA com ela ainda suspensa (o gesto está no clipe)
             yield return WaitForClipTime(grabHeldLaughNormalizedTime);
             PlaySfx(grabHeldLaughSound, grabHeldLaughVolume);
             CinemaKick(0.15f);
+            StruggleJolt(0.45f); // v10: ela se encolhe com o estouro da risada
             StartCoroutine(FadeLaughLook(0f, 0.35f)); // larga o olhar nela: a cabeça vai para trás na gargalhada (clipe)
+            // v15: a gargalhada TERMINA (a última sílaba e o eco morrendo, sem corte seco) e a cabeça desce até encará-la
+            yield return WaitForClipTime(grabLaughEndNormalizedTime);
+            StartCoroutine(FadeLaughLook(1f, 0.55f)); // v15: a cabeça desce devagar até encará-la (0,22 s era um estalo)
             yield return WaitForClipTime(grabWindupNormalizedTime);
-            StartCoroutine(FadeLaughLook(1f, 0.3f));  // volta a encará-la para o arremesso
             PlaySfx(grabThrowSound, grabThrowVolume);
             yield return WaitForClipTime(grabReleaseNormalizedTime);
             Vector3 dropVelocity = ReleaseVelocity(); // a velocidade da mão no arremesso + o empurrão para o abismo
             StartCoroutine(SlowMoRelease());
             CinemaKick(0.5f);
             EndGrip();
+            StruggleFlight(); // v10: solta o pulso dele e se debate no ar
+            StopGrabBlood(); // v13: o gotejar para; um último respingo sai no embalo
             yield return ThrownFall(dropVelocity, gentle: false);
             EndGrabTake();
             yield return FallFromGrab();
@@ -786,8 +798,10 @@ namespace TheDelivery.Narrative
                 // é puxada para trás no arco.
                 UpdateHang(palm);
                 grabTakeActor.transform.rotation = Quaternion.FromToRotation(Vector3.down, hangDir) * yaw;
+                UpdateGrabStruggleBody(); // v10: tronco, cabeça e pernas lutando — ANTES de prender o pescoço (a coluna o desloca)
                 if (grabTakeActorNeck != null)
                     grabTakeActor.transform.position += palm - grabTakeActorNeck.position;
+                UpdateGrabStruggleArms(); // e as mãos no pulso dele, com os ombros já no lugar final
                 if (grabTakeActorHead != null)
                     body.position = grabTakeActorHead.position - eyeOffset;
                 return;
@@ -806,6 +820,23 @@ namespace TheDelivery.Narrative
         // Ajustado no vídeo: com 70° e a aceleração inteira, o arco da subida a deixava na HORIZONTAL.
         // A mão aperta o pescoço (não é uma corda): o corpo pende no máximo 35° e sente metade do tranco.
         private const float HangStiffness = 22f, HangDamping = 5f, HangMaxAngle = 35f, HangAccelGain = 0.45f;
+        // O GIRO DO ARREMESSO (v11, 2026-11-23): o braço dele passa por cima a ~3,9 rad/s com ~2 m até o
+        // centro do corpo dela — ~32 m/s² de centrífuga, mais de 3 g. Um corpo girado assim NÃO pende: é
+        // jogado para fora, esticado na direção do braço. Com o limite de 35° ela ficava pendurada rente à
+        // cabeça dele e, na câmera de perfil, cobria a cara da criatura. Da armação até a soltura o pêndulo
+        // sente a aceleração inteira, aceita até 140° e é bem mais rígido (simulado no clipe: 7 → 4 quadros
+        // de sobreposição, e por cima da cabeça dele no alto do giro).
+        private const float FlingStiffness = 120f, FlingDamping = 12f, FlingMaxAngle = 140f, FlingAccelGain = 1f;
+
+        /// <summary>0 = pendurada; 1 = no giro do arremesso (de 0,35 s antes do marco de armar até a soltura).</summary>
+        private float HangFlingWeight()
+        {
+            if (grabAnimator == null) return 0f;
+            AnimatorStateInfo st = grabAnimator.GetCurrentAnimatorStateInfo(0);
+            float len = Mathf.Max(0.01f, st.length);
+            float t = st.normalizedTime * len, start = grabWindupNormalizedTime * len - 0.35f;
+            return Mathf.SmoothStep(0f, 1f, (t - start) / 0.2f);
+        }
 
         private void ResetHang()
         {
@@ -824,18 +855,21 @@ namespace TheDelivery.Narrative
                 hangPrimed = true;
                 return;
             }
+            float fling = HangFlingWeight();
             Vector3 v = Vector3.Lerp(hangPalmVel, (palm - hangPalmPrev) / dt, 0.3f);
-            Vector3 accel = Vector3.ClampMagnitude((v - hangPalmVel) / dt, 25f);
+            Vector3 accel = Vector3.ClampMagnitude((v - hangPalmVel) / dt, Mathf.Lerp(25f, 40f, fling));
             hangPalmVel = v;
             hangPalmPrev = palm;
 
-            Vector3 apparent = Physics.gravity - accel * HangAccelGain;
+            Vector3 apparent = Physics.gravity - accel * Mathf.Lerp(HangAccelGain, FlingAccelGain, fling);
             Vector3 target = apparent.sqrMagnitude > 0.01f ? apparent.normalized : Vector3.down;
-            hangVel += ((target - hangDir) * HangStiffness - hangVel * HangDamping) * dt;
+            float stiffness = Mathf.Lerp(HangStiffness, FlingStiffness, fling), damping = Mathf.Lerp(HangDamping, FlingDamping, fling);
+            hangVel += ((target - hangDir) * stiffness - hangVel * damping) * dt;
             hangDir = (hangDir + hangVel * dt).normalized;
+            float maxAngle = Mathf.Lerp(HangMaxAngle, FlingMaxAngle, fling);
             float angle = Vector3.Angle(Vector3.down, hangDir);
-            if (angle > HangMaxAngle)
-                hangDir = Vector3.Slerp(Vector3.down, hangDir, HangMaxAngle / angle).normalized;
+            if (angle > maxAngle)
+                hangDir = Vector3.Slerp(Vector3.down, hangDir, maxAngle / angle).normalized;
         }
 
         /// <summary>

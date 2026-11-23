@@ -30,6 +30,11 @@ namespace TheDelivery.Narrative
         private float laughStart;
         private float laughLookWeight;   // 0..1: quanto a criatura está olhando para baixo, para ela
         private float laughZoom;         // 0..1: posição da câmera entre os olhos dela e o close
+        // OLHAR ORGÂNICO (2026-11-23): o alvo do olhar persegue o rosto dela com atraso — a cabeça nunca trava
+        // seca; em movimento rápido (sacudida, arremesso) ela chega um instante depois, como olho de verdade.
+        private const float LaughLookLag = 0.09f;
+        private Vector3 laughLookTarget, laughLookVel;
+        private bool laughLookPrimed;
         private Transform laughFace, laughFaceTop;
         private Camera laughCloseCamera;
         private Camera laughHiddenCamera;
@@ -120,12 +125,17 @@ namespace TheDelivery.Narrative
             // desse tamanho quebra o pescoço do modelo. Com teto de LaughLookMaxAngle sobre a pose da
             // animação: com ela atrás do ombro (no recuo do arremesso) o giro inteiro torceria a cabeça
             // para trás.
+            if (!laughLookPrimed || (herFace - laughLookTarget).sqrMagnitude > 1f)
+            {   // primeiro quadro ou corte de câmera (o alvo pula dos olhos dela para o modelo): sem varrer a cabeça
+                laughLookTarget = herFace; laughLookVel = Vector3.zero; laughLookPrimed = true;
+            }
+            else laughLookTarget = Vector3.SmoothDamp(laughLookTarget, herFace, ref laughLookVel, LaughLookLag);
             if (laughLookWeight > 0f && laughFace != null)
             {
                 Transform neck = grabHead.parent;
                 if (neck != null)
-                    neck.rotation = Quaternion.Slerp(Quaternion.identity, LookDelta(herFace), 0.5f * laughLookWeight) * neck.rotation;
-                grabHead.rotation = Quaternion.Slerp(Quaternion.identity, LookDelta(herFace), laughLookWeight) * grabHead.rotation;
+                    neck.rotation = Quaternion.Slerp(Quaternion.identity, LookDelta(laughLookTarget), 0.5f * laughLookWeight) * neck.rotation;
+                grabHead.rotation = Quaternion.Slerp(Quaternion.identity, LookDelta(laughLookTarget), laughLookWeight) * grabHead.rotation;
             }
 
             if (laughShaking)
@@ -280,6 +290,7 @@ namespace TheDelivery.Narrative
         {
             EndLaughClose();
             laughLookWeight = 0f;
+            laughLookPrimed = false;
         }
     }
 }
