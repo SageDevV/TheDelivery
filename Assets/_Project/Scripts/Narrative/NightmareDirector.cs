@@ -825,6 +825,24 @@ namespace TheDelivery.Narrative
         [Range(0f, 1f)]
         [Tooltip("Ponto do clipe (0–1) da pausa dramática: o ápice da subida (escrito pelo Refazer o Agarrão).")]
         [SerializeField] private float grabHoldNormalizedTime = 0.47f;
+        [Tooltip("Tempo normalizado do clipe do agarrão em que a OUTRA mão fecha no pescoço (o enforcamento). Medido pelo NightmareGrabExtendRebuild.")]
+        [SerializeField] private float grabChokeNormalizedTime = 0.36f;
+        [Tooltip("Tempo normalizado do embalo antes do arremesso (o rugido de esforço entra aqui).")]
+        [SerializeField] private float grabWindupNormalizedTime = 0.62f;
+        [Tooltip("Tempo normalizado em que a criatura solta o pescoço e GARGALHA com ela ainda no ar (v5). Medido pelo NightmareGrabExtendRebuild.")]
+        [SerializeField] private float grabHeldLaughNormalizedTime = 0.47f;
+        [Tooltip("A gargalhada da criatura com ela suspensa (entre o enforcamento e o arremesso).")]
+        [SerializeField] private AudioClip grabHeldLaughSound;
+        [SerializeField, Range(0f, 1f)] private float grabHeldLaughVolume = 0.85f;
+        [Tooltip("Aperto no pescoço: carne, cartilagem rangendo (toca quando a segunda mão fecha).")]
+        [SerializeField] private AudioClip grabChokeSound;
+        [SerializeField, Range(0f, 1f)] private float grabChokeVolume = 0.9f;
+        [Tooltip("A Clear sendo enforcada: engasgos e falta de ar.")]
+        [SerializeField] private AudioClip grabChokeVoice;
+        [SerializeField, Range(0f, 1f)] private float grabChokeVoiceVolume = 1f;
+        [Tooltip("Rugido de esforço da criatura + o corpo voando (no embalo do arremesso).")]
+        [SerializeField] private AudioClip grabThrowSound;
+        [SerializeField, Range(0f, 1f)] private float grabThrowVolume = 1f;
         [Tooltip("Segundos da pausa dramática com ela erguida no alto, antes do arremesso. 0 = sem pausa.")]
         [SerializeField] private float grabHoldDuration = 2.5f;
         [Range(0f, 0.3f)]

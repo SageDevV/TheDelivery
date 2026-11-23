@@ -240,12 +240,25 @@ namespace TheDelivery.Narrative
             // (NightmareGrabExtendRebuild). Sem arremesso: ela só cai.
             yield return WaitForClipTime(grabHoldNormalizedTime);
             yield return DramaticHold();
+            // v4 (2026-11-22): a OUTRA mão fecha no pescoço — o enforcamento — e depois o arremesso para o alto.
+            yield return WaitForClipTime(grabChokeNormalizedTime);
+            PlaySfx(grabChokeSound, grabChokeVolume);
+            PlaySfx(grabChokeVoice, grabChokeVoiceVolume);
+            CinemaKick(0.2f);
+            // v5: solta o pescoço e GARGALHA com ela ainda suspensa (o gesto está no clipe)
+            yield return WaitForClipTime(grabHeldLaughNormalizedTime);
+            PlaySfx(grabHeldLaughSound, grabHeldLaughVolume);
+            CinemaKick(0.15f);
+            StartCoroutine(FadeLaughLook(0f, 0.35f)); // larga o olhar nela: a cabeça vai para trás na gargalhada (clipe)
+            yield return WaitForClipTime(grabWindupNormalizedTime);
+            StartCoroutine(FadeLaughLook(1f, 0.3f));  // volta a encará-la para o arremesso
+            PlaySfx(grabThrowSound, grabThrowVolume);
             yield return WaitForClipTime(grabReleaseNormalizedTime);
-            Vector3 dropVelocity = DropVelocity();
+            Vector3 dropVelocity = ReleaseVelocity(); // a velocidade da mão no arremesso + o empurrão para o abismo
             StartCoroutine(SlowMoRelease());
-            CinemaKick(0.35f);
+            CinemaKick(0.5f);
             EndGrip();
-            yield return ThrownFall(dropVelocity, gentle: true);
+            yield return ThrownFall(dropVelocity, gentle: false);
             EndGrabTake();
             yield return FallFromGrab();
 
@@ -655,6 +668,18 @@ namespace TheDelivery.Narrative
         /// à pose na tela — exatamente o tipo de atraso que este beat existe para não ter.
         /// Tem teto (3× o clipe): um Animator parado não trava o pesadelo.
         /// </summary>
+        /// <summary>Leva o peso do "olhar para ela" (UpdateLaughHead) até <paramref name="target"/>.</summary>
+        private IEnumerator FadeLaughLook(float target, float duration)
+        {
+            float from = laughLookWeight;
+            for (float t = 0f; t < duration; t += Time.deltaTime)
+            {
+                laughLookWeight = Mathf.SmoothStep(from, target, t / duration);
+                yield return null;
+            }
+            laughLookWeight = target;
+        }
+
         private IEnumerator WaitForClipTime(float normalized)
         {
             if (grabAnimator == null || grabAnimator.runtimeAnimatorController == null || grabAnimator.layerCount == 0)

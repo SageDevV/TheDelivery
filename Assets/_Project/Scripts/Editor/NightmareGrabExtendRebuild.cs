@@ -173,14 +173,18 @@ namespace TheDelivery.EditorTools
                 so.FindProperty("grabContactNormalizedTime").floatValue = contactN;
                 so.FindProperty("grabReleaseNormalizedTime").floatValue = releaseN;
                 so.FindProperty("grabHoldNormalizedTime").floatValue = holdN;
+                so.FindProperty("grabChokeNormalizedTime").floatValue = lastChokeN;
+                so.FindProperty("grabWindupNormalizedTime").floatValue = lastWindupN;
+                so.FindProperty("grabHeldLaughNormalizedTime").floatValue = lastHeldLaughN;
                 so.FindProperty("grabHoldSpeed").floatValue = 0.05f;
-                so.FindProperty("grabHoldDuration").floatValue = 0.8f; // a animação já sustenta ~3 s parada
+                so.FindProperty("grabHoldDuration").floatValue = 0f; // a sustentação (com tremor) já está no clipe
                 so.FindProperty("grabThrowVelocity").vector3Value = throwVel;
                 so.FindProperty("grabPalmReach").floatValue = 0.08f * CreatureScale;
                 so.FindProperty("grabThrowForward").floatValue = push;
                 so.FindProperty("fallStartPoint").objectReferenceValue = null; // a queda começa de onde ela está
                 so.FindProperty("fallBlinkDelay").floatValue = 0.7f;           // vê a criatura na borda antes de piscar
                 so.FindProperty("grabTakeDistance").floatValue = 7f;
+                so.FindProperty("grabTakeFallTime").floatValue = 1.5f; // v6: ver ela voando para longe antes da queda em 1ª pessoa
                 so.FindProperty("grabTakeYaw").floatValue = 35f;
                 so.FindProperty("grabTakeHeight").floatValue = 3.0f; // na altura dela erguida: de baixo, a cabeça da criatura a escondia no ápice
                 so.FindProperty("grabTakeFov").floatValue = 50f;
@@ -209,8 +213,13 @@ namespace TheDelivery.EditorTools
         /// contato, ápice e soltura pela trajetória da palma.</summary>
         private static bool Measure(GameObject model, AnimationClip clip, out float contactN, out float releaseN,
                                     out Vector3 palmAtContact, out Vector3 palmAtRelease, out Vector3 throwVel, out float apexH, out float holdN, StringBuilder report)
+            => Measure(model, clip, out contactN, out releaseN, out palmAtContact, out palmAtRelease, out throwVel, out apexH, out holdN, out _, out _, report);
+
+        private static float lastChokeN, lastWindupN, lastHeldLaughN;
+        private static bool Measure(GameObject model, AnimationClip clip, out float contactN, out float releaseN,
+                                    out Vector3 palmAtContact, out Vector3 palmAtRelease, out Vector3 throwVel, out float apexH, out float holdN, out float chokeN, out float windupN, StringBuilder report)
         {
-            contactN = releaseN = apexH = holdN = 0f; palmAtContact = palmAtRelease = throwVel = Vector3.zero;
+            contactN = releaseN = apexH = holdN = chokeN = windupN = 0f; palmAtContact = palmAtRelease = throwVel = Vector3.zero;
             var go = Object.Instantiate(model);
             go.hideFlags = HideFlags.HideAndDontSave;
             try
@@ -238,25 +247,28 @@ namespace TheDelivery.EditorTools
                 //   SOLTURA   = depois do ápice, a mão desce 10 cm (o braço começa a voltar)
                 // v2 (2026-11-22): a criatura AGACHA e pega a Clear perto do chão → CONTATO = mão mais baixa
                 // nos primeiros 40% do clipe (o fundo do agachamento).
-                int contact = 0;
-                for (int i = 0; i <= (int)(n * 0.4f); i++) if (palm[i].y < palm[contact].y) contact = i;
-                int apex = contact;
-                for (int i = contact; i <= (int)(n * 0.85f); i++) if (palm[i].y > palm[apex].y) apex = i;
-                int hold = apex;
-                float riseTo = Mathf.Lerp(palm[contact].y, palm[apex].y, 0.92f);
-                for (int i = contact; i <= apex; i++) if (palm[i].y >= riseTo) { hold = i; break; }
-                int release = n - 1;
-                for (int i = apex; i < n; i++) if (palm[i].y < palm[apex].y - 0.10f) { release = i; break; }
+                // v3 (2026-11-22): clipe AUTORAL (Blender, motion2/authorgrab.py) — os tempos são do roteiro dele:
+                // olha 0–0,55 s · dobra e estende a mão 0,55–1,3 · FECHA no pescoço 1,35 · ergue até 2,65 ·
+                // sustenta com tremor até 4,4 · levanta o braço num tranco e SOLTA no pico 4,85.
+                int At(float s) => Mathf.Clamp(Mathf.RoundToInt(s / dt), 0, n);
+                // v4 (2026-11-22, motion2/authorgrab2.py): pega 1,35 · ergue até 2,5 · a outra mão ENFORCA 3,25–5,5 ·
+                // embalo 5,55 · ARREMESSO para o alto, solta em 6,30 (a mão subindo rápido).
+                // v5 (2026-11-22, motion2/authorgrab3.py): depois do enforcamento ela continua no ar e a criatura GARGALHA
+                // (5,5–8,4: solta o pescoço, cabeça e tronco para trás, braço esquerdo aberto) · embalo 8,55 · solta em 9,20.
+                int contact = At(1.35f), hold = At(2.5f), release = At(9.47f), apex = release; // v6: GESTO DE ARREMESSO — arma o braço por cima do ombro 8,3–9,4 e chicoteia para a frente; solta no meio do chicote // no MEIO do arremesso (a mão no auge da velocidade; nas chaves ela para)
+                chokeN = At(3.25f) / (float)n; windupN = At(9.25f) / (float)n; /* rugido no chicote */ lastHeldLaughN = At(5.70f) / (float)n;
                 contactN = contact / (float)n;
                 releaseN = release / (float)n;
                 holdN = hold / (float)n;
                 palmAtContact = palm[contact];
                 palmAtRelease = palm[release];
-                throwVel = Vector3.zero; // sem arremesso: ela só é solta
+                throwVel = (palm[Mathf.Min(n, release + 1)] - palm[Mathf.Max(0, release - 1)]) / (2f * dt) * 0.85f; // v6: arremesso para LONGE // a velocidade da mão no arremesso (60%: a criatura a lança, mas ela não vira projétil)
                 apexH = palm[apex].y;
                 report.AppendLine($"Clipe '{clip.name}': {clip.length:0.00} s, {n} amostras.");
                 report.AppendLine($"CONTATO t={contact * dt:0.00}s (norm {contactN:0.000}), palma {palmAtContact:F2}.");
                 report.AppendLine($"SUSTENTAÇÃO t={hold * dt:0.00}s (norm {holdN:0.000}); ÁPICE {apexH:0.00} m em t={apex * dt:0.00}s.");
+                lastChokeN = chokeN; lastWindupN = windupN;
+                report.AppendLine($"ENFORCA norm {chokeN:0.000}; GARGALHADA norm {lastHeldLaughN:0.000}; EMBALO norm {windupN:0.000}; velocidade da mão na soltura {throwVel:F2} m/s.");
                 report.AppendLine($"SOLTURA t={release * dt:0.00}s (norm {releaseN:0.000}), palma {palmAtRelease:F2}.");
                 return true;
             }

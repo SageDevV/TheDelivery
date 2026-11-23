@@ -25,7 +25,7 @@ namespace TheDelivery.EditorTools
     public static class NightmareAudioDemo
     {
         private const float WarmupSeconds = 4f;
-        private const float Duration = 110f;
+        private const float Duration = 145f; // o prelúdio inteiro, incluindo a cena da lua (2026-11-22)
         private const float ChaseSeconds = 9f;
 
         private const string ExitPlayMarker = "Temp/ExitPlay.pending";
