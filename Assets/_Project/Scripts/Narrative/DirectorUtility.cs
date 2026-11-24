@@ -141,5 +141,44 @@ namespace TheDelivery.Narrative
             source.spatialBlend = 0f;
             return source;
         }
+
+        /// <summary>
+        /// Toca um som 2D que SOBREVIVE à troca de cena (a porta da chegada na Road, o elevador da
+        /// Recepção subindo enquanto a tela escurece): fonte própria em DontDestroyOnLoad, destruída
+        /// quando o clipe termina.
+        /// </summary>
+        public static void PlayAcrossSceneChange(AudioClip clip, float volume)
+        {
+            if (clip == null)
+                return;
+            var go = new GameObject($"OneShot_{clip.name}");
+            Object.DontDestroyOnLoad(go);
+            var source = go.AddComponent<AudioSource>();
+            source.spatialBlend = 0f;
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+            Object.Destroy(go, clip.length + 0.1f);
+        }
+
+        /// <summary>
+        /// Um som 3D avulso num ponto do mundo (o telefone do balcão, o balde do zelador): fonte
+        /// temporária, destruída quando o clipe termina. <paramref name="spatial"/> abaixo de 1 deixa
+        /// parte do som "na cabeça" — útil para um susto que precisa bater forte mesmo de longe.
+        /// </summary>
+        public static void PlayAt(AudioClip clip, Vector3 position, float volume, float spatial = 1f, float minDistance = 1.5f, float maxDistance = 18f)
+        {
+            if (clip == null)
+                return;
+            var go = new GameObject($"OneShot3D_{clip.name}");
+            go.transform.position = position;
+            var source = go.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = Mathf.Clamp01(spatial);
+            source.rolloffMode = AudioRolloffMode.Logarithmic;
+            source.minDistance = minDistance;
+            source.maxDistance = maxDistance;
+            source.dopplerLevel = 0f;
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+            Object.Destroy(go, clip.length + 0.1f);
+        }
     }
 }

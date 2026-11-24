@@ -886,17 +886,8 @@ namespace TheDelivery.Narrative
         /// Toca um som 2D que SOBREVIVE à troca de cena (a porta da chegada): fonte própria em
         /// DontDestroyOnLoad, destruída quando o clipe termina.
         /// </summary>
-        private static void PlayAcrossSceneChange(AudioClip clip, float volume)
-        {
-            if (clip == null)
-                return;
-            var go = new GameObject($"OneShot_{clip.name}");
-            DontDestroyOnLoad(go);
-            var source = go.AddComponent<AudioSource>();
-            source.spatialBlend = 0f;
-            source.PlayOneShot(clip, Mathf.Clamp01(volume));
-            Destroy(go, clip.length + 0.1f);
-        }
+        private static void PlayAcrossSceneChange(AudioClip clip, float volume) =>
+            DirectorUtility.PlayAcrossSceneChange(clip, volume); // a mesma rotina do elevador da Recepção
 
         // --- Vigias ------------------------------------------------------------
 

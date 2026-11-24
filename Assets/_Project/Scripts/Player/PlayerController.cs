@@ -866,6 +866,30 @@ namespace TheDelivery.Player
         }
 
         /// <summary>
+        /// O PISO DA CENA (G-02, 2026-11-23): troca os passos para samples avulsos daquele chão (modo
+        /// PerStepClips) — o piso frio da Recepção, por exemplo. Chamado pelo <see cref="SceneFootsteps"/>
+        /// da cena. Volumes negativos mantêm os atuais. Para o loop antigo se estiver tocando.
+        /// </summary>
+        public void SetFootstepSurface(AudioClip[] clips, float walkVolume = -1f, float runVolume = -1f, float crouchVolume = -1f)
+        {
+            if (clips == null || clips.Length == 0)
+                return;
+            footstepMode = FootstepMode.PerStepClips;
+            footstepClips = clips;
+            lastClipIndex = -1;
+            if (walkVolume >= 0f) walkStepVolume = walkVolume;
+            if (runVolume >= 0f) runStepVolume = runVolume;
+            if (crouchVolume >= 0f) crouchStepVolume = crouchVolume;
+            if (footstepSource != null)
+            {
+                footstepSource.Stop();
+                footstepSource.loop = false;
+                footstepSource.clip = null;
+                footstepSource.volume = 1f; // PlayOneShot multiplica pelo volume do source
+            }
+        }
+
+        /// <summary>
         /// Sorteia um clipe evitando repetir o anterior — com poucas variações, é a
         /// repetição IMEDIATA que denuncia a gravação, não a falta de variedade.
         /// </summary>

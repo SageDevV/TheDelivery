@@ -25,9 +25,10 @@ chamado, "boa noite", respiração), nunca falas longas.
 | ID | Evento | Tipo | Campo / componente | Clipe atual | Status | Direção |
 |---|---|---|---|---|---|---|
 | G-01 | Passos da Clear (andar) | SFX loop | `PlayerController.walkLoopClip` | `Walking.mp3` | ✅ | — |
-| G-02 | Passos da Clear por passo (variações) | SFX | `PlayerController.footstepClips[]` | — | ❌ | 4–6 variações por piso: madeira (apê), cerâmica (café/recepção), asfalto (rua), concreto (Escape) |
-| G-03 | Correr / agachar | SFX | — | — | ➕ | Passo mais pesado na corrida; agachar = roupa roçando |
-| G-04 | Respiração da Clear correndo | Voz/SFX loop | — | — | ➕ | Pode reaproveitar `WomanBreathing.mp3` (já usado no Nightmare) |
+| G-02 | Passos da Clear por passo (variações) | SFX | `PlayerController.footstepClips[]` via `SceneFootsteps` (por cena) | Recepção: `ClearFootTile_01..06` | 🟡 | Recepção feita (2026-11-23); faltam madeira (apê), asfalto (rua), concreto (Escape) |
+| G-03 | Correr / agachar | SFX | `ClearBodySounds` (Player.prefab): roupa ao agachar/levantar e ao disparar a correr | `ClearClothRustle_01..03` | ✅ | — |
+| G-04 | Respiração da Clear | Voz/SFX loop | `ClearBodySounds` (Player.prefab): sobe com o fôlego caindo, máxima quando esgota; mudo no Nightmare | `ClearPanting` | ✅ | — |
+| G-05 | **Susto-base do jogo (jumpscare)** | SFX 2D | `JumpscareAudio.Play(clip)` (`Scripts/FX/JumpscareAudio.cs`): golpe 2D com prioridade máxima e **todas as outras fontes abaixadas para 0,18 (≈ -15 dB) no mesmo quadro**, seguram 0,9 s depois que o golpe soa e voltam em 2,2 s. `JumpscareAudio.Preload(clip)` antes da hora | `JumpscareHit` (estéreo, PCM, 4,8 s) | ✅ | 2026-11-23: o golpe da **v2** + uma camada **leve de estática de TV** (take `sfx6/static_3`, já pago; tom de 350 Hz entalhado) a -8 dB que SEGUE o envelope do golpe do início ao fim ("levemente durante o áudio", sem rajada). Saturação 3,0 no corpo, voltando ao normal entre 0,7 e 2 s; limitador +2,5 dB, teto -0,3 dBFS: -0,8 LUFS. Recusadas: v3 com grito inumano; rajada de estática no início. Gerador: scratchpad `nm_audio/jumpscare_static.py` (usa `reception_scare_v2.py`) |
 | G-05 | Porta abrir / fechar / trancada / bater | SFX | `Door.openClip/closeClip/lockedClip/knockClip` | só `knockClip` = `KnockDoor_Placeholder` | ❌/🟡 | Trancada = maçaneta chacoalhando (é beat de tensão, não "erro") |
 | G-06 | Interruptor / abajur (ligar, sem energia) | SFX | `LightSwitch` / `TableLamp` `.toggleClip/.noPowerClip` | — | ❌ | `noPowerClip` = clique seco sem nada acontecer |
 | G-07 | Geladeira abrir/fechar | SFX | `FridgeDoor.openClip/closeClip` | — | ❌ | Ventosa da borracha + zumbido do motor enquanto aberta |
@@ -129,15 +130,22 @@ chamado, "boa noite", respiração), nunca falas longas.
 
 ## Ato 2 — Reception
 
+**Conceito sonoro: o prédio vazio à noite.** A Road termina em silêncio absoluto e a porta do prédio soa por cima da troca de cena; a recepção recebe a Clear só com o *room tone* — reator das fluorescentes e ventilação —, sem música. Tudo o que soa a mais é algo "ligado sem dono" (relógio, rádio entre estações, o telefone tocando uma vez) ou o zelador escondido. Sons sintetizados em 2026-11-23 (`scratchpad nm_audio/reception_sfx.py`), aplicados por `Tools/The Delivery/Reception - Sonorização` (`ReceptionAudioSetup.cs`, idempotente).
+
 | ID | Beat | Evento | Tipo | Campo | Clipe atual | Status | Direção |
 |---|---|---|---|---|---|---|---|
-| A2-01 | todos | Ambiente da recepção | Ambiente loop | — (a cena não tem `AmbientMusic`) | `Act2Ambient_Placeholder.mp3` **existe, sem uso** | ➕ | Pôr um `AmbientMusic` na cena. Fluorescente + ar-condicionado + chuva começando lá fora |
-| A2-02 | 2 ReceptionistAbsent | Balcão vazio | SFX 3D | — | — | ➕ | Algo "ligado sem dono": monitor chiando, rádio baixo, telefone de mesa tocando uma vez |
-| A2-03 | 3 Investigation | Porta da sala de produtos | SFX | `ProductsRoomDoor` | — | ➕ | Rangido longo |
-| A2-04 | 4 JanitorScare | Falso susto do zelador | Sting | `Act2Director.scareSound` (salvo como `somDoSusto`) | `Jumpscare_Placeholder` | 🟡 | Mais contido que os sustos do Ato 3: é falso alarme |
-| A2-05 | 5 JanitorDialogue | Linha do Jef | UI | `Dialogue_Act2-1` `sfx` | `Ominous_Placeholder` | 🟡 | — |
-| A2-06 | 5 JanitorDialogue | Trabalho do zelador (balde, esfregão) | SFX 3D | — | — | ➕ | Deixa o red herring mais crível |
-| A2-07 | 6 GoToElevator | Elevador (ding + porta fechando) | SFX | `elevatorSound` (salvo como `somElevador`) | `ElevatorSound_Placeholder` | 🟡 | Ding + porta + motor subindo, em um clipe só ou em dois |
+| A2-01 | todos | Room tone do saguão | Ambiente loop 2D | `AmbientMusic` em `_Audio/ReceptionAmbient` (vol. 0,55) | `ReceptionRoomTone` | ✅ | Reator 120 Hz + ventilação; nada de música. v2 (2026-11-23): só grave (< 600 Hz), sem o chiado agudo |
+| A2-01b | todos | Zumbido das luminárias | Loop 3D | `AmbientSoundEmitter` em cada `CeilingLamp` (vol. 0,13) | `ReceptionFluorescentBuzz` | ✅ | v2 (2026-11-23, "retire o assovio"): zumbido grave e quente (< 800 Hz). SEM os estalos do reator (soavam como tique de relógio) e sem os harmônicos agudos de 1,5/2,4 kHz (o assovio) |
+| A2-02 | 2 ReceptionistAbsent | Balcão vazio: telefone toca uma vez | SFX 3D | `Act2Director.deskPhoneSound` (vol. 0,42; o pensamento espera 2,6 s) | `ReceptionDeskPhoneRing` | ✅ | Ninguém atende — e só então ela estranha |
+| A2-02b | todos | Rádio entre estações no balcão | Loop 3D | `_Audio/DeskRadio` | `ReceptionDeskRadio` | ✅ | Ligado, e ninguém ouvindo. O relógio saiu do ato a pedido (2026-11-23). v2: sem o apito de portadora e com entalhes nos apitos do take de chiado (463/1906/2815/3844 Hz) |
+| A2-03 | 3 Investigation | Porta da sala de produtos rangendo | SFX 3D | `ProductsRoomDoor.openSound` (abre em 1,7 s; avisa o diretor 0,9 s depois) | `ReceptionProductsDoorCreak` | ✅ | O susto entra com a porta entreaberta, depois do rangido |
+| A2-04 | 4 JanitorScare | O susto-base do jogo | SFX 2D | `Act2Director.scareHitSound` via `JumpscareAudio.Play` (G-05: abaixa o resto); `scareSound` (só o balde, 3D) fica de reserva | `JumpscareHit` (o mesmo arquivo do jogo todo) | ✅ | 2026-11-23: a variação "golpe + balde" (`ReceptionJanitorScareHit`) foi APAGADA a pedido — a cena usa o `JumpscareHit` direto. Na gravação -0,7 LUFS, zero clipping. Antes do golpe, o silêncio: o esfregão para no instante do rangido |
+| A2-04b | 4 JanitorScare | A sola dele chiando ao deslizar | SFX 3D | `Act2Director.janitorSlideSound` | `ReceptionJanitorSlide` | ✅ | — |
+| A2-05 | 5 JanitorDialogue | Stings da conversa | UI | `Dialogue_Act2-1` falas 5 e 10 (`sfx`) | `ReceptionOminousLine`, `ReceptionNameSting` | ✅ | "Às vezes a pessoa some..." e "...eu não disse meu nome." |
+| A2-06 | 1–3 | O zelador trabalhando atrás da porta | Loop 3D | `_Audio/JanitorWork` (vol. 1), cala com fade no rangido da porta | `ReceptionJanitorMop` | ✅ | A pista que faz o jogador abrir a sala. v2: passadas molhadas e macias em tempo IRREGULAR (as da v1, a cada ~1,15 s com estalinhos, soavam como relógio), pano torcido, água no balde; sem o chiado da rodinha |
+| A2-06b | todos | Vento atrás do vidro | Loop 3D | `_Audio/GlassDoorWind` (passa-baixa 750 Hz) | `RoadWind` | ✅ | Reaproveitado. O freezer (`CafeteriaDisplayHum`) SAIU da Recepção em 2026-11-23: o loop tem assovios de compressor em 1,2–4,4 kHz |
+| A2-07 | 6 GoToElevator | Elevador em sequência | SFX 3D + 2D | `Act2Director.elevatorButton/Ding/DoorsOpen/DoorsClose/RideSound` | `ReceptionElevator*` | ✅ | Ela para; botão, sino, portas, motor — o motor atravessa a troca de cena (`DirectorUtility.PlayAcrossSceneChange`) |
+| G-02 | Passos da Clear por passo (variações) | SFX | `PlayerController.footstepClips[]` via `SceneFootsteps` (por cena) | Recepção: `ClearFootTile_01..06` | 🟡 | Recepção feita (2026-11-23); faltam madeira (apê), asfalto (rua), concreto (Escape) |
 
 ## Ato 3 — Apartment (a escalada)
 

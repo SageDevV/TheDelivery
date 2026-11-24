@@ -34,7 +34,7 @@ MonoBehaviour:
     text: "Pois \xE9. Mas a gente nunca sabe o que passa na cabe\xE7a dos outros,
       n\xE9? \xC0s vezes a pessoa some e... ningu\xE9m percebe direito."
     extraHold: 5
-    sfx: {fileID: 8300000, guid: 53d84c3793b8f264d9e0102bd44f748c, type: 3}
+    sfx: {fileID: 8300000, guid: 1e39ff35684eb824bb3e78ca715ec810, type: 3}
   - speaker: Clear
     text: ...
     extraHold: 1
@@ -54,4 +54,4 @@ MonoBehaviour:
   - speaker: Clear
     text: "...eu n\xE3o disse meu nome."
     extraHold: 0
-    sfx: {fileID: 0}
+    sfx: {fileID: 8300000, guid: 11ef5282dec573b4d868dfcb842ab867, type: 3}

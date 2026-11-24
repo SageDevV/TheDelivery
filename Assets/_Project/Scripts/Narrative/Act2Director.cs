@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Serialization;
 using TheDelivery.Core;
+using TheDelivery.FX;
 using TheDelivery.Interaction;
 using TheDelivery.Player;
 using static TheDelivery.Narrative.DirectorUtility;
@@ -68,6 +69,17 @@ namespace TheDelivery.Narrative
         [Tooltip("Pensamento de estranhamento: o balcão está vazio.")]
         [FormerlySerializedAs("porteiroThought")]
         [SerializeField] private ThoughtData receptionistThought;
+        /// <summary>
+        /// A2-02 (2026-11-23): quando a Clear chega no balcão, o telefone dele toca UMA vez — e ninguém
+        /// atende. O pensamento ("cadê ele?") espera o toque terminar. Som 3D no balcão.
+        /// </summary>
+        [Tooltip("Toque único do telefone do balcão quando a Clear chega (ninguém atende).")]
+        [SerializeField] private AudioClip deskPhoneSound;
+        [Tooltip("De onde o telefone toca (o balcão).")]
+        [SerializeField] private Transform deskPhonePoint;
+        [Range(0f, 1f)] [SerializeField] private float deskPhoneVolume = 0.42f; // mais baixo que o susto: é estranheza, não susto
+        [Tooltip("Espera (s) entre o toque começar e o pensamento aparecer.")]
+        [SerializeField] private float deskPhoneThoughtDelay = 2.6f;
 
         [Header("Beat 3 - Porta da sala (gate)")]
         [Tooltip("A porta interativa da sala de produtos. Armada no beat Investigation; ao abrir, dispara o susto.")]
@@ -87,6 +99,33 @@ namespace TheDelivery.Narrative
         [SerializeField] private float slideDistance = 1.5f;
         [Tooltip("Tempo (s) com o player travado durante o susto (deslize + folga).")]
         [SerializeField] private float scareFreezeDuration = 0.8f;
+        /// <summary>
+        /// A2-04/A2-06 (2026-11-23): antes do susto o zelador está TRABALHANDO atrás da porta (esfregão e
+        /// balde, um emissor em loop) — é a pista sonora que faz o jogador querer abrir a sala. No susto o
+        /// trabalho para, o balde tomba (o sting é diegético: assusta e se explica sozinho) e a sola dele
+        /// chia no piso molhado ao deslizar para a vista.
+        /// </summary>
+        [Tooltip("O som do zelador trabalhando (emissor em loop). Desligado no susto.")]
+        [SerializeField] private GameObject janitorWorkSound;
+        [Tooltip("A sola dele chiando no piso ao deslizar para a vista.")]
+        [SerializeField] private AudioClip janitorSlideSound;
+        [Range(0f, 1f)] [SerializeField] private float janitorSlideVolume = 0.75f;
+        [Tooltip("Volume do balde tombando (o som 3D, diegético).")]
+        [Range(0f, 1f)] [SerializeField] private float scareVolume = 0.8f;
+        /// <summary>
+        /// 2026-11-23 (v3, "será o som base de jumpscare do jogo inteiro"): toca por <see cref="JumpscareAudio"/>,
+        /// que abaixa todo o resto do jogo no instante do golpe. O clipe é o próprio <c>JumpscareHit</c> (sem variação da cena).
+        /// 2026-11-23 ("o jumpscare deve ser mais forte e impactante"): o GOLPE 2D, no ouvido do jogador —
+        /// estalo, sub-grave caindo, cluster grave, cordas raspando e salão — com o balde tombando 0,3 s depois,
+        /// tudo masterizado num arquivo só (separados, golpe e balde somavam no mixer e clipavam). Com ele, o
+        /// <see cref="scareSound"/> (o balde sozinho, 3D) fica de reserva. Antes do golpe, o silêncio: o
+        /// esfregão para no instante em que a porta range (ele ouviu).
+        /// </summary>
+        [Tooltip("O susto-base do jogo (JumpscareHit, 2D, na cabeça do jogador). Vazio = toca só o balde (scareSound).")]
+        [SerializeField] private AudioClip scareHitSound;
+        [Range(0f, 1f)] [SerializeField] private float scareHitVolume = 1f;
+        [Tooltip("Fade (s) do trabalho do zelador quando a porta começa a ranger.")]
+        [SerializeField] private float janitorFreezeFade = 0.12f;
 
         [Header("Beat 5 - Diálogo do zelador")]
         [Tooltip("A conversa com o zelador (evasivo/estranho — red herring).")]
@@ -106,6 +145,23 @@ namespace TheDelivery.Narrative
         [Tooltip("Atraso (s) após o som do elevador antes de trocar de cena.")]
         [FormerlySerializedAs("elevadorDelay")]
         [SerializeField] private float elevatorDelay = 1.5f;
+        /// <summary>
+        /// A2-07 (2026-11-23): o elevador em SEQUÊNCIA — botão, o sino da cabine chegando, as portas
+        /// abrindo, fechando, e o motor subindo, que continua por cima do escurecimento (sobrevive à troca
+        /// de cena). Com estes vazios, cai no som único antigo (<see cref="elevatorSound"/>).
+        /// </summary>
+        [Tooltip("Clique do botão de chamar.")]
+        [SerializeField] private AudioClip elevatorButtonSound;
+        [Tooltip("Sino da cabine chegando.")]
+        [SerializeField] private AudioClip elevatorDingSound;
+        [Tooltip("Portas abrindo.")]
+        [SerializeField] private AudioClip elevatorDoorsOpenSound;
+        [Tooltip("Portas fechando (baque no fim).")]
+        [SerializeField] private AudioClip elevatorDoorsCloseSound;
+        [Tooltip("Motor subindo — atravessa a troca de cena.")]
+        [SerializeField] private AudioClip elevatorRideSound;
+        [Tooltip("De onde o elevador soa (a porta do elevador).")]
+        [SerializeField] private Transform elevatorSoundPoint;
 
         [Header("Debug")]
         [Tooltip("Beat inicial. Use para pular beats ao testar.")]
@@ -218,6 +274,14 @@ namespace TheDelivery.Narrative
             else
                 Debug.LogWarning("[Act2Director] receptionistAbsentZone não atribuída; pulando o estranhamento do balcão.", this);
 
+            // A2-02: o telefone do balcão toca UMA vez, ninguém atende — e só então ela estranha.
+            if (deskPhoneSound != null)
+            {
+                Vector3 at = deskPhonePoint != null ? deskPhonePoint.position : receptionistAbsentZone != null ? receptionistAbsentZone.position : transform.position;
+                DirectorUtility.PlayAt(deskPhoneSound, at, deskPhoneVolume, 1f, 1.2f, 16f);
+                yield return new WaitForSeconds(Mathf.Max(0f, deskPhoneThoughtDelay));
+            }
+
             ShowThought(receptionistThought);
 
             AdvanceToBeat(Act2Beat.Investigation);
@@ -237,8 +301,11 @@ namespace TheDelivery.Narrative
             EnsurePlayerFree();
 
             productsRoomDoorOpened = false;
+            JumpscareAudio.Preload(scareHitSound); // o susto carregado ANTES da porta: sem atraso no golpe
             if (productsRoomDoor != null)
             {
+                productsRoomDoor.OpeningStarted -= OnProductsRoomDoorOpening;
+                productsRoomDoor.OpeningStarted += OnProductsRoomDoorOpening;
                 productsRoomDoor.Arm(OnProductsRoomDoorOpened);
                 yield return new WaitUntil(() => productsRoomDoorOpened);
             }
@@ -260,6 +327,17 @@ namespace TheDelivery.Narrative
             productsRoomDoorOpened = true;
         }
 
+        /// <summary>A porta começou a ranger: o zelador lá dentro para de esfregar (ouviu). O silêncio
+        /// até o susto é o que faz o golpe bater.</summary>
+        private void OnProductsRoomDoorOpening()
+        {
+            if (productsRoomDoor != null) productsRoomDoor.OpeningStarted -= OnProductsRoomDoorOpening;
+            if (janitorWorkSound == null) return;
+            var emitter = janitorWorkSound.GetComponent<AmbientSoundEmitter>();
+            if (emitter != null) emitter.FadeOutAndStop(janitorFreezeFade);
+            else janitorWorkSound.SetActive(false);
+        }
+
         // --- BEAT 4: JanitorScare -----------------------------------------
 
         /// <summary>
@@ -278,7 +356,21 @@ namespace TheDelivery.Narrative
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
-            PlaySound(scareSound);
+            // A2-04/06: o trabalho para, o balde tomba (sting diegético, forte mesmo de longe) e a sola chia.
+            if (janitorWorkSound != null) janitorWorkSound.SetActive(false);
+            Vector3 janitorAt = janitorTransform != null ? janitorTransform.position + Vector3.up : transform.position;
+            if (janitorSlideSound != null)
+            {
+                DirectorUtility.PlayAt(janitorSlideSound, janitorAt, janitorSlideVolume, 1f, 1.2f, 12f);
+                if (scareHitSound != null)
+                    JumpscareAudio.Play(scareHitSound, scareHitVolume); // o susto-base do jogo: golpe 2D + todo o resto abaixado (o balde já vem nele)
+                else
+                    DirectorUtility.PlayAt(scareSound, janitorAt, scareVolume, 0.6f, 3f, 24f); // reserva: só o balde, vindo de lá
+            }
+            else
+            {
+                PlaySound(scareSound);
+            }
 
             if (janitorTransform != null)
                 yield return SlideRoutine();
@@ -368,9 +460,30 @@ namespace TheDelivery.Narrative
             else
                 Debug.LogWarning("[Act2Director] elevatorZone não atribuída; transição não será disparada.", this);
 
-            // A porta do elevador fecha; pequeno respiro antes da troca.
-            PlaySound(elevatorSound);
-            yield return new WaitForSeconds(Mathf.Max(0f, elevatorDelay));
+            if (elevatorDingSound != null && elevatorRideSound != null)
+            {
+                // A2-07: ela para na frente do elevador e a sequência inteira acontece — botão, o sino da
+                // cabine chegando, portas abrindo e fechando, e o motor subindo, que continua por cima do
+                // escurecimento da troca de cena.
+                playerController.CanMove = false;
+                Vector3 at = elevatorSoundPoint != null ? elevatorSoundPoint.position : elevatorZone != null ? elevatorZone.position : transform.position;
+                DirectorUtility.PlayAt(elevatorButtonSound, at, 0.7f, 1f, 1f, 10f);
+                yield return new WaitForSeconds(1.3f);
+                DirectorUtility.PlayAt(elevatorDingSound, at, 0.8f, 0.85f, 1.5f, 20f);
+                yield return new WaitForSeconds(0.7f);
+                DirectorUtility.PlayAt(elevatorDoorsOpenSound, at, 0.8f, 1f, 1.5f, 15f);
+                yield return new WaitForSeconds(2.2f);
+                DirectorUtility.PlayAt(elevatorDoorsCloseSound, at, 0.85f, 0.7f, 1.5f, 15f);
+                yield return new WaitForSeconds(1.6f);
+                DirectorUtility.PlayAcrossSceneChange(elevatorRideSound, 0.75f);
+                yield return new WaitForSeconds(0.6f);
+            }
+            else
+            {
+                // A porta do elevador fecha; pequeno respiro antes da troca.
+                PlaySound(elevatorSound);
+                yield return new WaitForSeconds(Mathf.Max(0f, elevatorDelay));
+            }
 
             if (GameManager.Instance != null)
             {

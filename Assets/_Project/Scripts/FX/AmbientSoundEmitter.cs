@@ -106,6 +106,29 @@ namespace TheDelivery.FX
         /// </summary>
         public void PlayOneShotNow() => timer = 0f;
 
+        /// <summary>
+        /// Cala o emissor com um fade curto (o loop desligado a seco dá clique) e para os esporádicos.
+        /// Ex.: o zelador para de esfregar no instante em que a porta range — ele ouviu (2026-11-23).
+        /// </summary>
+        public void FadeOutAndStop(float duration = 0.15f)
+        {
+            oneShotSource = null;
+            if (loopSource == null || !loopSource.isPlaying || !isActiveAndEnabled) { if (loopSource != null) loopSource.Stop(); return; }
+            StartCoroutine(FadeOutRoutine(Mathf.Max(0.01f, duration)));
+        }
+
+        private System.Collections.IEnumerator FadeOutRoutine(float duration)
+        {
+            float from = loopSource.volume;
+            for (float t = 0f; t < duration; t += Time.deltaTime)
+            {
+                loopSource.volume = from * (1f - t / duration);
+                yield return null;
+            }
+            loopSource.volume = 0f;
+            loopSource.Stop();
+        }
+
         private AudioSource CreateSource()
         {
             AudioSource source = gameObject.AddComponent<AudioSource>();

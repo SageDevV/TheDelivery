@@ -34,8 +34,24 @@ namespace TheDelivery.Interaction
         [Tooltip("Duração (s) da animação de abrir.")]
         [SerializeField] private float openDuration = 0.6f;
 
+        /// <summary>
+        /// A2-03 (2026-11-23): o RANGIDO da porta (antes ela abria muda). Toca na própria porta (3D).
+        /// <see cref="notifyDelay"/> segura o aviso ao Director: o susto entra com a porta já entreaberta,
+        /// depois de o rangido se fazer ouvir — no mesmo quadro, o balde tombando o engolia.
+        /// </summary>
+        [Header("Som")]
+        [Tooltip("Rangido ao abrir.")]
+        [SerializeField] private AudioClip openSound;
+        [Range(0f, 1f)] [SerializeField] private float openVolume = 0.8f;
+        [Tooltip("Espera (s) entre começar a abrir e avisar o Director (o susto entra com a porta já entreaberta).")]
+        [SerializeField] private float notifyDelay = 0f;
+
         private Action onOpened;
         private bool armed;
+
+        /// <summary>Disparado no INSTANTE em que a porta começa a abrir (com o rangido), antes do
+        /// <see cref="notifyDelay"/>. Ex.: o Director cala o zelador lá dentro — ele ouviu a porta.</summary>
+        public event Action OpeningStarted;
 
         /// <summary>True após a porta ser aberta. O Director pode observar este flag
         /// como alternativa ao callback passado em <see cref="Arm"/>.</summary>
@@ -57,9 +73,35 @@ namespace TheDelivery.Interaction
             armed = false;      // consome: uma abertura só.
             WasOpened = true;
 
+            PlayOpenSound();
             StartCoroutine(OpenVisual());
+            OpeningStarted?.Invoke();
 
-            onOpened.Invoke();
+            if (notifyDelay > 0f)
+                StartCoroutine(NotifyLater(onOpened));
+            else
+                onOpened.Invoke();
+        }
+
+        private IEnumerator NotifyLater(Action callback)
+        {
+            yield return new WaitForSeconds(notifyDelay);
+            callback?.Invoke();
+        }
+
+        private void PlayOpenSound()
+        {
+            if (openSound == null)
+                return;
+            var source = GetComponent<AudioSource>();
+            if (source == null) source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 1f;
+            source.rolloffMode = AudioRolloffMode.Logarithmic;
+            source.minDistance = 1.2f;
+            source.maxDistance = 14f;
+            source.dopplerLevel = 0f;
+            source.PlayOneShot(openSound, openVolume);
         }
 
         // --- API do Director ----------------------------------------------
