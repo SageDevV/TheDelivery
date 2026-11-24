@@ -24,4 +24,4 @@ MonoBehaviour:
   - speaker: Entregador
     text: "Vai com calma. A noite \xE9 longa"
     extraHold: 3
-    sfx: {fileID: 8300000, guid: df1b3850e88e21f4f8ad533c37c81292, type: 3}
+    sfx: {fileID: 8300000, guid: 0417c901742296b478b870a563c116c0, type: 3}

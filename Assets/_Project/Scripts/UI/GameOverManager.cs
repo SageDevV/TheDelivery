@@ -58,6 +58,7 @@ namespace TheDelivery.UI
         [SerializeField] private int sortingOrder = 90;
 
         [Header("Som (opcional)")]
+        [Tooltip("O susto da captura. Padrão do jogo: JumpscareHit (tocado pelo JumpscareAudio, que abaixa o resto).")]
         [SerializeField] private AudioClip deathSting;
         [Range(0f, 1f)] [SerializeField] private float stingVolume = 1f;
 
@@ -109,13 +110,9 @@ namespace TheDelivery.UI
             GameOverStarted?.Invoke();
 
             BuildUI();
+            // A captura é um susto: o susto-base do jogo, com o resto do som abaixando no mesmo quadro.
             if (deathSting != null)
-            {
-                var src = gameObject.AddComponent<AudioSource>();
-                src.spatialBlend = 0f;
-                src.ignoreListenerPause = true;
-                src.PlayOneShot(deathSting, stingVolume);
-            }
+                TheDelivery.FX.JumpscareAudio.Play(deathSting, stingVolume);
 
             // Fundo escurece; o carimbo "bate" um pouco depois; a legenda datilografa.
             float t = 0f;

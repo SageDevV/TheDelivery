@@ -48,6 +48,10 @@ namespace TheDelivery.FX
         [SerializeField] private AudioClip[] thunderClips;
         [Tooltip("Fonte 2D para o loop/trovões gravados.")]
         [SerializeField] private AudioSource clipSource;
+        [Tooltip("Fonte 2D só dos trovões gravados (opcional). Sem ela, o trovão sai pelo clipSource — que, com loop " +
+                 "de chuva gravado, fica no volume da chuva e abaixa no ducking.")]
+        [SerializeField] private AudioSource thunderSource;
+        [Range(0f, 2f)] [SerializeField] private float thunderClipVolume = 1f;
         [Range(0f, 1f)] [SerializeField] private float rainVolume = 0.3f;
 
         [Header("Relâmpagos")]
@@ -372,8 +376,9 @@ namespace TheDelivery.FX
             // sensor enquanto ele ruge (e o trovão "cobre" o barulho dela — é desenho também).
             TheDelivery.Player.MicrophoneNoiseSensor.MaskFor(thunderMaskSeconds);
 
-            if (thunderClips != null && thunderClips.Length > 0 && clipSource != null)
-                clipSource.PlayOneShot(thunderClips[Random.Range(0, thunderClips.Length)], 1f);
+            var ts = thunderSource != null ? thunderSource : clipSource;
+            if (thunderClips != null && thunderClips.Length > 0 && ts != null)
+                ts.PlayOneShot(thunderClips[Random.Range(0, thunderClips.Length)], thunderClipVolume * Random.Range(0.75f, 1f));
             else if (synth != null)
                 synth.TriggerThunder(Random.Range(0.6f, 1f));
 

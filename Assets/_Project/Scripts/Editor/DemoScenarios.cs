@@ -411,6 +411,7 @@ namespace TheDelivery.EditorTools
 
             var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
             Object.DontDestroyOnLoad(rec.gameObject);
+            rec.RenderActiveCamera = true; // 1080p (a Game View encolhida dava quadros pequenos)
             rec.Begin(duration: 40f, fps: 24, recordAudio: true);
             float t0 = Time.time;
             double r0 = EditorApplication.timeSinceStartup;
@@ -470,7 +471,7 @@ namespace TheDelivery.EditorTools
                             var cc = pc.GetComponent<CharacterController>();
                             Vector3 k = ai.transform.position;
                             Vector3 dir = ai.transform.forward; dir.y = 0f; dir.Normalize();
-                            Vector3 pos = k + dir * 3.5f;
+                            Vector3 pos = k + dir * 8f; // longe o bastante para ouvir os passos dele chegando
                             if (UnityEngine.AI.NavMesh.SamplePosition(pos, out var hit, 2f, UnityEngine.AI.NavMesh.AllAreas)) pos = hit.position;
                             cc.enabled = false;
                             pc.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-dir, Vector3.up));
@@ -482,7 +483,7 @@ namespace TheDelivery.EditorTools
                         }
                         break;
                     case 3:
-                        if (go != null && go.IsActive) { Ev("Killer alcançou a protagonista -> KillerCapture -> GameOverManager"); Next(); }
+                        if (go != null && go.IsActive) { Ev("Killer alcançou a protagonista -> KillerCapture -> GameOverManager"); foreach (var cf in Object.FindObjectsByType<TheDelivery.AI.CreatureFootsteps>(FindObjectsSortMode.None)) Ev($"passos tocados por {cf.name}: {cf.StepsPlayed} (fonte vol {cf.GetComponent<AudioSource>()?.volume})"); Next(); }
                         else if (Since() > 25) { Ev("FALHOU: o killer não alcançou em 25 s"); step = 9; }
                         break;
                     case 4:

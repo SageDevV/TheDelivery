@@ -52,5 +52,5 @@ MonoBehaviour:
   holdSeconds: 3.5
   backgroundAlpha: 0.92
   sortingOrder: 90
-  deathSting: {fileID: 0}
+  deathSting: {fileID: 8300000, guid: 53c144a426802d64793ccd0ea8a193d0, type: 3}
   stingVolume: 1

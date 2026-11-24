@@ -114,6 +114,11 @@ namespace TheDelivery.Narrative
         [Tooltip("Som (sting) tocado no INSTANTE em que a câmera VIRA para travar no entregador — o susto/baque do encontro. Opcional.")]
         [FormerlySerializedAs("entregadorRevealSound")]
         [SerializeField] private AudioClip deliverymanRevealSound;
+        [Tooltip("Toca o reveal como o susto-base do jogo (JumpscareAudio: 2D, abaixa todo o resto), igual ao do zelador no Ato 2.")]
+        [SerializeField] private bool revealAsJumpscare = true;
+        [Tooltip("Passos do entregador (corredor e entrega). Ficam mudos na cutscene da sacada (o chamado de longe).")]
+        [SerializeField] private CreatureFootsteps deliverymanFootsteps;
+        private bool deliverymanStepsMuted;
         [Tooltip("Som sinistro do \"boa noite\" (placeholder/sting). Opcional se o diálogo já tiver áudio.")]
         [FormerlySerializedAs("boaNoiteSound")]
         [SerializeField] private AudioClip goodNightSound;
@@ -194,6 +199,22 @@ namespace TheDelivery.Narrative
         [Tooltip("A porta do apartamento (componente Door). Na entrega, o diálogo só começa quando a Clear ABRIR esta porta, e o auto-fechar é suspenso (a porta só fecha por interação) até a entrega terminar. Opcional.")]
         [SerializeField] private Door apartmentDoor;
 
+        [Header("Sons dos momentos (todos opcionais)")]
+        [Tooltip("Beat 1: chegada do elevador no andar (sininho e portas), tocados juntos no início do ato.")]
+        [SerializeField] private AudioClip[] elevatorArrivalSounds;
+        [Tooltip("Beat 2: molho de chaves e trinco quando a Clear chega à porta do apartamento (ainda fechada).")]
+        [SerializeField] private AudioClip apartmentKeysSound;
+        [Tooltip("Distância (m) da porta do apartamento em que as chaves soam.")]
+        [SerializeField] private float apartmentKeysRange = 2.2f;
+        [Tooltip("Beat 3: toques na tela do celular e o aviso de pedido confirmado, ao abrir o overlay do pedido.")]
+        [SerializeField] private AudioClip phoneOrderSound;
+        [Tooltip("Saco de papel da comida: ao receber do entregador, ao deixar na bancada e ao pegar de volta.")]
+        [SerializeField] private AudioClip foodBagSound;
+        [Tooltip("Beat 6: uma mordida por subida da comida à boca (sorteada).")]
+        [SerializeField] private AudioClip[] eatBiteSounds;
+        [Tooltip("Beat 6: lençol ao deitar, antes do pensamento de dormir.")]
+        [SerializeField] private AudioClip bedSheetsSound;
+
         [Header("Beat 5 - Fenômenos (sequência fixa)")]
         [Tooltip("Tempo de EXPLORAÇÃO livre (s) entre a entrega (Beat 4) e o início da escalada. A Clear anda livre pelo apartamento por este tempo antes do 1º fenômeno. Ex.: 180 = 3 minutos.")]
         [SerializeField] private float explorationDelay = 180f;
@@ -218,6 +239,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private GameObject ringingPhoneObject;
         [Tooltip("Pensamento da ligação muda (Thought_Act3-6, \"Alô? ...tem alguém aí?\"). SÓ dispara DEPOIS de a Clear atender o telefone. Opcional.")]
         [SerializeField] private ThoughtData phoneSilenceThought;
+        [Tooltip("Do outro lado da ligação muda: ninguém fala, só a respiração lenta pelo fone. Toca ao atender. Opcional.")]
+        [SerializeField] private AudioClip silentCallBreathSound;
         [Tooltip("4. Luzes do apartamento que PISCAM e VOLTAM (não morrem — diferente do Ato 4).")]
         [SerializeField] private Light[] apartmentLights;
         [Tooltip("Número de piscadas erráticas antes de a luz reacender.")]
@@ -228,6 +251,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private float flickerMaxInterval = 0.18f;
         [Tooltip("Som do baque ao piscar/reacender. Opcional.")]
         [SerializeField] private AudioClip flickerSound;
+        [Tooltip("Estalo/zumbido de cada piscada (sorteado; nem toda piscada soa). Opcional.")]
+        [SerializeField] private AudioClip[] flickerStepSounds;
         [Tooltip("5. Voz grossa do vizinho ao abrir a porta (isolamento). Opcional se usar diálogo.")]
         [FormerlySerializedAs("vizinhoVozSound")]
         [SerializeField] private AudioClip neighborVoiceSound;
@@ -572,6 +597,14 @@ namespace TheDelivery.Narrative
 
             if (deliveryman != null)
                 deliveryman.SetActive(false);
+            deliverymanStepsMuted = false;
+            if (revealAsJumpscare)
+                JumpscareAudio.Preload(deliverymanRevealSound); // carregado antes: sem atraso no golpe
+
+            // Acabou de sair do elevador: o sininho e as portas (continuidade com o Ato 2).
+            if (elevatorArrivalSounds != null)
+                foreach (var c in elevatorArrivalSounds)
+                    PlaySound(c);
 
             // Anda livre até a zona do encontro.
             if (deliverymanCrossPoint != null)
@@ -615,8 +648,11 @@ namespace TheDelivery.Narrative
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
-            // Sting no INSTANTE em que a câmera vira para travar no entregador (o susto).
-            PlaySound(deliverymanRevealSound);
+            // Sting no INSTANTE em que a câmera vira para travar no entregador (o susto) — o mesmo golpe do zelador.
+            if (revealAsJumpscare && deliverymanRevealSound != null)
+                JumpscareAudio.Play(deliverymanRevealSound);
+            else
+                PlaySound(deliverymanRevealSound);
             StartCameraFocus(deliveryman.transform);
 
             PlaySound(goodNightSound);
@@ -661,6 +697,15 @@ namespace TheDelivery.Narrative
         private IEnumerator BeatEnterApartment()
         {
             EnsurePlayerFree();
+
+            // Chegando à porta ainda fechada: procura as chaves e destranca.
+            if (apartmentKeysSound != null && apartmentDoor != null && !apartmentDoor.IsOpen)
+            {
+                yield return new WaitUntil(() => apartmentDoor.IsOpen ||
+                    Vector3.Distance(playerController.transform.position, apartmentDoor.transform.position) < apartmentKeysRange);
+                if (!apartmentDoor.IsOpen)
+                    PlaySound(apartmentKeysSound);
+            }
 
             if (apartmentDoorZone != null)
                 yield return new WaitUntil(() => PlayerInZone(apartmentDoorZone, apartmentDoorRadius));
@@ -751,6 +796,7 @@ namespace TheDelivery.Narrative
 
             if (orderPhoneOverlay != null)
                 orderPhoneOverlay.SetActive(true);
+            PlaySound(phoneOrderSound);
 
             yield return new WaitForSeconds(Mathf.Max(0f, phoneOrderLookDuration));
 
@@ -806,6 +852,7 @@ namespace TheDelivery.Narrative
 
             // O entregador surge no elevador e atravessa o corredor até a porta, andando
             // naturalmente (sem teleportar para a porta). Encara a direção do movimento.
+            deliverymanStepsMuted = false;
             if (deliveryman != null)
             {
                 Transform spawn = deliverymanDeliverySpawn != null ? deliverymanDeliverySpawn : elevatorExitPoint;
@@ -854,6 +901,7 @@ namespace TheDelivery.Narrative
             // O entregador ENTREGA a sacolinha de comida na mão do protagonista — vai pro
             // inventário (e aparece na mão, se o item tiver HeldPrefab e houver handAnchor).
             GiveDeliveryFood();
+            PlaySound(foodBagSound);
 
             // A Clear pega o lanche e volta a se mover.
             EnsurePlayerFree();
@@ -992,6 +1040,7 @@ namespace TheDelivery.Narrative
             counterDropPoint.Arm(deliveryFoodItem, OnFoodPlaced, "Deixar a comida na bancada");
 
             yield return new WaitUntil(() => foodPlaced);
+            PlaySound(foodBagSound);
 
             // Já consumido; limpa a referência para o cleanup de troca de beat não desarmar à toa.
             activeDropPoint = null;
@@ -1084,6 +1133,7 @@ namespace TheDelivery.Narrative
             counterDropPoint.ArmPickup(FoodToEatItem, OnFoodTaken, "Pegar a comida");
 
             yield return new WaitUntil(() => foodTaken);
+            PlaySound(foodBagSound);
 
             // Já consumido; limpa a referência para o cleanup de troca de beat não desarmar à toa.
             activeDropPoint = null;
@@ -1155,6 +1205,7 @@ namespace TheDelivery.Narrative
             // silêncio com o fone no ouvido) e só DESTRAVA quando o pensamento de silêncio
             // (phoneSilenceThought) termina.
             yield return RingPhoneUntilAnswered();
+            PlaySound(silentCallBreathSound); // do outro lado: só respiração
             playerController.CanMove = false;
             playerController.CanLookOverride = true;
             yield return ShowThoughtAndWait(phoneSilenceThought);
@@ -1383,6 +1434,9 @@ namespace TheDelivery.Narrative
                     if (l != null)
                         l.enabled = Random.value > 0.5f;
                 }
+                // o relé estalando e a lâmpada zumbindo a cada piscada (nem toda: soa errático, não um tique)
+                if (flickerStepSounds != null && flickerStepSounds.Length > 0 && audioSource != null && Random.value < 0.65f)
+                    audioSource.PlayOneShot(flickerStepSounds[Random.Range(0, flickerStepSounds.Length)], Random.Range(0.55f, 0.9f));
                 yield return new WaitForSeconds(Random.Range(flickerMinInterval, flickerMaxInterval));
             }
 
@@ -1602,6 +1656,7 @@ namespace TheDelivery.Narrative
             if (playerInteraction != null)
                 playerInteraction.InteractionEnabled = false;
 
+            PlaySound(bedSheetsSound);
             yield return ShowThoughtAndWait(sleepThought);
 
             // Fade para preto (deita -> apaga). Deixa no preto para o despertar do Ato 4.
@@ -1738,6 +1793,8 @@ namespace TheDelivery.Narrative
                 for (int i = 0; i < eatBiteCount; i++)
                 {
                     yield return LerpLocalPosition(t, basePos, upPos, eatBiteDuration);
+                    if (eatBiteSounds != null && eatBiteSounds.Length > 0)
+                        PlaySound(eatBiteSounds[Random.Range(0, eatBiteSounds.Length)]);
                     yield return LerpLocalPosition(t, upPos, basePos, eatBiteDuration);
                 }
             }
@@ -1790,6 +1847,11 @@ namespace TheDelivery.Narrative
         {
             if (deliveryman == null || deliverymanBalconyPoint == null)
                 yield break;
+
+            // Na sacada ele é a cutscene do chamado, lá embaixo na rua: SEM passos (pedido de 2026-11-23).
+            deliverymanStepsMuted = true;
+            if (deliverymanFootsteps != null)
+                deliverymanFootsteps.enabled = false;
 
             // Zona de gatilho: a de revelação, ou (fallback) um raio maior da sacada, para
             // ainda revelar "um pouco antes" de a Clear entrar na zona apertada de comer.
@@ -2090,6 +2152,8 @@ namespace TheDelivery.Narrative
                 Debug.LogWarning("[Act3Director] ponto de aparição do entregador nulo; ativando na posição atual.", this);
 
             deliveryman.SetActive(true);
+            if (deliverymanFootsteps != null)
+                deliverymanFootsteps.enabled = !deliverymanStepsMuted;   // o OnEnable zera a posição: o teleporte não vira passo
 
             // Por padrão encara a Clear (aparição parada). Quando vai CAMINHAR em seguida
             // (ex.: vindo do elevador na entrega), facePlayer=false: o WalkDeliverymanTo já

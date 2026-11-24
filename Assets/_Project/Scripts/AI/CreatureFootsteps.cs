@@ -223,6 +223,9 @@ namespace TheDelivery.AI
         /// <summary>Velocidade planar medida no último quadro (m/s). Para depuração e para quem quiser ler.</summary>
         public float CurrentSpeed => currentSpeed;
 
+        /// <summary>Passos tocados (modo PerStepClips) desde o início: diagnóstico e roteiros de vídeo.</summary>
+        public int StepsPlayed { get; private set; }
+
         private void Awake()
         {
             EnsureFootstepSource();
@@ -286,8 +289,11 @@ namespace TheDelivery.AI
             strideAccumulator = 0f;
             lastCyclePhase = -1f;
 
+            // Só o LOOP entra do zero (o fade sobe o volume). No modo por passo quem dá o volume é o
+            // PlayOneShot, e a fonte precisa ficar em 1: zerada aqui, nada a religava e os passos saíam
+            // mudos (o OnEnable roda DEPOIS do Awake/EnsureFootstepSource) — killer do Apartment, 2026-11-23.
             if (footstepSource != null)
-                footstepSource.volume = 0f;
+                footstepSource.volume = footstepMode == FootstepMode.LoopingClip ? 0f : 1f;
         }
 
         private void OnDisable()
@@ -567,6 +573,7 @@ namespace TheDelivery.AI
 
             footstepSource.pitch = basePitch * Random.Range(stepPitchRange.x, stepPitchRange.y);
             footstepSource.PlayOneShot(clip, stepVolume);
+            StepsPlayed++;
         }
 
         /// <summary>

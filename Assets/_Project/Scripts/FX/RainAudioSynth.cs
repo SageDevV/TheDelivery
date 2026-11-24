@@ -85,6 +85,7 @@ namespace TheDelivery.FX
             float dropDecay = Mathf.Exp(-dt / 0.012f);
             float thunderLpA = 1f - Mathf.Exp(-2f * Mathf.PI * 180f * dt);
             float vol = rainVolume;
+            float duck = JumpscareAudio.ProceduralGain; // som gerado aqui não obedece ao AudioSource.volume
 
             float pt = pendingThunder;
             if (pt > 0f)
@@ -149,7 +150,7 @@ namespace TheDelivery.FX
                         thunderStrength = 0f;
                 }
 
-                sample = sample / (1f + Mathf.Abs(sample)); // soft clip
+                sample = sample / (1f + Mathf.Abs(sample)) * duck; // soft clip; duck = abaixamento do susto (JumpscareAudio)
                 for (int c = 0; c < channels; c++)
                     data[i * channels + c] = sample;
                 energy += sample * sample;

@@ -21,6 +21,15 @@ namespace TheDelivery.FX
         public const float DefaultDuckTo = 0.18f;
 
         /// <summary>
+        /// Ganho atual do abaixamento para SOM GERADO POR CÓDIGO (OnAudioFilterRead, como a chuva do
+        /// <see cref="RainAudioSynth"/>): esse som não obedece ao AudioSource.volume, então quem gera multiplica
+        /// a própria saída por este valor. 1 = sem susto. Lido na thread de áudio.
+        /// </summary>
+        public static float ProceduralGain => proceduralGain;
+        private static volatile float proceduralGain = 1f;
+        internal static void SetProceduralGain(float g) => proceduralGain = Mathf.Clamp01(g);
+
+        /// <summary>
         /// Deixa o susto CARREGADO antes da hora. Um clipe sem "Preload Audio Data" só começa a carregar no Play —
         /// e o golpe saiu 1,3 s DEPOIS do zelador aparecer (gravação de 2026-11-23). Chame no começo da cena ou
         /// do beat que antecede o susto.
@@ -51,6 +60,7 @@ namespace TheDelivery.FX
             source.bypassReverbZones = true;
             source.bypassEffects = true;
             source.bypassListenerEffects = true;
+            source.ignoreListenerPause = true;  // toca mesmo com o jogo pausado (tela de Game Over)
             source.clip = clip;
             source.volume = Mathf.Clamp01(volume);
 
@@ -90,6 +100,7 @@ namespace TheDelivery.FX
                     s.volume = Mathf.Clamp01(s.volume * duckTo); // abaixa JÁ, no quadro do Play: o estalo do golpe soa
                 }                                                 // antes do próximo Update e somava com o resto cheio (clipava)
             lastGain = duckTo; elapsed = Attack;
+            JumpscareAudio.SetProceduralGain(duckTo);
             running = true;
         }
 
@@ -129,6 +140,7 @@ namespace TheDelivery.FX
                 ducked[i] = d;
             }
             lastGain = gain;
+            JumpscareAudio.SetProceduralGain(gain);
 
             if (started && elapsed >= Attack + hold + release)
                 Restore();
@@ -138,6 +150,7 @@ namespace TheDelivery.FX
         {
             if (!running) return;
             running = false;
+            JumpscareAudio.SetProceduralGain(1f);
             foreach (var d in ducked)
                 if (d.Source != null)
                     d.Source.volume = Mathf.Clamp01(d.Original);

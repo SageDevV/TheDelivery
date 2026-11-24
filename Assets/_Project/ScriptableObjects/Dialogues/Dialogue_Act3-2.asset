@@ -26,7 +26,7 @@ MonoBehaviour:
   - speaker: Entregador
     text: "Eu sei onde voc\xEA mora agora."
     extraHold: 0
-    sfx: {fileID: 0}
+    sfx: {fileID: 8300000, guid: 28de6bb2ed8dc69409a75c4afabcae26, type: 3}
   - speaker: "Voc\xEA"
     text: Como?
     extraHold: 0
@@ -34,4 +34,4 @@ MonoBehaviour:
   - speaker: Entregador
     text: "...pro caso de voc\xEA pedir de novo. Boa noite."
     extraHold: 3
-    sfx: {fileID: 8300000, guid: 53d84c3793b8f264d9e0102bd44f748c, type: 3}
+    sfx: {fileID: 0}
