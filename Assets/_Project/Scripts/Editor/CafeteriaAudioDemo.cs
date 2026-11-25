@@ -159,6 +159,7 @@ namespace TheDelivery.EditorTools
             }
 
             var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
+            rec.RenderActiveCamera = true; // 1080p pela câmera ativa (a Game View encolhida gravava 874x236) — 2026-11-25
             Object.DontDestroyOnLoad(rec.gameObject);
             rec.Begin(FullDuration, 24, true);
             rec.StartCoroutine(FullScript(rec, director, player));

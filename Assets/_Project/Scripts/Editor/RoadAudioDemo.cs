@@ -703,6 +703,7 @@ namespace TheDelivery.EditorTools
                 EditorApplication.update -= Tick;
                 var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
                 Object.DontDestroyOnLoad(rec.gameObject);
+                rec.RenderActiveCamera = true; // 1080p pela câmera ativa (2026-11-25; a Game View encolhida gravava pequeno)
                 rec.Begin(noSkips ? 420f : Duration, 24, true);
                 rec.StartCoroutine(Script(director, player));
             }
