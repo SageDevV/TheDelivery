@@ -52,7 +52,10 @@ namespace TheDelivery.Narrative
             {
                 float remaining = PlanarDistance(playerController.transform.position, abyssPoint.position);
                 float progress = Mathf.Clamp01(1f - remaining / startDistance);
-                ExtinguishInSequence(corridorLights, progress);
+                if (extinguishBehindDistance > 0f)
+                    ExtinguishBehind(corridorLights, playerController.transform.position, abyssPoint.position, extinguishBehindDistance);
+                else
+                    ExtinguishInSequence(corridorLights, progress);
                 UpdateRunPrompt();
                 yield return null;
             }

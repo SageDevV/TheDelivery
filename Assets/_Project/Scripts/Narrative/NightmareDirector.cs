@@ -320,6 +320,14 @@ namespace TheDelivery.Narrative
                  "mesmo de o jogador cogitá-la. A ordem do array É a coreografia. Opcional.")]
         [SerializeField] private Light[] corridorLights;
         /// <summary>
+        /// Se &gt; 0, cada luz do <see cref="corridorLights"/> apaga quando fica esta distância (m) ATRÁS da Clear no
+        /// sentido da fuga (rumo ao <c>abyssPoint</c>) — o escuro anda colado nela, por mais irregular que seja o
+        /// espaçamento das luzes. 0 = o comportamento original: apaga pela FRAÇÃO do caminho, na ordem do array
+        /// (com luzes desigualmente espaçadas o escuro atrasa). 2026-11-25: o acabamento do corredor usa 14 m.
+        /// </summary>
+        [Tooltip("> 0: cada luz apaga quando fica estes metros ATRÁS dela na fuga. 0 = pela fração do caminho (original).")]
+        [Min(0f)] [SerializeField] private float extinguishBehindDistance = 0f;
+        /// <summary>
         /// AVISO NA TELA de que dá para correr ("Segure SHIFT para correr"). É a PRIMEIRA coisa da
         /// fuga: aparece no quadro em que a corrida é liberada, e o pensamento do rosnado só entra
         /// depois que ele sai.
@@ -1919,6 +1927,27 @@ namespace TheDelivery.Narrative
         /// <paramref name="progress"/> (0-1) avança. Idempotente: chamada todo frame,
         /// só escreve na Light que de fato mudou de estado.
         /// </summary>
+        /// <summary>Apaga as luzes que ficaram mais de <paramref name="behind"/> m atrás de <paramref name="from"/> no
+        /// sentido de <paramref name="towards"/> (e reacende as que voltam a ficar à frente, como a versão por fração).</summary>
+        private static void ExtinguishBehind(Light[] lights, Vector3 from, Vector3 towards, float behind)
+        {
+            if (lights == null || lights.Length == 0)
+                return;
+            Vector3 dir = towards - from; dir.y = 0f;
+            if (dir.sqrMagnitude < 0.0001f)
+                return;
+            dir.Normalize();
+            for (int i = 0; i < lights.Length; i++)
+            {
+                if (lights[i] == null)
+                    continue;
+                Vector3 to = lights[i].transform.position - from; to.y = 0f;
+                bool shouldBeOn = Vector3.Dot(to, dir) > -behind;
+                if (lights[i].enabled != shouldBeOn)
+                    lights[i].enabled = shouldBeOn;
+            }
+        }
+
         private static void ExtinguishInSequence(Light[] lights, float progress)
         {
             if (lights == null || lights.Length == 0)
