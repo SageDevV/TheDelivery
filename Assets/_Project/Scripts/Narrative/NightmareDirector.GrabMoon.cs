@@ -24,7 +24,7 @@ namespace TheDelivery.Narrative
         [SerializeField] private bool moonEnding = true;
         [Tooltip("Ronco da aproximação (gerado no ElevenLabs).")]
         [SerializeField] private AudioClip moonRumbleSound;
-        [Tooltip("Estrondo do impacto. Vazio: sintetizado em código.")]
+        [Tooltip("Estrondo do impacto (ElevenLabs: MoonImpact.wav). Vazio: sem estrondo.")]
         [SerializeField] private AudioClip moonImpactSound;
         [Tooltip("Respiração ofegante da Clear ao ver a lua (loop).")]
         [SerializeField] private AudioClip moonPantingSound;
@@ -55,7 +55,6 @@ namespace TheDelivery.Narrative
         private AudioSource moonRumbleSource;
         private AudioSource moonPantSource;
         private AudioSource moonWindSource, moonMusicSource;
-        private static AudioClip moonSynthImpact;
 
         // ---------------------------------------------------------------- texturas
 
@@ -387,7 +386,7 @@ namespace TheDelivery.Narrative
             // Partículas a meia velocidade, clarão longo (1,4 s), a lua afundando em 8 s e a parede de
             // poeira levando ~4 s para chegar na Clear.
             EnsureMoonFlash();
-            PlaySfx(moonImpactSound != null ? moonImpactSound : SynthMoonImpact(), 1f);
+            if (moonImpactSound != null) PlaySfx(moonImpactSound, 1f);
             // ELA GRITA no choque; a respiração para.
             if (moonPantSource != null) moonPantSource.Stop();
             PlaySfx(moonScreamSound, 1f);
@@ -1201,33 +1200,6 @@ namespace TheDelivery.Narrative
             moonFlashImage = img.AddComponent<Image>();
             moonFlashImage.raycastTarget = false;
             moonFlashImage.color = new Color(1f, 1f, 1f, 0f);
-        }
-
-        /// <summary>
-        /// ESTRONDO SINTETIZADO (enquanto não há um do ElevenLabs): estalo de ruído, um sub que despenca
-        /// de 70 para 22 Hz e uma cauda longa de ruído grave rolando e se afastando. 5 s.
-        /// </summary>
-        private static AudioClip SynthMoonImpact()
-        {
-            if (moonSynthImpact != null) return moonSynthImpact;
-            const int rate = 44100; int n = rate * 5;
-            var d = new float[n]; var rnd = new System.Random(5);
-            float lp = 0f, lp2 = 0f, ph = 0f;
-            for (int i = 0; i < n; i++)
-            {
-                float t = i / (float)rate;
-                float w = (float)(rnd.NextDouble() * 2 - 1);
-                float cut = Mathf.Lerp(0.5f, 0.015f, Mathf.Clamp01(t / 1.5f));
-                lp += (w - lp) * cut; lp2 += (lp - lp2) * 0.05f;
-                float crack = w * Mathf.Exp(-t / 0.05f) * 0.9f;
-                ph += 2f * Mathf.PI * Mathf.Lerp(70f, 22f, Mathf.Clamp01(t / 1.2f)) / rate;
-                float sub = Mathf.Sin(ph) * Mathf.Exp(-t / 1.6f) * 1.1f;
-                float roll = (lp * 0.8f + lp2 * 3f) * Mathf.Exp(-t / 2.2f) * (0.8f + 0.2f * Mathf.Sin(t * 9f));
-                d[i] = (float)System.Math.Tanh((crack + sub + roll) * 1.4f);
-            }
-            moonSynthImpact = AudioClip.Create("MoonImpactSynth", n, 1, rate, false);
-            moonSynthImpact.SetData(d, 0);
-            return moonSynthImpact;
         }
 
         /// <summary>Desmonta a cena da lua (fim do beat / salto de debug).</summary>

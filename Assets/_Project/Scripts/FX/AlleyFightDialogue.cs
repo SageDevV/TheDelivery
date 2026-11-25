@@ -19,12 +19,13 @@ namespace TheDelivery.FX
         [SerializeField] private Vector2 pauseRange = new Vector2(1.4f, 3.2f);
         [Range(0f, 1f)] [SerializeField] private float hitChance = 0.45f;
 
-        private static AudioClip thudClip;
+        [Tooltip("Pancada no corpo (ElevenLabs: AlleyFightThud.wav).")]
+        [SerializeField] private AudioClip thudClip;
         private int lastThug = -1, lastVictim = -1;
 
         private void OnEnable()
         {
-            if (impact != null) impact.clip = thudClip != null ? thudClip : (thudClip = BuildThud());
+            if (impact != null && thudClip != null) impact.clip = thudClip;
             StartCoroutine(Run());
         }
 
@@ -37,7 +38,7 @@ namespace TheDelivery.FX
                 {
                     float len = Say(thugVoice, thugLines, ref lastThug);
                     yield return new WaitForSeconds(len * 0.85f);
-                    if (impact != null && Random.value < hitChance)
+                    if (impact != null && impact.clip != null && Random.value < hitChance)
                     {
                         impact.pitch = Random.Range(0.85f, 1.1f);
                         impact.PlayOneShot(impact.clip, Random.Range(0.7f, 1f));
@@ -64,31 +65,6 @@ namespace TheDelivery.FX
             src.clip = lines[i];
             src.Play();
             return lines[i].length / src.pitch;
-        }
-
-        /// <summary>Pancada surda num corpo: grave (~65 Hz caindo) com decaimento curto + estalo de
-        /// ruído abafado no ataque (roupa/pele). 0,3 s.</summary>
-        private static AudioClip BuildThud()
-        {
-            const int rate = 44100;
-            int n = (int)(rate * 0.3f);
-            var data = new float[n];
-            var rnd = new System.Random(77);
-            float phase = 0f, lp = 0f;
-            for (int i = 0; i < n; i++)
-            {
-                float t = i / (float)rate;
-                float f = Mathf.Lerp(95f, 55f, Mathf.Clamp01(t / 0.12f));
-                phase += 2f * Mathf.PI * f / rate;
-                float body = Mathf.Sin(phase) * Mathf.Exp(-t / 0.07f);
-                float w = (float)(rnd.NextDouble() * 2.0 - 1.0);
-                lp += (w - lp) * 0.18f;
-                float slap = lp * Mathf.Exp(-t / 0.012f) * 1.6f;
-                data[i] = Mathf.Clamp(body * 0.9f + slap, -1f, 1f);
-            }
-            var clip = AudioClip.Create("AlleyFightThud", n, 1, rate, false);
-            clip.SetData(data, 0);
-            return clip;
         }
     }
 }

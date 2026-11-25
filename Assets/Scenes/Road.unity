@@ -17774,6 +17774,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 3f00f8e935321f84bb1e72259329567c, type: 3}
   pauseRange: {x: 1.4, y: 3.2}
   hitChance: 0.45
+  thudClip: {fileID: 8300000, guid: c1c6b04b7a515f84fa5e725588f2c247, type: 3}
 --- !u!4 &703784655
 Transform:
   m_ObjectHideFlags: 0

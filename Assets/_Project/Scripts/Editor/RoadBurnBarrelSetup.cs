@@ -17,7 +17,7 @@ namespace TheDelivery.EditorTools
     /// 200 L com furos, cinza, brasas emissivas e tábuas carbonizadas; PBR assado).</item>
     /// <item>Fogo ANIMADO por partículas: chamas (flipbook 8×8 de línguas de fogo GERADO aqui, com
     /// turbulência em movimento), núcleo amarelo, faíscas esticadas pela velocidade e fumaça escura
-    /// macia; luz pontual tremulando e estalos sintetizados (<see cref="BurnBarrelFire"/>).</item>
+    /// macia; luz pontual tremulando e o fogo do ElevenLabs em loop (<see cref="BurnBarrelFire"/>).</item>
     /// <item>Prefabs Prefabs/BurnBarrel_A|B|C e a raiz "BurnBarrels" na cena, com os barris dentro dos
     /// becos medidos pelo <see cref="RoadAlleyProbe"/> (encostados numa parede, a 2–6 m da calçada).</item>
     /// </list>
@@ -203,6 +203,7 @@ namespace TheDelivery.EditorTools
                 var bf = fire.AddComponent<BurnBarrelFire>();
                 var so = new SerializedObject(bf);
                 so.FindProperty("fireLight").objectReferenceValue = light;
+                so.FindProperty("crackleClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/SoundEffects/BurnBarrelFire.wav");
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, $"{PrefabDir}/{name}.prefab");

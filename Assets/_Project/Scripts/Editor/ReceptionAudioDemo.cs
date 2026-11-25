@@ -27,6 +27,7 @@ namespace TheDelivery.EditorTools
     {
         private const float Duration = 118f;
         private const float ScareDuration = 32f;
+        private const string CandidateFile = "Temp/JumpscareCandidate.txt";
 
         static ReceptionAudioDemo() => GameScreenshotTool.PlayReady += OnPlayReady;
 
@@ -53,6 +54,20 @@ namespace TheDelivery.EditorTools
             {
                 Debug.LogError("[ReceptionAudioDemo] Act2Director ou PlayerController não encontrado.");
                 return;
+            }
+            // comparação de candidatos do susto (2026-11-25): Temp/JumpscareCandidate.txt = caminho do clipe a testar
+            if (File.Exists(CandidateFile))
+            {
+                string path = File.ReadAllText(CandidateFile).Trim();
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                var field = typeof(Act2Director).GetField("scareHitSound", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (clip != null && field != null)
+                {
+                    clip.LoadAudioData();
+                    field.SetValue(director, clip);
+                    Debug.Log($"[ReceptionAudioDemo] susto de teste: {path}");
+                }
+                else Debug.LogWarning($"[ReceptionAudioDemo] candidato do susto não encontrado: {path}");
             }
             var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
             Object.DontDestroyOnLoad(rec.gameObject);

@@ -153,6 +153,7 @@ MonoBehaviour:
   speed: 7
   jitter: 0.05
   volume: 0.5
+  crackleClip: {fileID: 8300000, guid: db03f38529410fa48b37cffe8bf396fe, type: 3}
 --- !u!1 &1565307865835385595
 GameObject:
   m_ObjectHideFlags: 0

@@ -140,6 +140,7 @@ namespace TheDelivery.EditorTools
             so.FindProperty("thugVoice").objectReferenceValue = Source("FightThug", "ThugVoice", 1.65f);
             so.FindProperty("victimVoice").objectReferenceValue = Source("FightVictim", "VictimVoice", 1.05f);
             so.FindProperty("impact").objectReferenceValue = Source("FightVictim", "Impact", 0.8f);
+            so.FindProperty("thudClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/SoundEffects/AlleyFightThud.wav");
             var tl = so.FindProperty("thugLines"); tl.arraySize = thug.Length;
             for (int i = 0; i < thug.Length; i++) tl.GetArrayElementAtIndex(i).objectReferenceValue = thug[i];
             var vl = so.FindProperty("victimLines"); vl.arraySize = victim.Length;

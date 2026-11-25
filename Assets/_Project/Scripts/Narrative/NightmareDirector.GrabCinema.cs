@@ -26,7 +26,6 @@ namespace TheDelivery.Narrative
         private float cinemaShake;          // solavanco atual (decai)
         private float cinemaSeed;
         private float cinemaKeyLevel, cinemaRimLevel; // iluminação desejada NO ASSUNTO (a intensidade sai de nível × distância²)
-        private static AudioClip whooshClip;
         private bool slowMoActive;
 
         /// <summary>Liga luzes e foco de cinema para <paramref name="cam"/>. Os níveis são a luz que chega
@@ -192,37 +191,6 @@ namespace TheDelivery.Narrative
         {
             if (slowMoActive) Time.timeScale = 1f;
             slowMoActive = false;
-        }
-
-        /// <summary>
-        /// O GOLPE DE AR do arremesso, sintetizado: um baque grave (55→35 Hz) e um SOPRO de ruído com
-        /// filtro que varre de grave a agudo e some — o braço cortando o ar com ela. 0,9 s.
-        /// </summary>
-        private void PlayThrowWhoosh()
-        {
-            if (whooshClip == null)
-            {
-                const int rate = 44100;
-                int n = (int)(rate * 0.9f);
-                var data = new float[n];
-                var rnd = new System.Random(911);
-                float lp1 = 0f, lp2 = 0f, phase = 0f;
-                for (int i = 0; i < n; i++)
-                {
-                    float t = i / (float)rate;
-                    float w = (float)(rnd.NextDouble() * 2.0 - 1.0);
-                    float cut = Mathf.Lerp(0.02f, 0.35f, Mathf.Clamp01(t / 0.35f));
-                    lp1 += (w - lp1) * cut;
-                    lp2 += (lp1 - lp2) * cut;
-                    float swoosh = (lp1 - lp2) * 3.2f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / 0.7f));
-                    phase += 2f * Mathf.PI * Mathf.Lerp(55f, 35f, Mathf.Clamp01(t / 0.4f)) / rate;
-                    float thump = Mathf.Sin(phase) * Mathf.Exp(-t / 0.16f) * 0.9f;
-                    data[i] = Mathf.Clamp(swoosh + thump, -1f, 1f);
-                }
-                whooshClip = AudioClip.Create("GrabThrowWhoosh", n, 1, rate, false);
-                whooshClip.SetData(data, 0);
-            }
-            PlaySfx(whooshClip, 0.9f);
         }
     }
 }
