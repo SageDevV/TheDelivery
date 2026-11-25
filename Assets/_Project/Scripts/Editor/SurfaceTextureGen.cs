@@ -15,7 +15,7 @@ namespace TheDelivery.EditorTools
     {
         public const string Dir = "Assets/_Project/Materials/Surfaces";
 
-        public enum Kind { SquareTile, Subway, Planks, Granite, Wainscot, Asphalt, Pavers }
+        public enum Kind { SquareTile, Subway, Planks, Granite, Wainscot, Asphalt, Pavers, Marble, Concrete, Plaster }
 
         public sealed class Spec
         {
@@ -155,6 +155,52 @@ namespace TheDelivery.EditorTools
                         c = Color.Lerp(s.a, s.b, big * 0.6f + mid * 0.4f);
                         if (agg > 0.86f) c *= 1.35f; else if (agg < 0.08f) c *= 0.7f;
                         h = mid * 0.6f + (agg > 0.86f ? 0.4f : 0f); g = s.smooth * (0.6f + 0.8f * (1f - big));   // poças: partes mais lisas
+                        break;
+                    }
+                    case Kind.Marble:
+                    {
+                        // porcelanato "mármore": peças grandes, veios largos por fBm deformado (cada peça desloca o
+                        // veio, como placas cortadas de blocos diferentes) + veios finos; a = fundo, b = veio
+                        float tw = m / cellsU; int cx = Mathf.FloorToInt(pu / tw), cy = Mathf.FloorToInt(pv / tw);
+                        float lx = pu - cx * tw, ly = pv - cy * tw;
+                        float edge = Mathf.Min(Mathf.Min(lx, tw - lx), Mathf.Min(ly, tw - ly));
+                        bool groutPix = edge < s.grout * 0.5f;
+                        int cix = ((cx % cellsU) + cellsU) % cellsU, ciy = ((cy % cellsU) + cellsU) % cellsU;
+                        float rnd = Hash(cix, ciy, s.seed);
+                        float w = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 2)), 5, s.seed + 1);
+                        float w2 = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 6)), 4, s.seed + 5);
+                        float t1 = (u * 2f + v) * cellsU + w * 3.2f + rnd * 4f;
+                        float vein = Mathf.Pow(1f - Mathf.Abs(Mathf.Sin(t1 * Mathf.PI)), 14f) * (0.45f + w2);
+                        float t2 = (u * 3f - v * 2f) * cellsU * 2f + w2 * 5f + rnd * 7f;
+                        vein += Mathf.Pow(1f - Mathf.Abs(Mathf.Sin(t2 * Mathf.PI)), 40f) * 0.45f;
+                        Color cc = s.a * (0.95f + 0.1f * w) * (1f + (rnd - 0.5f) * s.variation);
+                        cc = Color.Lerp(cc, s.b, Mathf.Clamp01(vein) * 0.75f);
+                        float bevel = Mathf.Clamp01((edge - s.grout * 0.5f) / 0.003f);
+                        c = groutPix ? s.groutColor : cc;
+                        h = groutPix ? 0f : 0.7f + 0.3f * bevel;
+                        g = groutPix ? s.groutSmooth : s.smooth * (0.95f + 0.05f * w2);
+                        break;
+                    }
+                    case Kind.Concrete:
+                    {
+                        // cimento queimado / concreto: nuvens largas, manchas escuras, pontinhos de agregado
+                        float big = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 1.5f)), 5, s.seed);
+                        float mid = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 10)), 4, s.seed + 3);
+                        float stain = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 3)), 4, s.seed + 7);
+                        float sp = Hash(x, y, s.seed + 9);
+                        c = Color.Lerp(s.a, s.b, big * 0.7f + mid * 0.3f);
+                        if (stain > 0.62f) c *= Mathf.Lerp(1f, 0.82f, (stain - 0.62f) / 0.38f);
+                        if (sp > 0.985f) c *= 0.7f; else if (sp < 0.01f) c *= 1.2f;
+                        h = mid * 0.35f; g = s.smooth * (0.65f + 0.7f * (1f - stain));
+                        break;
+                    }
+                    case Kind.Plaster:
+                    {
+                        // massa corrida pintada: quase lisa, rolo de tinta bem leve
+                        float fine = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 30)), 4, s.seed);
+                        float roller = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 4)), 3, s.seed + 2, 1f, 0.4f);
+                        c = s.a * (0.965f + 0.04f * roller + 0.03f * fine);
+                        h = fine * 0.25f; g = s.smooth * (0.9f + 0.2f * fine);
                         break;
                     }
                     default: // Pavers: blocos de concreto com junta de areia
