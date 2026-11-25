@@ -1,6 +1,7 @@
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 using System.Text;
 using TheDelivery.Core;
 using TheDelivery.Narrative;
@@ -31,7 +32,7 @@ namespace TheDelivery.EditorTools
 
         private static void OnPlayReady(string prep)
         {
-            if (prep != "balconycallvideo" && prep != "apartmentroomvideo" && prep != "apartmentdoorsvideo" && prep != "apartmentdoorbellvideo" && prep != "apartmentphenomenavideo" && prep != "act3momentsvideo") return;
+            if (prep != "balconycallvideo" && prep != "apartmentroomvideo" && prep != "apartmentdoorsvideo" && prep != "apartmentdoorbellvideo" && prep != "apartmentphenomenavideo" && prep != "act3momentsvideo" && prep != "act3itemsvideo" && prep != "act3foodphonevideo" && prep != "newdoorsvideo" && prep != "aptourvideo") return;
             string bakDir = Path.Combine(Application.temporaryCachePath, "save-backup-balcony");
             Directory.CreateDirectory(bakDir);
             string[] files = { SaveManager.SavePath, SaveManager.ProgressPath };
@@ -56,7 +57,7 @@ namespace TheDelivery.EditorTools
             var rec = new GameObject("DemoFrameRecorder").AddComponent<DemoFrameRecorder>();
             Object.DontDestroyOnLoad(rec.gameObject);
             rec.RenderActiveCamera = true;
-            rec.StartCoroutine(prep == "apartmentroomvideo" ? RoomScript(rec) : prep == "apartmentdoorsvideo" ? DoorsScript(rec) : prep == "apartmentdoorbellvideo" ? DoorbellScript(rec) : prep == "apartmentphenomenavideo" ? PhenomenaScript(rec) : prep == "act3momentsvideo" ? MomentsScript(rec) : Script(rec));
+            rec.StartCoroutine(prep == "apartmentroomvideo" ? RoomScript(rec) : prep == "apartmentdoorsvideo" ? DoorsScript(rec) : prep == "apartmentdoorbellvideo" ? DoorbellScript(rec) : prep == "apartmentphenomenavideo" ? PhenomenaScript(rec) : prep == "act3momentsvideo" ? MomentsScript(rec) : prep == "act3itemsvideo" ? ItemsScript(rec) : prep == "act3foodphonevideo" ? FoodPhoneScript(rec) : prep == "newdoorsvideo" ? NewDoorsScript(rec) : prep == "aptourvideo" ? TourScript(rec) : Script(rec));
         }
 
         private static IEnumerator Script(DemoFrameRecorder rec)
@@ -586,6 +587,392 @@ namespace TheDelivery.EditorTools
             }
             InputSystem.RemoveDevice(pad);
             yield return new WaitUntil(() => Time.time - t0 > 149f || player == null);
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "act3itemsvideo" (2026-11-24, etapa 7): chaves na porta (Beat 2), toques no celular (Beat 3), saco da
+        /// comida (Beat 4 e 6), mordidas no sofá e lençol na cama (Beat 6), seguindo o fluxo real do Act3Director.
+        /// Marcador: "700 Assets/Scenes/Boot.unity act3itemsvideo".
+        /// </summary>
+        private static IEnumerator ItemsScript(DemoFrameRecorder rec)
+        {
+            var log = new StringBuilder();
+            float t0 = 0f;
+            void Ev(string s) { log.AppendLine($"{Time.time - t0:0.0}  {s}"); Debug.Log($"[Act3ItemsDemo] {Time.time - t0:0.0}s {s}"); }
+
+            yield return new WaitUntil(() => Object.FindFirstObjectByType<MainMenuController>() != null);
+            yield return new WaitForSeconds(2f);
+            GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartment);
+            yield return new WaitUntil(() => SceneManager.GetActiveScene().name == "Apartment" && Object.FindFirstObjectByType<Act3Director>() != null);
+            yield return new WaitForSeconds(2f);
+
+            var director = Object.FindFirstObjectByType<Act3Director>();
+            var player = Object.FindFirstObjectByType<PlayerController>();
+            var cc = player.GetComponent<CharacterController>();
+            var src = GetPrivate<AudioSource>(director, "audioSource");
+            var door = GetPrivate<TheDelivery.Interaction.Door>(director, "apartmentDoor");
+            var pi = GetPrivate<TheDelivery.Interaction.PlayerInteraction>(director, "playerInteraction");
+            var fridge = GetPrivate<Transform>(director, "fridgeZone");
+            var phone = GetPrivate<GameObject>(director, "phoneObject");
+            var counter = GetPrivate<Component>(director, "counterDropPoint");
+            var revealZone = GetPrivate<Transform>(director, "deliverymanBalconyRevealZone");
+            var balcony = GetPrivate<Transform>(director, "balconyPoint");
+            var sofa = GetPrivate<TheDelivery.Interaction.SittableChair>(director, "sofaChair");
+            var tv = GetPrivate<TheDelivery.FX.TVScreen>(director, "livingRoomTV");
+            var bed = GetPrivate<Transform>(director, "bedPoint");
+            const BindingFlags I = BindingFlags.NonPublic | BindingFlags.Instance;
+            void SetF(string f, object v) => typeof(Act3Director).GetField(f, I)?.SetValue(director, v);
+            object GetF(string f) => typeof(Act3Director).GetField(f, I)?.GetValue(director);
+            void Call(string m) => typeof(Act3Director).GetMethod(m, I)?.Invoke(director, null);
+            void Put(Vector3 p, Vector3 look, float pitch = 4f)
+            {
+                if (NavMesh.SamplePosition(p, out var h, 2.5f, NavMesh.AllAreas)) p = h.position;
+                cc.enabled = false; player.transform.position = p; player.transform.rotation = Quaternion.LookRotation(Flat(look - p)); cc.enabled = true;
+                player.SyncCameraState(pitch, player.EyeHeight);
+            }
+            SetF("waitForDeliveryDelay", 2f);
+            Gamepad pad = InputSystem.AddDevice<Gamepad>("Act3ItemsGamepad");
+            Vector3 inside = new Vector3(1.0f, player.transform.position.y, 2.6f);
+
+            // BEAT 2: chega à porta fechada -> chaves e trinco; abre e entra
+            if (door != null) { door.IsLocked = false; if (!door.IsClosed) door.SetOpenInstant(false); }
+            Vector3 doorP = door != null ? new Vector3(door.transform.position.x, inside.y, door.transform.position.z) : inside;
+            Vector3 outside = doorP + Flat(doorP - inside) * 3.5f;
+            Put(outside, doorP);
+            rec.Begin(200f, 24, true);
+            t0 = Time.time;
+            director.AdvanceToBeat(Act3Beat.EnterApartment);
+            yield return null;
+            Ev("Beat 2: no corredor, indo até a porta do apê");
+            yield return WalkTo(pad, player, doorP, 1.3f, 8f);
+            QueueStick(pad, Vector2.zero);
+            Ev("na porta: chaves e trinco");
+            yield return new WaitForSeconds(4.5f);
+            door?.Interact(null); Ev("abre a porta");
+            yield return new WaitForSeconds(1.2f);
+            yield return WalkTo(pad, player, inside, 0.6f, 8f);
+            QueueStick(pad, Vector2.zero);
+
+            // BEAT 3: geladeira vazia e o pedido no celular
+            yield return new WaitUntil(() => director.CurrentBeat == Act3Beat.HungerAndOrder || Time.time - t0 > 30f);
+            if (director.CurrentBeat != Act3Beat.HungerAndOrder) director.AdvanceToBeat(Act3Beat.HungerAndOrder);
+            if (fridge != null) Put(fridge.position, fridge.position + Vector3.forward);
+            Ev("Beat 3: na geladeira");
+            yield return new WaitUntil(() => GetF("activeOrderPhone") != null || Time.time - t0 > 70f);
+            if (phone != null) Put(Vector3.MoveTowards(new Vector3(phone.transform.position.x, inside.y, phone.transform.position.z), inside, 1.2f), phone.transform.position, 30f);
+            yield return new WaitForSeconds(1f);
+            Call("OnPhoneOrdered"); Ev("pega o celular e pede: toques na tela");
+            yield return new WaitForSeconds(5f);
+
+            // BEAT 4: entrega -> saco de papel ao receber e ao deixar na bancada
+            yield return new WaitUntil(() => director.CurrentBeat == Act3Beat.Delivery || Time.time - t0 > 85f);
+            if (door != null) Put(Vector3.MoveTowards(doorP, inside, 2.0f), doorP);
+            Ev("Beat 4: esperando o entregador");
+            float tb = Time.time;
+            yield return new WaitUntil(() => (src != null && src.isPlaying) || Time.time - tb > 40f);
+            yield return new WaitForSeconds(1.5f);
+            if (door != null && door.IsClosed) { door.Interact(null); Ev("abre para o entregador"); }
+            yield return new WaitUntil(() => !player.CanMove || Time.time - tb > 50f);
+            yield return new WaitUntil(() => player.CanMove || Time.time - tb > 75f);
+            Ev("recebe a comida: saco de papel");
+            yield return new WaitUntil(() => GetF("activeDropPoint") != null || Time.time - tb > 90f);
+            if (counter != null) Put(Vector3.MoveTowards(new Vector3(counter.transform.position.x, inside.y, counter.transform.position.z), inside, 1.0f), counter.transform.position, 30f);
+            yield return new WaitForSeconds(1f);
+            Call("OnFoodPlaced"); Ev("deixa na bancada: saco de papel");
+            yield return new WaitForSeconds(4f);
+
+            // BEAT 6: pega de volta (saco), sacada, sofá (mordidas), cama (lençol)
+            director.AdvanceToBeat(Act3Beat.EatAndSleep);
+            yield return null;
+            yield return new WaitUntil(() => GetF("activeDropPoint") != null || Time.time - t0 > 130f);
+            yield return new WaitForSeconds(0.5f);
+            Call("OnFoodTaken"); Ev("Beat 6: pega a comida na bancada: saco de papel");
+            yield return new WaitForSeconds(3f);
+            yield return new WaitUntil(() => player.CanMove || Time.time - t0 > 140f);
+            var dman = GetPrivate<GameObject>(director, "deliveryman");
+            if (revealZone != null) { Put(revealZone.position, balcony != null ? balcony.position : revealZone.position + Vector3.forward); yield return new WaitUntil(() => (dman != null && dman.activeInHierarchy) || Time.time - t0 > 105f); Ev("entregador revelado lá embaixo"); }
+            if (balcony != null) { cc.enabled = false; player.transform.position = new Vector3(balcony.position.x, player.transform.position.y, balcony.position.z); cc.enabled = true; player.SyncCameraState(8f, player.EyeHeight); }
+            yield return new WaitUntil(() => !player.CanMove || Time.time - t0 > 115f);   // a câmera trava no entregador lá embaixo
+            Ev("sacada: o entregador encarando");
+
+            if (sofa != null)
+            {
+                yield return new WaitUntil(() => player.CanMove || Time.time - t0 > 160f);
+                Put(Vector3.MoveTowards(new Vector3(sofa.transform.position.x, inside.y, sofa.transform.position.z), inside, 1.0f), sofa.transform.position);
+                yield return new WaitForSeconds(2.5f);
+                yield return new WaitUntil(() => sofa.CanInteract || Time.time - t0 > 165f);
+                sofa.Interact(pi); Ev("senta no sofá");
+                yield return new WaitUntil(() => sofa.IsSeated || Time.time - t0 > 168f);
+                // come pela MESMA rotina do jogo (EatFoodAnimation: 3 subidas à boca, uma mordida em cada)
+                yield return new WaitForSeconds(7f);   // o pensamento "Pressione [F] para comer"
+                Ev("come: mordidas (rotina EatFoodAnimation do Act3Director)");
+                yield return (IEnumerator)typeof(Act3Director).GetMethod("EatFoodAnimation", I).Invoke(director, null);
+                yield return new WaitForSeconds(2f);
+                tv?.TurnOff();
+                director.StopAllCoroutines();
+                if (sofa.IsSeated) { sofa.StandUp(); yield return new WaitUntil(() => !sofa.IsSeated || Time.time - t0 > 190f); }
+                if (bed != null)
+                {
+                    cc.enabled = false; player.transform.position = new Vector3(bed.position.x, player.transform.position.y, bed.position.z); cc.enabled = true;
+                    player.SyncCameraState(20f, player.EyeHeight);
+                    yield return new WaitForSeconds(1.5f);
+                    var sheets = GetPrivate<AudioClip>(director, "bedSheetsSound");
+                    if (src != null && sheets != null) src.PlayOneShot(sheets);
+                    Ev($"na cama: lençol ({sheets?.name})");
+                    yield return new WaitForSeconds(6f);
+                }
+            }
+            yield return new WaitUntil(() => player.CanMove || Time.time - t0 > 192f);
+            InputSystem.RemoveDevice(pad);
+            yield return new WaitUntil(() => Time.time - t0 > 199f || player == null);
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "act3foodphonevideo" (2026-11-24): o pedido no celular (cutscene da tela inteira), o lanche desembrulhado
+        /// no papel da bancada, a Clear pegando o hambúrguer e comendo (inteiro -> 1ª -> 2ª -> 3ª mordida).
+        /// Marcador: "520 Assets/Scenes/Boot.unity act3foodphonevideo".
+        /// </summary>
+        private static IEnumerator FoodPhoneScript(DemoFrameRecorder rec)
+        {
+            var log = new StringBuilder();
+            float t0 = 0f;
+            void Ev(string s) { log.AppendLine($"{Time.time - t0:0.0}  {s}"); Debug.Log($"[Act3FoodPhoneDemo] {Time.time - t0:0.0}s {s}"); }
+
+            yield return new WaitUntil(() => Object.FindFirstObjectByType<MainMenuController>() != null);
+            yield return new WaitForSeconds(2f);
+            GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartment);
+            yield return new WaitUntil(() => SceneManager.GetActiveScene().name == "Apartment" && Object.FindFirstObjectByType<Act3Director>() != null);
+            yield return new WaitForSeconds(2f);
+
+            var director = Object.FindFirstObjectByType<Act3Director>();
+            var player = Object.FindFirstObjectByType<PlayerController>();
+            var cc = player.GetComponent<CharacterController>();
+            var pi = GetPrivate<TheDelivery.Interaction.PlayerInteraction>(director, "playerInteraction");
+            var fridge = GetPrivate<Transform>(director, "fridgeZone");
+            var phone = GetPrivate<GameObject>(director, "phoneObject");
+            var overlay = GetPrivate<GameObject>(director, "orderPhoneOverlay");
+            var counter = GetPrivate<Component>(director, "counterDropPoint");
+            var sofa = GetPrivate<TheDelivery.Interaction.SittableChair>(director, "sofaChair");
+            const BindingFlags I = BindingFlags.NonPublic | BindingFlags.Instance;
+            object GetF(string f) => typeof(Act3Director).GetField(f, I)?.GetValue(director);
+            void Call(string m) => typeof(Act3Director).GetMethod(m, I)?.Invoke(director, null);
+            IEnumerator Routine(string m) => (IEnumerator)typeof(Act3Director).GetMethod(m, I).Invoke(director, null);
+            void CounterInteract() { if (counter is TheDelivery.Items.CounterDropPoint cdp && pi != null) cdp.Interact(pi); }
+            void Put(Vector3 p, Vector3 look, float pitch = 4f)
+            {
+                if (NavMesh.SamplePosition(p, out var h, 2.5f, NavMesh.AllAreas)) p = h.position;
+                cc.enabled = false; player.transform.position = p; player.transform.rotation = Quaternion.LookRotation(Flat(look - p)); cc.enabled = true;
+                player.SyncCameraState(pitch, player.EyeHeight);
+            }
+            Vector3 inside = new Vector3(1.0f, player.transform.position.y, 2.6f);
+
+            // BEAT 3: geladeira vazia -> celular -> a cutscene do pedido
+            director.AdvanceToBeat(Act3Beat.HungerAndOrder);
+            yield return null;
+            if (fridge != null) Put(fridge.position, fridge.position + Vector3.forward);
+            rec.Begin(120f, 24, true);
+            t0 = Time.time;
+            Ev("Beat 3: fome; esperando o celular armar");
+            yield return new WaitUntil(() => GetF("activeOrderPhone") != null || Time.time - t0 > 40f);
+            if (phone != null) Put(Vector3.MoveTowards(new Vector3(phone.transform.position.x, inside.y, phone.transform.position.z), inside, 1.2f), phone.transform.position, 30f);
+            yield return new WaitForSeconds(1f);
+            Call("OnPhoneOrdered"); Ev("pega o celular: cutscene do pedido");
+            yield return new WaitUntil(() => (overlay != null && overlay.activeInHierarchy) || Time.time - t0 > 45f);
+            yield return new WaitUntil(() => (overlay != null && !overlay.activeInHierarchy) || Time.time - t0 > 75f);
+            Ev("pedido pago; o celular fecha");
+            yield return new WaitForSeconds(1f);
+
+            // BEAT 4 (encurtado): a comida já entregue -> bancada -> desembrulhar
+            director.StopAllCoroutines();
+            Call("GiveDeliveryFood");
+            director.StartCoroutine(Routine("PlaceFoodOnCounter"));
+            if (counter != null) Put(Vector3.MoveTowards(new Vector3(counter.transform.position.x, inside.y, counter.transform.position.z), inside, 0.9f), counter.transform.position, 38f);
+            yield return new WaitUntil(() => GetF("activeDropPoint") != null || Time.time - t0 > 85f);
+            yield return new WaitForSeconds(0.5f);
+            CounterInteract(); Ev("deixa a sacola na bancada");
+            yield return new WaitForSeconds(0.5f);
+            yield return new WaitUntil(() => GetF("activeDropPoint") != null || Time.time - t0 > 92f);
+            yield return new WaitForSeconds(1f);
+            CounterInteract(); Ev("desembrulha: o hambúrguer no papel");
+            yield return new WaitUntil(() => player.CanMove || Time.time - t0 > 98f);
+            yield return new WaitForSeconds(2.5f);
+
+            // BEAT 6 (encurtado): pega o hambúrguer e come no sofá
+            director.StopAllCoroutines();
+            director.StartCoroutine(Routine("TakeFoodFromCounter"));
+            yield return new WaitUntil(() => GetF("activeDropPoint") != null || Time.time - t0 > 100f);
+            yield return new WaitForSeconds(0.5f);
+            CounterInteract(); Ev("pega o hambúrguer: na mão");
+            player.SyncCameraState(10f, player.EyeHeight);
+            yield return new WaitForSeconds(3f);
+            if (sofa != null)
+            {
+                Put(Vector3.MoveTowards(new Vector3(sofa.transform.position.x, inside.y, sofa.transform.position.z), inside, 1.0f), sofa.transform.position);
+                yield return new WaitForSeconds(0.5f);
+                if (sofa.CanInteract) sofa.Interact(pi);
+                yield return new WaitUntil(() => sofa.IsSeated || Time.time - t0 > 110f);
+                Ev("senta no sofá");
+                yield return new WaitForSeconds(1f);
+            }
+            director.StopAllCoroutines();
+            Ev("come: inteiro -> 1ª -> 2ª -> 3ª mordida");
+            yield return Routine("EatFoodAnimation");
+            Ev("comeu");
+            yield return new WaitUntil(() => Time.time - t0 > 119f || player == null);
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "newdoorsvideo" (2026-11-24): as portas novas — a 302 da Clear vista do corredor (de longe, de perto, abrindo e
+        /// fechando), as dos vizinhos (303 e 301), o vizinho abrindo com a corrente e a 302 vista de dentro.
+        /// Marcador: "260 Assets/Scenes/Boot.unity newdoorsvideo".
+        /// </summary>
+        private static IEnumerator NewDoorsScript(DemoFrameRecorder rec)
+        {
+            var log = new StringBuilder();
+            float t0 = 0f;
+            void Ev(string s) { log.AppendLine($"{Time.time - t0:0.0}  {s}"); Debug.Log($"[NewDoorsDemo] {Time.time - t0:0.0}s {s}"); }
+
+            yield return new WaitUntil(() => Object.FindFirstObjectByType<MainMenuController>() != null);
+            yield return new WaitForSeconds(2f);
+            GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartment);
+            yield return new WaitUntil(() => SceneManager.GetActiveScene().name == "Apartment" && Object.FindFirstObjectByType<Act3Director>() != null);
+            yield return new WaitForSeconds(2f);
+
+            var director = Object.FindFirstObjectByType<Act3Director>();
+            var player = Object.FindFirstObjectByType<PlayerController>();
+            var cc = player.GetComponent<CharacterController>();
+            var door = GetPrivate<TheDelivery.Interaction.Door>(director, "apartmentDoor");
+            var nDoor = GetPrivate<TheDelivery.Interaction.Door>(director, "neighborDoor");
+            var nZone = GetPrivate<Transform>(director, "neighborDoorZone");
+            var dman = GetPrivate<GameObject>(director, "deliveryman");
+            var n02 = GameObject.Find("NeighborDoor_02");
+            const BindingFlags I = BindingFlags.NonPublic | BindingFlags.Instance;
+            director.StopAllCoroutines();
+            if (dman != null) dman.SetActive(false);
+            void Put(Vector3 p, Vector3 look, float pitch = 3f)
+            {
+                if (NavMesh.SamplePosition(p, out var h, 1.5f, NavMesh.AllAreas)) p = h.position;
+                cc.enabled = false; player.transform.position = p; player.transform.rotation = Quaternion.LookRotation(Flat(look - p)); cc.enabled = true;
+                player.SyncCameraState(pitch, player.EyeHeight);
+            }
+            Vector3 Center(Transform t) { var r = t.GetComponentInChildren<Renderer>(); return r != null ? r.bounds.center : t.position; }
+            float y = player.transform.position.y;
+            if (door != null) { door.IsLocked = false; if (!door.IsClosed) door.SetOpenInstant(false); }
+
+            rec.Begin(60f, 24, true);
+            t0 = Time.time;
+            if (door != null)
+            {
+                Vector3 dc = Center(door.transform);
+                Put(new Vector3(dc.x - 0.25f, y, dc.z - 2.3f), dc, 2f);
+                Ev("302 (Clear) vista do corredor"); yield return new WaitForSeconds(3.5f);
+                Put(new Vector3(dc.x, y, dc.z - 1.0f), dc + Vector3.up * 0.3f, -6f);
+                Ev("de perto: número, olho mágico, maçaneta"); yield return new WaitForSeconds(3.5f);
+                Put(new Vector3(dc.x - 0.2f, y, dc.z - 1.6f), dc, 4f);
+                door.Interact(null); Ev("abre"); yield return new WaitForSeconds(3f);
+                door.Interact(null); Ev("fecha"); yield return new WaitForSeconds(2.5f);
+            }
+            if (nDoor != null)
+            {
+                Vector3 nc = Center(nDoor.transform);
+                Put(new Vector3(nc.x - 1.9f, y, nc.z), nc, 2f);
+                Ev("303 (vizinho) vista do corredor"); yield return new WaitForSeconds(3f);
+            }
+            if (n02 != null)
+            {
+                Vector3 oc = Center(n02.transform);
+                Put(new Vector3(oc.x + 1.9f, y, oc.z), oc, 2f);
+                Ev("301 (outro vizinho)"); yield return new WaitForSeconds(3f);
+            }
+            if (nDoor != null && nZone != null)
+            {
+                director.StartCoroutine((IEnumerator)typeof(Act3Director).GetMethod("NeighborEncounter", I).Invoke(director, null));
+                Put(nZone.position, nDoor.transform.position, 2f);
+                float tn = Time.time;
+                Ev("bate na 303");
+                yield return new WaitForSeconds(1f);
+                while (nDoor.IsClosed && Time.time - tn < 15f)
+                {
+                    nDoor.Interact(null);
+                    float w = Time.time; yield return new WaitUntil(() => !nDoor.IsClosed || Time.time - w > 3.5f);
+                }
+                Ev("o vizinho abre: a corrente por dentro");
+                yield return new WaitUntil(() => nDoor.IsClosed || Time.time - tn > 35f);
+                Ev("o vizinho fecha");
+                yield return new WaitForSeconds(1f);
+            }
+            director.StopAllCoroutines();
+            if (door != null)
+            {
+                Vector3 dc = Center(door.transform);
+                Put(new Vector3(dc.x + 0.3f, y, dc.z + 2.2f), dc, 3f);
+                Ev("302 vista de dentro"); yield return new WaitForSeconds(3.5f);
+            }
+            yield return new WaitUntil(() => Time.time - t0 > 59f || player == null);
+            Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
+            File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
+        }
+
+        /// <summary>
+        /// "aptourvideo" (2026-11-24, a noite do acabamento): passeio por pontos fixos do prédio — cozinha, banheiro,
+        /// sala, sacada, rua vista da sacada, quarto, hall e corredor do prédio — para conferir pisos, revestimentos,
+        /// janelas, sacada, móveis e decoração. Marcador: "300 Assets/Scenes/Boot.unity aptourvideo".
+        /// </summary>
+        private static IEnumerator TourScript(DemoFrameRecorder rec)
+        {
+            var log = new StringBuilder();
+            float t0 = 0f;
+            void Ev(string s) { log.AppendLine($"{Time.time - t0:0.0}  {s}"); Debug.Log($"[AptTour] {Time.time - t0:0.0}s {s}"); }
+            yield return new WaitUntil(() => Object.FindFirstObjectByType<MainMenuController>() != null);
+            yield return new WaitForSeconds(2f);
+            GameManager.Instance.GoToAct(GameAct.Act3, GameScene.Apartment);
+            yield return new WaitUntil(() => SceneManager.GetActiveScene().name == "Apartment" && Object.FindFirstObjectByType<Act3Director>() != null);
+            yield return new WaitForSeconds(2f);
+            var director = Object.FindFirstObjectByType<Act3Director>();
+            var player = Object.FindFirstObjectByType<PlayerController>();
+            var cc = player.GetComponent<CharacterController>();
+            director.StopAllCoroutines();
+            var dman = GetPrivate<GameObject>(director, "deliveryman"); if (dman != null) dman.SetActive(false);
+            const float FY = 5.31f;
+            void Put(float x, float z, float lx, float lz, float pitch)
+            {
+                var p = new Vector3(x, FY + 0.05f, z);
+                cc.enabled = false; player.transform.position = p; player.transform.rotation = Quaternion.LookRotation(Flat(new Vector3(lx, p.y, lz) - p)); cc.enabled = true;
+                player.SyncCameraState(pitch, player.EyeHeight);
+            }
+            var shots = new (string label, float x, float z, float lx, float lz, float pitch, float secs)[]
+            {
+                ("Cozinha: porcelanato, azulejo, fogão", -7.35f, 7.3f, -9.9f, 6.2f, 16f, 3f),
+                ("Cozinha: mesa, cadeiras e moletom", -9.3f, 6.3f, -7.9f, 8.4f, 20f, 3.5f),
+                ("Banheiro: azulejo metrô", 1.0f, 8.4f, 3.0f, 11.6f, 10f, 3f),
+                ("Banheiro: janela maxim-ar", 2.2f, 9.7f, 3.35f, 10.6f, 6f, 2.5f),
+                ("Sala: laminado e janela de correr", 1.2f, 2.2f, -2.5f, 2.4f, 4f, 3f),
+                ("Sala: estante e quadro", -1.2f, 5.3f, 0.0f, 0.0f, 6f, 3.5f),
+                ("Sacada: porta de correr aberta", 0.6f, 5.2f, -3.5f, 5.3f, 6f, 3f),
+                ("Sacada: piso e guarda-corpo", -2.8f, 5.3f, -4.6f, 4.9f, 24f, 3f),
+                ("Rua vista da sacada", -3.6f, 5.3f, -14f, 2.0f, 26f, 3.5f),
+                ("Quarto: janela", -0.8f, 8.5f, -2.0f, 11.9f, 4f, 3f),
+                ("Quarto: quadro", -1.6f, 9.0f, 0.0f, 11.0f, 2f, 2.5f),
+                ("Hall: quadro", -3.6f, 7.5f, -5.2f, 6.0f, 2f, 2.5f),
+                ("Corredor do prédio: 302 e capacho", 0.0f, -2.6f, 0.0f, 0.0f, 22f, 3f),
+                ("Corredor: 303 e capacho", -1.4f, -2.5f, 2.4f, -2.5f, 12f, 3f),
+                ("Corredor: 301, extintor", 1.5f, -1.2f, -2.4f, -4.0f, 8f, 3.5f),
+                ("Corredor: quadro de luz e elevador", -0.4f, -4.6f, 1.0f, -7.0f, 4f, 3f),
+            };
+            rec.Begin(shots.Sum(s => s.secs) + 1f, 24, true);
+            t0 = Time.time;
+            foreach (var s in shots)
+            {
+                Put(s.x, s.z, s.lx, s.lz, s.pitch);
+                Ev(s.label);
+                yield return new WaitForSeconds(s.secs);
+            }
             Directory.CreateDirectory(DemoFrameRecorder.OutputDir);
             File.WriteAllText(Path.Combine(DemoFrameRecorder.OutputDir, "log.txt"), log.ToString());
         }

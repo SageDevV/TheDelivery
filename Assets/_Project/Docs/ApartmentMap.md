@@ -92,12 +92,12 @@ Complementa o `AudioMap.md` (seções A3/A4), que tem os códigos originais.
 **Primitivas (cubo/plano) no lugar de modelo:**
 | Objeto | Hoje | Prioridade |
 |---|---|---|
-| **Comida** (`Food.prefab`, vai para a mão da Clear) | Cubo | **Alta** (aparece em close) |
-| **Porta do apartamento** (`ApartmentDoor/DoorMesh`) | Cubo com `Door.mat` | **Alta** (interagida várias vezes) |
-| Maçanetas (apê e 2 vizinhos) | Esfera e cilindro, `DoorHandle.mat` sem textura | Média (sai junto com a porta) |
-| Portas dos vizinhos (`NeighborDoor_01/02`) | ProBuilder e maçanetas primitivas, sem corrente | Média (a corrente faz parte da cena do vizinho) |
-| Janelas (sala, quarto, banheiro + `Window.prefab`) | Cubos de vidro, `Glass.mat` sem textura | Média |
-| Rua e calçadas (`Street`/`Sidewalk`) | Planos | Média (vistas da sacada) |
+| **Comida** (`Food.prefab`, vai para a mão da Clear) | ✅ FEITO 2026-11-24: hambúrguer realista com 4 estágios de mordida (ver seção abaixo) | — |
+| **Porta do apartamento** (`ApartmentDoor/DoorMesh`) | ✅ FEITO 2026-11-24: `Blender/build_door.py` + `ApartmentDoorsSetup` (folha almofadada 302 com ferragens, número e olho mágico; guarnição no vão) | — |
+| Maçanetas (apê e 2 vizinhos) | ✅ FEITO 2026-11-24 (fazem parte da folha nova; as primitivas saíram) | — |
+| Portas dos vizinhos (`NeighborDoor_01/02`) | ✅ FEITO 2026-11-24: 303 (com a corrente por dentro) e 301; o ProBuilder foi removido do DoorMesh | — |
+| Janelas (sala, quarto, banheiro) | ✅ FEITO 2026-11-24: caixilho de alumínio (correr 4 e 2 folhas, maxim-ar no banheiro) + peitoril de granito; vidro `WindowGlass.mat` transparente com sujeira leve (`ApartmentFurnishSetup`) | — |
+| Rua e calçadas (`Street`/`Sidewalk`) | ✅ FEITO 2026-11-24: asfalto e calçada de blocos (texturas geradas, repetição por metro), meio-fio dos dois lados e faixa central tracejada (`ApartmentSurfacesSetup`) | — |
 | Tela da TV (`TV_Render`) | Quad (normal para tela) | — |
 
 **Material sem textura (cor chapada):**
@@ -106,15 +106,44 @@ Complementa o `AudioMap.md` (seções A3/A4), que tem os códigos originais.
 | `Fridge.mat`, `Fridge_02.mat` | Geladeira (interagida no Ato 3) | Alta |
 | `Curtain.mat` | Cortina do box do banheiro (o esconderijo final) | Alta |
 | `Neighbor.mat` | Vizinho (falta só o `_MetallicGlossMap`) | Baixa |
-| `ApartmentWall.mat` (67 paredes) e `Floor.mat` (12 pisos) | O apê inteiro, o corredor e o banheiro têm o mesmo piso e a mesma parede | Média (cozinha e banheiro pedem azulejo) |
+| `ApartmentWall.mat` e `Floor.mat` | ✅ FEITO 2026-11-24 por REVESTIMENTO (as malhas ProBuilder não mudam): laminado (sala, quarto, hall), porcelanato + azulejo 1,6 m (cozinha), cerâmica + azulejo metrô até o teto (banheiro), cerâmica de área externa (sacada), granito + rodameio 1,1 m (corredor do prédio) | — |
 
 **Não existe e o roteiro pede:**
 | Falta | Por quê | Prioridade |
 |---|---|---|
-| Sacada | Existe um vão com mureta na sala (o `BalconyPoint`), mas sem piso de sacada, guarda-corpo ou porta: é uma janela aberta | Média |
-| Fogão, mesa e cadeiras na cozinha | A cozinha só tem bancada, pia, geladeira e lixeira; ela "come no sofá", mas a casa parece vazia | Média |
-| Animators do entregador e do vizinho | `deliverymanAnimator` e `neighborAnimator` vazios no `Act3Director` (eles andam sem animação de passo?) | Média (conferir em jogo) |
-| Corredor do prédio: números nas portas, capacho, extintor, quadro de luz | Corredor de "cenário" | Baixa |
-| Detalhes de casa (quadros, livros, roupa na cadeira) | O apê não parece habitado | Baixa |
+| Sacada | ✅ FEITO 2026-11-24: o vidro do nicho saiu (área aberta), piso cerâmico, capa de granito + corrimão na mureta, porta de correr de 3 folhas ABERTA (empilhadas na ponta z 4,65; passagem ≈ 0,8 m) | — |
+| Fogão, mesa e cadeiras na cozinha | ✅ FEITO 2026-11-24: fogão 4 bocas entre a bancada e a geladeira, mesa no fundo, 2 cadeiras (NavMeshObstacle com carving) | — |
+| Animators do entregador e do vizinho | ✅ FEITO 2026-11-24: atribuídos (`StandardIdle`/Antagonist, o mesmo do `Act4Director.shadowAnimator`; `Neighbor`/Neighbor). Já funcionavam pelo fallback `GetComponentInChildren` | — |
+| Corredor do prédio: números nas portas, capacho, extintor, quadro de luz | ✅ FEITO 2026-11-24: números (portas novas), capachos 302/303/301, extintor + placa, quadro de luz no corredor do elevador | — |
+| Detalhes de casa (quadros, livros, roupa na cadeira) | ✅ FEITO 2026-11-24: estante com livros (sala), 3 quadros (sala, hall, quarto), moletom largado numa cadeira da cozinha | — |
 
 **OK:** cama, guarda-roupa, sofá, tapete, TV, abajur, bancada, pia, lixeiras, vaso, pia do banheiro, box, espelho, celular, fixo, saco de comida, elevador, viaturas e prédios externos. Todos com textura.
+
+## Sons novos do Ato 3 (ElevenLabs, 2026-11-24)
+Todos ligados pelo `ApartmentAudioSetup` (etapa 6) e tocados pelo `Act3Director`:
+- `JumpscareHit` no reveal do entregador (o mesmo do zelador, via `JumpscareAudio`); passos de bota no entregador (corredor e entrega; mudos na sacada).
+- Elevador na chegada (REUSO da Recepção), luminária do corredor (REUSO), cidade e vento na sacada (REUSO da Road).
+- `Act3GoodNightSting` na fala "A noite é longa"; `Act3OminousDrone` em "Eu sei onde você mora agora"; `NeighborGrunt` quando o vizinho abre.
+- `ApartmentKeysUnlock` (porta do apê), `PhoneOrderTaps` (pedido), `FoodBagRustle` (receber, deixar, pegar), `EatBite_01..03` (sofá), `BedSheets` (cama).
+- `NeighborTVMuffled` (2026-11-24): videogame de tiro abafado atrás da porta do vizinho (tiros, explosões e ele gritando), loop de 22 s com passa-baixa 2,6 kHz; emissor 3D `NeighborTV` na porta dele.
+
+## Hambúrguer e pedido no celular (2026-11-24)
+- **Modelo:** `Blender/build_burger.py` (0 créditos). Gera `Models/Burger/Burger.fbx` com `Burger_Full`, `Burger_Bite1..3` (mordidas booleanas, cada camada mostra o próprio miolo) e `Wrapper` (papel quadriculado), assados em PBR 2048. Com o argumento `photos`, renderiza as fotos do cardápio do app (`UI/PhoneOrder/menu_burger_*.png`).
+- **Setup:** `Editor/Act3FoodPhoneSetup.cs` (menu "Tools/The Delivery/Ato 3 - Hambúrguer e celular"; marcador `Temp/Act3FoodPhoneSetup.pending`).
+  - `Food.prefab` (o lanche na mão, GUID mantido) = hambúrguer com os 4 estágios + `FoodBiteStages`. O `Act3Director.EatFoodAnimation` avança um estágio por mordida (`eatBitePause` entre elas).
+  - `BurgerOnWrapper.prefab` = o `unwrappedFoodVisual` da bancada (substituiu o cubo provisório no mesmo ponto).
+  - `OrderPhoneOverlay` (Canvas) com `UI/PhoneOrderCutscene`: bloqueio → tela inicial → app The Delivery → cardápio → X-Burger → sacola → pagar → aprovado (~17 s, tempo do jogo). Toques `PhoneTap_01..03`, aviso `PhonePaymentApproved` (ElevenLabs). O Ato 4 continua com o `DeadPhoneOverlay`.
+- **Vídeo:** prep `act3foodphonevideo` (marcador "520 Assets/Scenes/Boot.unity act3foodphonevideo").
+
+## Acabamento do prédio (2026-11-24, 0 créditos)
+- **Texturas:** `Editor/SurfaceTextureGen.cs` gera texturas sem emenda (cor, normal, metallic/smoothness) e o material URP em `Materials/Surfaces/`: azulejo, metrô, porcelanato, cerâmica, granito, laminado, rodameio, asfalto, calçada de blocos, meio-fio e tinta de faixa.
+- **Revestimentos:** `Editor/ApartmentSurfacesSetup.cs` (marcador `Temp/ApartmentSurfacesSetup.pending`). Cria o objeto raiz `Surfaces` (na RAIZ da cena: o `_Environment` está em y 5,26). Ele tem quads de piso 3 mm acima de cada cômodo e quads de parede 2 mm à frente das faces internas das `Wall` que encostam no retângulo do cômodo. As malhas ficam em `Models/Generated/Surfaces/`. Também troca o material de `Street`/`Sidewalk` e cria o meio-fio e a faixa.
+- **Mobília e acabamento:** `Blender/build_interior.py` (grupos `kitchen`, `decor`, `arch`) → `Models/Interior/{Kitchen,Decor,Arch}.fbx`. `Editor/ApartmentFurnishSetup.cs` (marcador `Temp/ApartmentFurnishSetup.pending`) cria o objeto raiz `Furnishing` com:
+  - cozinha;
+  - decoração (itens de parede posicionados por raycast);
+  - corredor;
+  - caixilhos e vidro novo;
+  - sacada;
+  - os animators do Ato 3.
+- Os objetos gerados são estáticos para batching, SEM ContributeGI: a cena não tem bake e as malhas não têm UV de lightmap.
+- Vídeo do passeio: prep `aptourvideo` (marcador `300 Assets/Scenes/Boot.unity aptourvideo`).

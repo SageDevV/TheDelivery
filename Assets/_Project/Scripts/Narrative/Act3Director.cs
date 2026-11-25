@@ -374,6 +374,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private float eatBiteHeight = 0.08f;
         [Tooltip("Duração (s) de cada meia-mordida (só subir, ou só descer).")]
         [SerializeField] private float eatBiteDuration = 0.18f;
+        [Tooltip("Pausa (s) depois de cada mordida, mastigando, antes de baixar a comida (para ver a mordida no lanche).")]
+        [SerializeField] private float eatBitePause = 0.6f;
 
         [Header("Beat 6 - Dormir (handoff)")]
         [Tooltip("Zona da cama. Clear caminha até aqui para deitar.")]
@@ -796,9 +798,19 @@ namespace TheDelivery.Narrative
 
             if (orderPhoneOverlay != null)
                 orderPhoneOverlay.SetActive(true);
-            PlaySound(phoneOrderSound);
 
-            yield return new WaitForSeconds(Mathf.Max(0f, phoneOrderLookDuration));
+            // Com a cutscene da tela (tela inicial -> app The Delivery -> lanche -> pagar), espera ela
+            // terminar; os toques e o "pagamento aprovado" saem dela. Sem ela, o overlay fica parado.
+            var cutscene = orderPhoneOverlay != null ? orderPhoneOverlay.GetComponent<TheDelivery.UI.PhoneOrderCutscene>() : null;
+            if (cutscene != null)
+            {
+                yield return cutscene.Play();
+            }
+            else
+            {
+                PlaySound(phoneOrderSound);
+                yield return new WaitForSeconds(Mathf.Max(0f, phoneOrderLookDuration));
+            }
 
             // Pedido feito: fecha o overlay e devolve o controle livre.
             if (orderPhoneOverlay != null)
@@ -1784,6 +1796,7 @@ namespace TheDelivery.Narrative
 
             GameObject held = playerInventory.GetHeldVisual(FoodToEatItem);
             Transform t = held != null ? held.transform : null;
+            FoodBiteStages bites = held != null ? held.GetComponentInChildren<FoodBiteStages>(true) : null;
 
             if (t != null && eatBiteCount > 0)
             {
@@ -1795,7 +1808,13 @@ namespace TheDelivery.Narrative
                     yield return LerpLocalPosition(t, basePos, upPos, eatBiteDuration);
                     if (eatBiteSounds != null && eatBiteSounds.Length > 0)
                         PlaySound(eatBiteSounds[Random.Range(0, eatBiteSounds.Length)]);
+                    // A mordida aparece no lanche (inteiro -> 1ª -> 2ª -> 3ª), se o modelo tiver os estágios.
+                    if (bites != null)
+                        bites.Advance();
                     yield return LerpLocalPosition(t, upPos, basePos, eatBiteDuration);
+                    // mastigando, com o lanche de volta à frente: dá para ver a mordida
+                    if (eatBitePause > 0f)
+                        yield return new WaitForSeconds(eatBitePause);
                 }
             }
 
