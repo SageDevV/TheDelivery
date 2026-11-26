@@ -147,3 +147,26 @@ Todos ligados pelo `ApartmentAudioSetup` (etapa 6) e tocados pelo `Act3Director`
   - os animators do Ato 3.
 - Os objetos gerados são estáticos para batching, SEM ContributeGI: a cena não tem bake e as malhas não têm UV de lightmap.
 - Vídeo do passeio: prep `aptourvideo` (marcador `300 Assets/Scenes/Boot.unity aptourvideo`).
+
+## Ato 4: pendências resolvidas (2026-11-25)
+Aplicadas pelo `Editor/Act4AudioSetup.cs` (marcador `Temp/Act4AudioSetup.pending`); evidência no prep `act4beatsvideo` (`Editor/Act4BeatsDemo.cs`, "420 Assets/Scenes/Boot.unity act4beatsvideo").
+
+| Momento | Som | Origem |
+|---|---|---|
+| Passos na cozinha (acorda) | `Act4KitchenSteps` | Reuso: `KillerBootStep` abafados pela parede |
+| O vulto | `Act4ShadowSting` (loop) | ElevenLabs |
+| O som alto | `Act4KitchenCrash` (prato quebrando) | ElevenLabs |
+| Celular morto | `PhoneTap_01..03` (campo novo `deadPhoneTapSounds`) | Reuso |
+| O killer ao longe | `KillerHumming` (cantarolar) | ElevenLabs |
+| A ligação | `PhoneDialRing` + `OperatorMuffled` (campos novos `phoneDialSound`/`operatorMurmurSound`) | ElevenLabs |
+| Linha caindo / apagão | `Act4LineDead` / `Act4PowerOut` | ElevenLabs |
+| Passos indo embora | `KillerStepLeaving_01..05` (campo novo `footstepsLeavingSequence`, cada um mais fraco) | Reuso |
+| Sirene / viaturas | `PoliceSirenBR` / `PoliceCarArrive` (motor nos 2 `PoliceCarArrival`) | ElevenLabs |
+| Pancada | `Act4HeadHit` (soco do beco + `NightmareDazeRing`) | Reuso |
+| Esconderijo descoberto | box `ShowerCurtainPull` (ElevenLabs), cama `BedSheets`, sofá `ClearClothRustle_02`; guarda-roupa usa a própria porta; `GrabNeck` + `ClearScream_Grab` | Campo novo `HideSpot.revealSound` |
+| Respiração escondida | `WomanBreathing` via `FX/HidingBreath` (some quando o killer chega a 6 m) | Reuso |
+
+- As luzes de sirene (`SirenLightEffect.sirenAudio`) ficam vazias DE PROPÓSITO: a sirene toca pelo diretor.
+- O trovão já era ElevenLabs (`RainThunder_01/02`).
+- Texturas: `Curtain.mat` recebeu a cor e a normal extraídas de dentro do `Curtain.fbx` (`Textures/Curtain/`); `Fridge.mat` usa `Textures/Fridge/Fridge_BaseColor.png`, que existia mas estava desligada.
+- Custo: 171 créditos (ElevenLabs, flow `8IQEVWZaSuQedbxaqvII`).

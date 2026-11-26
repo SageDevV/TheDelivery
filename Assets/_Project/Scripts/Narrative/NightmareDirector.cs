@@ -430,6 +430,8 @@ namespace TheDelivery.Narrative
         /// </summary>
         [Tooltip("Som do susto (o jumpscare).")]
         [SerializeField] private AudioClip attackSound;
+        [Tooltip("O golpe do susto no INÍCIO do ataque, uma vez só (o JumpscareHit de todo o jogo, via JumpscareAudio). O attackSound continua em loop por baixo. Vazio = sem golpe.")]
+        [SerializeField] private AudioClip attackJumpscareSound;
         [Range(0f, 1f)]
         [Tooltip("Volume do loop do susto.")]
         [SerializeField] private float attackSoundVolume = 1f;

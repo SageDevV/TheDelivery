@@ -130,11 +130,11 @@ namespace TheDelivery.AI
             {
                 spot.SpotDoor.IsLocked = false;
                 spot.SpotDoor.Open();
-                PlayAt(doorOpenSound, spot.SpotDoor.transform.position);
+                PlayAt(spot.RevealSound != null ? spot.RevealSound : doorOpenSound, spot.SpotDoor.transform.position);
             }
             else
             {
-                PlayAt(doorOpenSound, hidePos);
+                PlayAt(spot.RevealSound != null ? spot.RevealSound : doorOpenSound, hidePos);
             }
             yield return new WaitForSeconds(doorOpenPause);
 

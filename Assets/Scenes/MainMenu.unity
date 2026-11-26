@@ -205,6 +205,9 @@ MonoBehaviour:
   - ApartmentDoor
   objectsToActivate:
   - MenuShadowFigure
+  objectsToDeactivate:
+  - BalconyCity
+  - ApartmentAmbient
   startSirenLights: 1
   enableFlickeringLights: 1
 --- !u!114 &18360614
@@ -225,11 +228,11 @@ MonoBehaviour:
   themeDarkLevel: 0.2
   themeFadeIn: 4
   themeDuckSpeed: 2.5
-  ambientDrone: {fileID: 0}
+  ambientDrone: {fileID: 8300000, guid: 28de6bb2ed8dc69409a75c4afabcae26, type: 3}
   droneVolume: 0.35
-  blackoutClick: {fileID: 8300000, guid: 86be4cf2be7f25649815d18fa58aa11e, type: 3}
+  blackoutClick: {fileID: 8300000, guid: a7266b60ecb73de4bb6a2412f0ac11c1, type: 3}
   clickVolume: 0.5
-  darkPresence: {fileID: 8300000, guid: 52cc29260f4cde14fba73d631b9dab39, type: 3}
+  darkPresence: {fileID: 8300000, guid: 7e27d683b6ddb3f4581639ffc5c4f9e1, type: 3}
   presenceVolume: 0.55
   presenceFade: 3
   presenceAnchorName: MenuShadowFigure

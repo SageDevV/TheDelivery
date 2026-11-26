@@ -110,6 +110,14 @@ namespace TheDelivery.Interaction
         /// Define o estado por ROTEIRO ou interação: aplica às luzes (respeitando a
         /// energia), move a alavanca, toca o clique e dispara <see cref="Toggled"/>.
         /// </summary>
+        /// <summary>Liga/desliga SEM o clique (estado inicial de um ato, não uma ação do jogador).</summary>
+        public void SetOnSilent(bool on)
+        {
+            isOn = on;
+            ApplyLights();
+            Toggled?.Invoke(isOn);
+        }
+
         public void SetOn(bool on)
         {
             isOn = on;

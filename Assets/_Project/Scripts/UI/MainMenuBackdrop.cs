@@ -55,6 +55,8 @@ namespace TheDelivery.UI
         [Tooltip("Objetos da cena de fundo autorados DESLIGADOS que só existem no menu (ex.: a sombra " +
                  "do homem no corredor). São ligados ao montar o cenário.")]
         [SerializeField] private string[] objectsToActivate = { "MenuShadowFigure" };
+        [Tooltip("Objetos da cena de fundo DESLIGADOS no menu (por nome). Padrão: os ambientes com trânsito/buzina — o menu não tem som de carros (pedido do usuário, 2026-11-26).")]
+        [SerializeField] private string[] objectsToDeactivate = { "BalconyCity", "ApartmentAmbient" };
 
         [Header("Sirenes")]
         [Tooltip("Liga (só as LUZES, sem som) as sirenes ativas do cenário: o vermelho/azul da " +
@@ -135,6 +137,10 @@ namespace TheDelivery.UI
                 foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
                     if (System.Array.IndexOf(objectsToActivate, t.name) >= 0)
                         t.gameObject.SetActive(true);
+
+                foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                    if (objectsToDeactivate != null && System.Array.IndexOf(objectsToDeactivate, t.name) >= 0)
+                        t.gameObject.SetActive(false);
 
                 foreach (Door door in root.GetComponentsInChildren<Door>(true))
                     if (System.Array.IndexOf(doorsToOpen, door.name) >= 0)

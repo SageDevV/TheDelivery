@@ -471,7 +471,7 @@ namespace TheDelivery.EditorTools
                             var cc = pc.GetComponent<CharacterController>();
                             Vector3 k = ai.transform.position;
                             Vector3 dir = ai.transform.forward; dir.y = 0f; dir.Normalize();
-                            Vector3 pos = k + dir * 8f; // longe o bastante para ouvir os passos dele chegando
+                            Vector3 pos = k + dir * 5f; // dentro do alcance da visão dele (8 m; a 8 m exatos ficava na borda e ele não a via)
                             if (UnityEngine.AI.NavMesh.SamplePosition(pos, out var hit, 2f, UnityEngine.AI.NavMesh.AllAreas)) pos = hit.position;
                             cc.enabled = false;
                             pc.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-dir, Vector3.up));

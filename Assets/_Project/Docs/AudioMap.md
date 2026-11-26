@@ -4,6 +4,11 @@ Levantamento de 2026-11-17, feito a partir dos campos `AudioClip` nos scripts e 
 atribuído nas cenas (`Nightmare`, `Cafeteria`, `Road`, `Reception`, `Apartment`, `Escape`,
 `MainMenu`), nos `Dialogue_*.asset` e no `Player.prefab`. As cópias `0 (n).unity` foram ignoradas.
 
+> [!important] Estado atual (varredura global de 2026-11-26)
+> Do Prólogo ao Ato 4 **não sobra nenhum som provisório nem campo vazio por engano** (ferramenta `Editor/GlobalSweep.cs`).
+> As tabelas abaixo são o levantamento original de 2026-11-17. Onde elas ainda dizem ❌/🟡, vale a seção
+> **"Atualização de 2026-11-26"** no fim deste arquivo.
+
 **Legenda de status**
 
 | Status | Significado |
@@ -269,3 +274,37 @@ A cena não tem nenhum áudio ainda.
 lugar antes do objeto e `_Placeholder` no que for provisório. Exemplos: `ReceptionAmbient`,
 `RoadAmbient`, `ApartmentRainLoop`, `ApartmentFridgeHum`, `KillerFootsteps_01..04`,
 `DeliverymanCalling`, `DeathSting`.
+
+---
+
+## Atualização de 2026-11-26 (o que mudou desde o levantamento)
+
+| ID | Antes | Hoje |
+|---|---|---|
+| G-05 | Portas ❌/🟡 | ✅ `ApartmentDoorOpen/Close/Locked/Knock` (ElevenLabs), via `ApartmentAudioSetup` |
+| G-06 | Interruptor/abajur ❌ | ✅ `LightSwitchClick_01..03` / `LightSwitchDead_01..02` |
+| G-07 | Geladeira ❌ | ✅ `FridgeDoorOpen/Close` + `ApartmentFridgeHum` |
+| G-08 | TV ❌ | ✅ fliperama `FlickerBuzz_02`, notebook `LightSwitchClick_01` (Ato 1) |
+| G-12 / E-06 | Game Over ❌ | ✅ `JumpscareHit` (**variante C**, escolhida em 2026-11-26) via `GameOverManager.deathSting` |
+| N-06 | Variações de passo da criatura ❌ | Opcional: o loop de perseguição não soou repetitivo |
+| N-08 | Ataque (fim alternativo) | ✅ `attackSound` em loop + golpe `JumpscareHit` (C) no início (`attackJumpscareSound`) |
+| A1-04 | TV da cafeteria ❌ | Não se aplica: a cafeteria não tem TV com vídeo (só o fliperama e o notebook, ver G-08) |
+| A1 | Cadeiras ao levantar | ✅ `CafeteriaChairDrag` |
+| A2 | Elevador | ✅ botão, sino, portas e motor; o `ElevatorSound_Placeholder` (reserva) saiu |
+| A3-03 | "Boa noite" ❌/🟡 | ✅ o susto sai pelo `sfx` do `Dialogue_Act3-1` (`Act3GoodNightSting`); o `goodNightSound` fica vazio de propósito |
+| A3-04 | Chave e porta do apê ❌ | Não se aplica: o `OpeningCutscene` está desativado; a porta usa os sons do `Door` |
+| A3-14 | Luzes piscando ❌ | ✅ `FlickerBuzz_01..04` + `LightsRestoreThunk` |
+| A3-15 / A3-16 | Vizinho ❌ | ✅ `NeighborGrunt`, `NeighborDoorChainOpen/Close`, `NeighborTVMuffled` |
+| A3-17 | "Clear… Clear…" ❌ | ✅ `DeliverymanCallingClear` (ElevenLabs, voz Nassif) |
+| A3 | Sofá | ✅ sentar `ClearClothRustle_01`, levantar `ClearClothRustle_03` |
+| A4 (todos) | Placeholders | ✅ todos finais, ver `ApartmentMap.md` ("Ato 4: pendências resolvidas") |
+| A4-13 | Esconderijo comprometido ❌ | ✅ `GrabNeck` + `ClearScream_Grab`; som de cada esconderijo em `HideSpot.revealSound` (box = `ShowerCurtainPull`) |
+| A4-17 | Viatura chegando ❌ | ✅ `PoliceCarArrive` nas duas `PoliceCarArrival` |
+| A4 | Perseguição do killer | ✅ `KillerChaseLoop` + `KillerChaseSting` (ElevenLabs, opção 1) via `FX/ChaseMusic` |
+| A4 | Respiração escondida | ✅ `HidingPanting` via `FX/HidingBreath` (some com o killer perto) |
+| Menu | Apagão / presença / drone | ✅ `Act4PowerOut` / `KillerHumming` / `Act3OminousDrone`; sem trânsito no menu (`MainMenuBackdrop.objectsToDeactivate`) |
+
+**Vazios de propósito (não são pendência):** `AmbientSoundEmitter.loopClip` da cafeteria (só one-shots),
+`OpeningCutscene` (desativado), `Act3Director.goodNightSound`, `HideSpotPullOut.doorOpenSound` e o `revealSound` do
+guarda-roupa (a porta já soa), `CreatureFootsteps.walkLoopClip` (modo PerStepClips), `SirenLightEffect.sirenAudio`
+(a sirene toca pelo diretor).

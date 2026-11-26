@@ -55,6 +55,9 @@ namespace TheDelivery.UI
         private Image fingerImg, rippleImg;
         private CanvasGroup lockPanel, homePanel, splashPanel, menuPanel, detailPanel, bagPanel, payingPanel, donePanel;
         private RectTransform tdIcon, burgerCard, addButton, payButton, spinner;
+        private RectTransform powerButton, deadTarget;
+        private CanvasGroup deadPanel, batteryPanel;
+        private Image batteryFill;
         private readonly List<TextMeshProUGUI> statusTexts = new List<TextMeshProUGUI>();
         private readonly List<Image> statusShapes = new List<Image>();
 
@@ -101,6 +104,7 @@ namespace TheDelivery.UI
                 var b = Img("Button", body, new Color(0.16f, 0.16f, 0.18f), roundedSprite).rectTransform;
                 b.anchorMin = b.anchorMax = new Vector2(0.5f, 0.5f); b.sizeDelta = new Vector2(6f, h); b.anchoredPosition = new Vector2(x, y);
                 b.SetAsFirstSibling();
+                if (x > 0f) powerButton = b;
             }
 
             // tela (máscara arredondada)
@@ -413,6 +417,104 @@ namespace TheDelivery.UI
             yield return Wait(2.4f);
             yield return Fade(rootGroup, 1f, 0f, 0.35f);
             IsPlaying = false;
+        }
+
+        // ---------------------------------------------------------------- a bateria (Ato 4)
+        /// <summary>
+        /// A Clear confere o celular no Ato 4 (2026-11-25):
+        /// 1. a tela está preta; ela toca duas vezes e nada acontece;
+        /// 2. aperta o botão lateral: aparece a bateria vazia, com o filete vermelho piscando e "Conecte o carregador",
+        ///    e a tela apaga de novo;
+        /// 3. aperta outra vez, com o mesmo resultado, e o aparelho fica preto na mão dela.
+        /// Para fechar, chame <see cref="Hide"/>.
+        /// </summary>
+        public IEnumerator PlayDeadBattery()
+        {
+            EnsureBuilt();
+            if (deadPanel == null) BuildDead();
+            IsPlaying = true;
+            foreach (var g in new[] { lockPanel, homePanel, splashPanel, menuPanel, detailPanel, bagPanel, payingPanel, donePanel }) Show(g, false);
+            screen.Find("StatusBar")?.gameObject.SetActive(false);
+            Show(deadPanel, true); Show(batteryPanel, false);
+            deadPanel.transform.SetAsLastSibling(); KeepOverlaysOnTop();
+            rippleImg.color = new Color(1f, 1f, 1f, 0f);
+            finger.gameObject.SetActive(true);
+            finger.anchoredPosition = new Vector2(W / 2 + 40f, -H / 2 - 40f); finger.localScale = Vector3.one;
+
+            yield return Fade(rootGroup, 0f, 1f, 0.35f);
+            yield return Wait(0.9f);
+
+            // 1. toca a tela: nada
+            yield return TapOn(deadTarget, 0.6f);
+            yield return Wait(0.8f);
+            yield return TapOn(deadTarget, 0.3f);
+            yield return Wait(1.0f);
+            finger.gameObject.SetActive(false);
+
+            // 2. botão lateral: a bateria vazia pisca e some
+            yield return PressPower();
+            yield return ShowBattery(3);
+            yield return Wait(1.1f);
+
+            // 3. de novo, mais aflita: o mesmo
+            yield return PressPower();
+            yield return ShowBattery(2);
+            yield return Wait(0.6f);
+            IsPlaying = false;
+        }
+
+        /// <summary>Fecha a tela do celular (fade) e devolve a barra de status para a próxima cutscene.</summary>
+        public IEnumerator Hide()
+        {
+            yield return Fade(rootGroup, rootGroup.alpha, 0f, 0.35f);
+            if (screen != null) screen.Find("StatusBar")?.gameObject.SetActive(true);
+            if (deadPanel != null) Show(deadPanel, false);
+            if (batteryPanel != null) Show(batteryPanel, false);
+        }
+
+        private void BuildDead()
+        {
+            deadPanel = Panel("Dead");
+            Stretch(Img("Black", deadPanel.transform, Color.black).rectTransform);
+            deadTarget = Img("TapTarget", deadPanel.transform, new Color(0f, 0f, 0f, 0f)).rectTransform;
+            Box(deadTarget, W / 2 - 40, H / 2 - 10, 80, 80);
+
+            batteryPanel = Panel("BatteryEmpty");
+            Stretch(Img("Black", batteryPanel.transform, Color.black).rectTransform);
+            var outline = Img("Battery", batteryPanel.transform, new Color(0.85f, 0.85f, 0.85f), roundedSprite, 1.5f).rectTransform;
+            Box(outline, W / 2 - 75, H / 2 - 50, 150, 76);
+            var inner = Img("Inner", outline, Color.black, roundedSprite, 1.5f).rectTransform; Stretch(inner, 6f);
+            var tip = Img("Tip", batteryPanel.transform, new Color(0.85f, 0.85f, 0.85f), roundedSprite, 3f).rectTransform;
+            Box(tip, W / 2 + 77, H / 2 - 26, 10, 28);
+            batteryFill = Img("Fill", inner, new Color(0.92f, 0.16f, 0.12f), roundedSprite, 3f);
+            Box(batteryFill.rectTransform, 5, 5, 14, 54, new Vector2(138f, 64f));
+            Txt(batteryPanel.transform, "Conecte o carregador", 17, new Color(1f, 1f, 1f, 0.55f), 0, H / 2 + 52, W, 26, TextAlignmentOptions.Center);
+        }
+
+        private IEnumerator PressPower()
+        {
+            if (powerButton == null) yield break;
+            if (tapClips != null && tapClips.Length > 0) audioSource.PlayOneShot(tapClips[Random.Range(0, tapClips.Length)], tapVolume);
+            Vector2 p0 = powerButton.anchoredPosition;
+            float t = 0f; const float d = 0.22f;
+            while (t < d) { t += Dt(); powerButton.anchoredPosition = p0 + new Vector2(-3f * Mathf.Sin(Mathf.Clamp01(t / d) * Mathf.PI), 0f); yield return null; }
+            powerButton.anchoredPosition = p0;
+            yield return Wait(0.35f);
+        }
+
+        private IEnumerator ShowBattery(int blinks)
+        {
+            Show(batteryPanel, true); batteryPanel.alpha = 0f; batteryPanel.transform.SetAsLastSibling(); KeepOverlaysOnTop();
+            batteryFill.enabled = true;
+            yield return Fade(batteryPanel, 0f, 1f, 0.2f);
+            for (int i = 0; i < blinks; i++)
+            {
+                yield return Wait(0.45f); batteryFill.enabled = false;
+                yield return Wait(0.35f); batteryFill.enabled = true;
+            }
+            yield return Wait(0.5f);
+            yield return Fade(batteryPanel, 1f, 0f, 0.4f);
+            Show(batteryPanel, false);
         }
 
         private IEnumerator TapOn(RectTransform target, float moveTime)

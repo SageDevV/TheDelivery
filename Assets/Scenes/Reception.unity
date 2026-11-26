@@ -1336,7 +1336,7 @@ MonoBehaviour:
   janitorDialogue: {fileID: 11400000, guid: 3498ff3d963303b4ba789672b2d6db87, type: 2}
   elevatorZone: {fileID: 1668099937}
   elevatorRadius: 0.93
-  elevatorSound: {fileID: 8300000, guid: 2228b7d28f1df5f48bd3e9394bb8da6d, type: 3}
+  elevatorSound: {fileID: 0}
   elevatorDelay: 1.5
   elevatorButtonSound: {fileID: 8300000, guid: 0b726ec221751f541b4474a4b841d73b, type: 3}
   elevatorDingSound: {fileID: 8300000, guid: 0f61addb875eef748804581241e25caf, type: 3}

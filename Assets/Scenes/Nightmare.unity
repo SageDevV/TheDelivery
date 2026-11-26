@@ -10777,6 +10777,7 @@ MonoBehaviour:
   attackKeyLightIntensity: 1.4
   attackKeyLightColor: {r: 0.82, g: 0.86, b: 1, a: 1}
   attackSound: {fileID: 8300000, guid: f783f0ab3e96832459f8947407784477, type: 3}
+  attackJumpscareSound: {fileID: 8300000, guid: 53c144a426802d64793ccd0ea8a193d0, type: 3}
   attackSoundVolume: 1
   attackVisibleLayers:
     serializedVersion: 2

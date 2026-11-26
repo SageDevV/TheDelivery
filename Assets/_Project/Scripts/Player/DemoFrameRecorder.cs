@@ -36,6 +36,9 @@ namespace TheDelivery.Player
             StartCoroutine(Record());
         }
 
+        /// <summary>Encerra a gravação no próximo quadro (roteiros que terminam antes da duração prevista).</summary>
+        public void FinishEarly() => duration = 0f;
+
         /// <summary>Agenda uma ação para <paramref name="time"/> s depois do início da gravação.</summary>
         public void At(float time, Action action) => cues.Add((time, action));
 

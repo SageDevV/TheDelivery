@@ -62,6 +62,8 @@ namespace TheDelivery.Narrative
             // depois do primeiro. Vai na fonte de LOOP de propósito — assumi-la é o que
             // tira do ar o som da perseguição, que acabou de virar passado.
             PlayLoop(attackSound, attackSoundVolume);
+            if (attackJumpscareSound != null)
+                TheDelivery.FX.JumpscareAudio.Play(attackJumpscareSound); // o mesmo golpe de todos os sustos do jogo
 
             if (dreamVolume != null)
                 dreamVolume.SetActive(false);

@@ -262,7 +262,7 @@ MonoBehaviour:
   promptTurnOn: Ligar TV
   promptTurnOff: Desligar TV
   audioSource: {fileID: 0}
-  toggleClip: {fileID: 0}
+  toggleClip: {fileID: 8300000, guid: 0d17cd0561920924dae36a5853a33716, type: 3}
 --- !u!4 &39910881 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 288684876243252564, guid: 4ddd5b9d6470ed74eb58f89fd22bd593, type: 3}
@@ -18934,7 +18934,7 @@ MonoBehaviour:
   interactionPrompt: Sentar
   standPrompt: Levantar
   sitSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
-  standSound: {fileID: 0}
+  standSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
   seatSoundVolume: 0.8
   standWithInteractKey: 0
   seatCameraPoint: {fileID: 16300403}
@@ -21294,7 +21294,7 @@ MonoBehaviour:
   promptTurnOn: Ligar TV
   promptTurnOff: Desligar TV
   audioSource: {fileID: 0}
-  toggleClip: {fileID: 0}
+  toggleClip: {fileID: 8300000, guid: 18c616ae685516c46924c75b56c1fcfe, type: 3}
 --- !u!1001 &1160124143
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33270,7 +33270,7 @@ MonoBehaviour:
   interactionPrompt: Sentar
   standPrompt: Levantar
   sitSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
-  standSound: {fileID: 0}
+  standSound: {fileID: 8300000, guid: 62095d8cec4b7354e8744086a41bd714, type: 3}
   seatSoundVolume: 0.8
   standWithInteractKey: 0
   seatCameraPoint: {fileID: 0}

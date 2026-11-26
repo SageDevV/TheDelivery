@@ -64,6 +64,10 @@ namespace TheDelivery.AI
         public ThoughtData EnterThought => enterThought;
         public Door SpotDoor => spotDoor;
 
+        [Tooltip("Som do esconderijo sendo DESCOBERTO pelo killer (cortina do box, lençol da cama...). Vazio = o doorOpenSound do HideSpotPullOut.")]
+        [SerializeField] private AudioClip revealSound;
+        public AudioClip RevealSound => revealSound;
+
         /// <summary>Ponto em que o killer fica para arrancar o player (fallback: à frente do esconderijo).</summary>
         public Vector3 GetExtractionPosition()
         {

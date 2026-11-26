@@ -146,6 +146,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private string shadowChasingParam = "IsChasing";
         [Tooltip("Som/sting de tensão quando o vulto cruza (placeholder).")]
         [SerializeField] private AudioClip tensionStingSound;
+        [Tooltip("Susto quando o vulto (o killer) aparece no corredor (2026-11-25, pedido do usuário). O mesmo golpe do jogo (JumpscareHit), via JumpscareAudio, que abaixa o resto. Vazio = sem susto.")]
+        [SerializeField] private AudioClip shadowJumpscareSound;
 
         [Tooltip("Zona onde o vulto estava — player precisa chegar aqui pra disparar a virada.")]
         [SerializeField] private Transform discoveryTriggerZone;
@@ -172,6 +174,14 @@ namespace TheDelivery.Narrative
         [SerializeField] private GameObject phoneObject;
         [Tooltip("Overlay UI do celular com tela morta (imagem fullscreen ou parcial).")]
         [SerializeField] private GameObject deadPhoneOverlay;
+        [Tooltip("Cutscene da tela do celular (o mesmo aparelho do pedido no Ato 3): ela toca a tela, aperta o botão lateral e só aparece a bateria vazia. Vazio = o overlay estático antigo.")]
+        [SerializeField] private TheDelivery.UI.PhoneOrderCutscene batteryCutscene;
+
+        [Header("Beat 1 - Estado da casa ao acordar")]
+        [Tooltip("Interruptores que ficam ACESOS quando ela acorda (só a sala). Os outros de roomSwitches são desligados, sem clique.")]
+        [SerializeField] private LightSwitch[] lightsOnAtWake;
+        [Tooltip("Ambientes que NÃO existem de madrugada (ex.: a cidade ao longe, com buzina). Desligados no início do Ato 4.")]
+        [SerializeField] private GameObject[] ambienceOffInAct4;
         [Tooltip("Tempo (s) \"olhando\" o celular antes do pensamento de desespero.")]
         [SerializeField] private float deadPhoneLookDuration = 0.8f;
         [Tooltip("Pensamento de desespero ao ver o celular morto.")]
@@ -211,6 +221,15 @@ namespace TheDelivery.Narrative
         [SerializeField] private AudioClip deadLineSound;
         [Tooltip("Pausa de silêncio após a linha cair, antes de avançar pro Beat 7.")]
         [SerializeField] private float deadLineSilence = 2f;
+        [Tooltip("Discagem + tom de chamando, no fone, antes do diálogo. Vazio = o diálogo começa direto.")]
+        [SerializeField] private AudioClip phoneDialSound;
+        [Tooltip("Voz da atendente abafada no fone, em loop baixo durante o diálogo. Vazio = só legenda.")]
+        [SerializeField] private AudioClip operatorMurmurSound;
+        [Range(0f, 1f)] [SerializeField] private float phoneLineVolume = 0.55f;
+        [Range(0f, 1f)] [SerializeField] private float operatorMurmurVolume = 0.3f;
+        [Tooltip("Toques na tela do celular morto (sem resposta). Um é sorteado a cada toque.")]
+        [SerializeField] private AudioClip[] deadPhoneTapSounds;
+        private AudioSource phoneLineSource;
 
         [Header("Beat 6 - Luzes piscando")]
         [Tooltip("Luzes dos cômodos que piscam e apagam após o telefonema. NÃO incluir as luzes do luar (que ficam acesas).")]
@@ -259,6 +278,8 @@ namespace TheDelivery.Narrative
         [Header("Beat 8 - Death")]
         [Tooltip("Som dos passos do killer se AFASTANDO (indo embora - falso alívio).")]
         [SerializeField] private AudioClip footstepsLeavingSound;
+        [Tooltip("Passos se afastando, um clip por passo (cada um mais fraco e abafado). Se preenchido, substitui o footstepsLeavingSound; o último se repete se faltarem clips.")]
+        [SerializeField] private AudioClip[] footstepsLeavingSequence;
         [Tooltip("Quantos passos de afastamento.")]
         [SerializeField] private int leavingSteps = 5;
         [Tooltip("Intervalo entre os passos de afastamento (s).")]
@@ -471,6 +492,20 @@ namespace TheDelivery.Narrative
         /// e sem loop. Sem isso, <see cref="PlaySoundFaded"/> abortaria com aviso e
         /// nenhum som tocaria (causa do "sting não dispara": o campo estava vazio).
         /// </summary>
+        /// <summary>
+        /// A casa como ela a deixou ao dormir: só a luz da sala acesa (abajures e TV já começam apagados).
+        /// De madrugada não há cidade lá fora: sem trânsito e sem buzina. Ficam a chuva e o vento.
+        /// </summary>
+        private void ApplyWakeState()
+        {
+            if (roomSwitches != null)
+                foreach (var sw in roomSwitches)
+                    if (sw != null) sw.SetOnSilent(lightsOnAtWake != null && System.Array.IndexOf(lightsOnAtWake, sw) >= 0);
+            if (ambienceOffInAct4 != null)
+                foreach (var go in ambienceOffInAct4)
+                    if (go != null) go.SetActive(false);
+        }
+
         private void EnsureAudioSource()
         {
             audioSource = DirectorUtility.EnsureNarrativeAudioSource(this, audioSource);
@@ -583,7 +618,8 @@ namespace TheDelivery.Narrative
         /// </summary>
         private IEnumerator BeatAwakening()
         {
-            // Estado inicial: travado, deitado, olhos fechados.
+            // Estado inicial: só a luz da sala acesa, sem cidade lá fora; travado, deitado, olhos fechados.
+            ApplyWakeState();
             playerController.CanMove = false;
             if (standUpPrompt != null)
                 standUpPrompt.SetActive(false);
@@ -888,6 +924,22 @@ namespace TheDelivery.Narrative
         /// player se esconde pela primeira vez, o prompt some. O avanço para o
         /// Beat 4 será disparado depois (trigger narrativo), não aqui.
         /// </summary>
+        /// <summary>O vulto está na tela e à vista: o peito dele dentro do enquadramento e nenhuma parede no meio.</summary>
+        private bool ShadowInSight()
+        {
+            var cam = Camera.main;
+            if (cam == null || shadowFigure == null) return false;
+            Vector3 chest = shadowFigure.transform.position + Vector3.up * 1.3f;
+            Vector3 vp = cam.WorldToViewportPoint(chest);
+            if (vp.z <= 0f || vp.x < 0.05f || vp.x > 0.95f || vp.y < 0f || vp.y > 1f) return false;
+            foreach (var hit in Physics.RaycastAll(cam.transform.position, chest - cam.transform.position, Vector3.Distance(cam.transform.position, chest), ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.transform.IsChildOf(shadowFigure.transform) || hit.transform.IsChildOf(playerController.transform)) continue;
+                return false;
+            }
+            return true;
+        }
+
         private IEnumerator BeatDiscovery()
         {
             // Estado inicial: player TRAVADO para a cutscene, prompt oculto,
@@ -898,6 +950,7 @@ namespace TheDelivery.Narrative
             // PlayerController não toca na câmera nesse estado, o Director controla
             // corpo+câmera diretamente durante a virada.
             playerController.CanMove = false;
+            if (shadowJumpscareSound != null) JumpscareAudio.Preload(shadowJumpscareSound); // sem atraso no golpe
             if (hidePrompt != null)
                 hidePrompt.SetActive(false);
             if (antagonist != null)
@@ -929,6 +982,9 @@ namespace TheDelivery.Narrative
                 // in, em paralelo para não travar a caminhada). Será parado com fade
                 // out no instante em que o vulto chegar ao endpoint.
                 PlaySoundFadedLoop(tensionStingSound);
+                // O susto cai no instante em que ELE aparece na porta (entra na visão da câmera, sem parede no meio),
+                // não quando o vulto nasce atrás da parede.
+                bool scared = shadowJumpscareSound == null;
                 Debug.Log("[Act4Director] SOM: sting de tensão (vulto cruzando)");
 
                 Vector3 target = shadowEndPoint.position;
@@ -936,6 +992,12 @@ namespace TheDelivery.Narrative
                 {
                     shadowFigure.transform.position = Vector3.MoveTowards(
                         shadowFigure.transform.position, target, shadowWalkSpeed * Time.deltaTime);
+                    if (!scared && ShadowInSight())
+                    {
+                        scared = true;
+                        JumpscareAudio.Play(shadowJumpscareSound);
+                        Debug.Log("[Act4Director] SUSTO: o vulto apareceu na porta");
+                    }
                     yield return null;
                 }
 
@@ -1246,11 +1308,37 @@ namespace TheDelivery.Narrative
             // então não há CanLook separado a desligar — mesmo padrão dos outros beats.
             playerController.CanMove = false;
 
+            if (batteryCutscene != null)
+            {
+                // A tela do celular: toca, aperta o botão lateral, a bateria vazia... e o desespero.
+                batteryCutscene.gameObject.SetActive(true);
+                yield return batteryCutscene.PlayDeadBattery();
+                ShowThought(deadPhoneThought);
+                yield return null;
+                yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
+                yield return batteryCutscene.Hide();
+                batteryCutscene.gameObject.SetActive(false);
+                playerController.CanMove = true;
+                AdvanceToBeat(Act4Beat.RunToLandline);
+                yield break;
+            }
+
             if (deadPhoneOverlay != null)
                 deadPhoneOverlay.SetActive(true);
 
-            // Pequena pausa "olhando" o celular antes do baque.
-            yield return new WaitForSeconds(Mathf.Max(0f, deadPhoneLookDuration));
+            // Pequena pausa "olhando" o celular antes do baque — ela toca a tela, e nada.
+            if (deadPhoneTapSounds != null && deadPhoneTapSounds.Length > 0 && sfxAudioSource != null)
+            {
+                float look = Mathf.Max(0f, deadPhoneLookDuration);
+                for (int k = 0; k < 3; k++)
+                {
+                    var tap = deadPhoneTapSounds[Random.Range(0, deadPhoneTapSounds.Length)];
+                    if (tap != null) sfxAudioSource.PlayOneShot(tap, 0.8f);
+                    yield return new WaitForSeconds(Mathf.Max(0.25f, look / 3f));
+                }
+            }
+            else
+                yield return new WaitForSeconds(Mathf.Max(0f, deadPhoneLookDuration));
 
             // "Não... deixei carregando a noite toda."
             ShowThought(deadPhoneThought);
@@ -1356,6 +1444,24 @@ namespace TheDelivery.Narrative
             // trava o olhar, mesmo padrão dos outros beats — sem CanLook separado).
             playerController.CanMove = false;
 
+            // Disca e chama, no fone. Depois a atendente fala baixinho (abafada) por baixo das legendas.
+            if (phoneLineSource == null)
+            {
+                phoneLineSource = gameObject.AddComponent<AudioSource>();
+                phoneLineSource.playOnAwake = false; phoneLineSource.spatialBlend = 0f;
+            }
+            if (phoneDialSound != null)
+            {
+                phoneLineSource.loop = false; phoneLineSource.clip = phoneDialSound; phoneLineSource.volume = phoneLineVolume;
+                phoneLineSource.Play();
+                yield return new WaitForSeconds(phoneDialSound.length);
+            }
+            if (operatorMurmurSound != null)
+            {
+                phoneLineSource.loop = true; phoneLineSource.clip = operatorMurmurSound; phoneLineSource.volume = operatorMurmurVolume;
+                phoneLineSource.Play();
+            }
+
             // Roda o diálogo (ThoughtData multi-linha). Espera 1 frame pra garantir
             // que o runner do ThoughtSystem iniciou, depois aguarda o diálogo INTEIRO
             // terminar (todas as falas encadeadas) antes da linha cair.
@@ -1364,6 +1470,7 @@ namespace TheDelivery.Narrative
             yield return new WaitUntil(() => ThoughtSystem.Instance == null || !ThoughtSystem.Instance.IsShowing);
 
             // A linha cai: silêncio súbito + som de linha morta.
+            if (phoneLineSource != null) phoneLineSource.Stop();
             PlaySoundFaded(deadLineSound);
             Debug.Log("[Act4Director] A linha caiu (o antagonista voltou)");
 
@@ -1734,7 +1841,9 @@ namespace TheDelivery.Narrative
             // 1. O killer "vai embora": passos se afastando (falso alívio).
             for (int i = 0; i < leavingSteps; i++)
             {
-                PlayStep(footstepsLeavingSound);
+                PlayStep(footstepsLeavingSequence != null && footstepsLeavingSequence.Length > 0
+                    ? footstepsLeavingSequence[Mathf.Min(i, footstepsLeavingSequence.Length - 1)]
+                    : footstepsLeavingSound);
                 Debug.Log($"[Act4Director] Passos se afastando {i + 1}/{leavingSteps} (falso alívio)");
                 yield return new WaitForSeconds(Mathf.Max(0f, leavingStepInterval));
             }
