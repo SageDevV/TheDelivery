@@ -870,6 +870,9 @@ namespace TheDelivery.Player
         /// PerStepClips) — o piso frio da Recepção, por exemplo. Chamado pelo <see cref="SceneFootsteps"/>
         /// da cena. Volumes negativos mantêm os atuais. Para o loop antigo se estiver tocando.
         /// </summary>
+        /// <summary>Os passos avulsos atuais (para quem troca o piso por um tempo e depois devolve, ex.: a água do Ato 5).</summary>
+        public AudioClip[] CurrentFootstepClips => footstepClips;
+
         public void SetFootstepSurface(AudioClip[] clips, float walkVolume = -1f, float runVolume = -1f, float crouchVolume = -1f)
         {
             if (clips == null || clips.Length == 0)

@@ -32,8 +32,9 @@ namespace TheDelivery.EditorTools
 
         private static void OnPlayReady(string prep)
         {
-            if (prep != "act4beatsvideo" && prep != "act4fixvideo" && prep != "act4shadowvideo" && prep != "act4chasevideo" && prep != "act4sirenvideo") return;
-            sirenRun = prep == "act4sirenvideo";
+            if (prep != "act4beatsvideo" && prep != "act4fixvideo" && prep != "act4shadowvideo" && prep != "act4chasevideo" && prep != "act4sirenvideo" && prep != "act4hitvideo") return;
+            hitRun = prep == "act4hitvideo";
+            sirenRun = prep == "act4sirenvideo" || prep == "act4hitvideo";
             chaseRun = prep == "act4chasevideo";
             shadowRun = prep == "act4shadowvideo";
             shortRun = prep == "act4fixvideo";
@@ -43,6 +44,7 @@ namespace TheDelivery.EditorTools
             rec.StartCoroutine(Script(rec));
         }
 
+        private static bool hitRun; // act4hitvideo: o fim do ato (sai do box, corredor, a pancada e a queda)
         private static bool sirenRun; // act4sirenvideo: do box até a sala, com o giroflex batendo nas janelas
         private static bool chaseRun; // act4chasevideo: o killer a vê, persegue (música de perseguição) e ela se esconde
         private static bool shadowRun; // act4shadowvideo: para depois do vulto (o susto)
@@ -116,7 +118,32 @@ namespace TheDelivery.EditorTools
                 float ws = Time.time;
                 while ((anyParked == null || !anyParked.enabled) && Time.time - ws < 40f) yield return null;
                 Ev("Viaturas estacionadas: giroflex na janela do banheiro");
-                yield return new WaitForSeconds(6f);
+                yield return new WaitForSeconds(hitRun ? 2f : 6f);
+                if (hitRun)
+                {
+                    yield return WaitThought();
+                    if (PlayerHiding.Instance.IsHidden) PlayerHiding.Instance.ExitHideSpot();
+                    yield return new WaitForSeconds(1.5f);
+                    var amb = F<Transform>(d, "ambushZone");
+                    // 1,2 m antes da emboscada, no chão do corredor, e anda até ela (sem atravessar parede)
+                    Vector3 to = UnityEngine.AI.NavMesh.SamplePosition(amb.position, out var ht, 3f, UnityEngine.AI.NavMesh.AllAreas) ? ht.position : amb.position;
+                    Vector3 dirA = to - pc.transform.position; dirA.y = 0f; dirA.Normalize();
+                    Vector3 from = to - dirA * 1.2f;
+                    if (UnityEngine.AI.NavMesh.SamplePosition(from, out var hf, 1f, UnityEngine.AI.NavMesh.AllAreas)) from = hf.position;
+                    var ccTo = pc.GetComponent<CharacterController>();
+                    cc.enabled = false; pc.transform.SetPositionAndRotation(from, Quaternion.LookRotation(dirA)); cc.enabled = true;
+                    pc.SyncCameraState(4f, pc.EyeHeight);
+                    Ev("Saiu do box: no corredor, 1,2 m antes da emboscada");
+                    yield return new WaitForSeconds(1.2f);
+                    for (float u = 0f; u <= 1f && pc.CanMove; u += Time.deltaTime / 1.1f)
+                    {
+                        cc.enabled = false; pc.transform.position = Vector3.Lerp(from, to, u); cc.enabled = true;
+                        yield return null;
+                    }
+                    Ev("Emboscada: a pancada e a queda");
+                    yield return new WaitForSeconds(31f);
+                    Ev("FIM (act4hitvideo)"); Save(); rec.FinishEarly(); yield break;
+                }
                 if (PlayerHiding.Instance.IsHidden) PlayerHiding.Instance.ExitHideSpot();
                 yield return new WaitForSeconds(1.5f);
                 var bathWin = GameObject.Find("_Environment/Bathroom/Window");

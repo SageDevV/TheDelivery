@@ -15,7 +15,7 @@ namespace TheDelivery.EditorTools
     {
         public const string Dir = "Assets/_Project/Materials/Surfaces";
 
-        public enum Kind { SquareTile, Subway, Planks, Granite, Wainscot, Asphalt, Pavers, Marble, Concrete, Plaster }
+        public enum Kind { SquareTile, Subway, Planks, Granite, Wainscot, Asphalt, Pavers, Marble, Concrete, Plaster, HullPlate, DeckPlate }
 
         public sealed class Spec
         {
@@ -25,6 +25,9 @@ namespace TheDelivery.EditorTools
             public Color a, b, groutColor;              // tons da peça (sorteados entre a e b) e da junta
             public float smooth = 0.6f, groutSmooth = 0.15f, variation = 0.06f, speckle = 0f, bump = 1f;
             public int seed = 1;
+            // chapas de aço do navio (Ato 5): metálico (canal R) e ferrugem/escorridos
+            public float metal = 0f, rust = 0f, streaks = 0f;
+            public Color rustColor = new Color(0.32f, 0.15f, 0.07f, 1f);
         }
 
         // ------------------------------------------------------------------ ruído periódico
@@ -77,6 +80,7 @@ namespace TheDelivery.EditorTools
             Directory.CreateDirectory(Dir);
             int N = s.size;
             var col = new Color[N * N]; var height = new float[N * N]; var gloss = new float[N * N];
+            float[] metalMap = s.metal > 0f ? new float[N * N] : null; float curMetal = s.metal;
             float m = s.meters;
             int cellsU = Mathf.Max(1, Mathf.RoundToInt(m / s.tile)), cellsV = Mathf.Max(1, Mathf.RoundToInt(m / s.tileH));
             for (int y = 0; y < N; y++)
@@ -203,6 +207,61 @@ namespace TheDelivery.EditorTools
                         h = fine * 0.25f; g = s.smooth * (0.9f + 0.2f * fine);
                         break;
                     }
+                    case Kind.HullPlate:
+                    case Kind.DeckPlate:
+                    {
+                        // chapas de aço soldadas (tile x tileH m) com rebites junto às emendas; ferrugem em manchas e
+                        // escorrendo para baixo a partir das emendas; DeckPlate = chapa antiderrapante (losangos a 45°)
+                        float tw = m / cellsU, th = m / cellsV;
+                        int cx = Mathf.FloorToInt(pu / tw), cy = Mathf.FloorToInt(pv / th);
+                        float lx = pu - cx * tw, ly = pv - cy * th;
+                        int cix = ((cx % cellsU) + cellsU) % cellsU, ciy = ((cy % cellsV) + cellsV) % cellsV;
+                        float rnd = Hash(cix, ciy, s.seed);
+                        float edge = Mathf.Min(Mathf.Min(lx, tw - lx), Mathf.Min(ly, th - ly));
+                        bool seam = edge < s.grout * 0.5f;
+                        float weld = Mathf.Clamp01(1f - Mathf.Abs(edge - s.grout) / s.grout);        // cordão de solda
+                        // rebites: fileira a 4 cm da emenda, a cada 12 cm
+                        float rv = 0f;
+                        if (s.kind == Kind.HullPlate)
+                        {
+                            const float rowOff = 0.04f, pitch = 0.12f, rr = 0.011f;
+                            float dxe = Mathf.Min(lx, tw - lx), dye = Mathf.Min(ly, th - ly);
+                            if (Mathf.Abs(dye - rowOff) < rr * 1.2f) { float q = Mathf.Repeat(lx, pitch) - pitch / 2; float d = Mathf.Sqrt(q * q + (dye - rowOff) * (dye - rowOff)); rv = Mathf.Max(rv, Mathf.Clamp01(1f - d / rr)); }
+                            if (Mathf.Abs(dxe - rowOff) < rr * 1.2f) { float q = Mathf.Repeat(ly, pitch) - pitch / 2; float d = Mathf.Sqrt(q * q + (dxe - rowOff) * (dxe - rowOff)); rv = Mathf.Max(rv, Mathf.Clamp01(1f - d / rr)); }
+                        }
+                        float tread = 0f;
+                        if (s.kind == Kind.DeckPlate)
+                        {
+                            const float cell = 0.04f;
+                            int tx = Mathf.FloorToInt(pu / cell), ty = Mathf.FloorToInt(pv / cell);
+                            float ux = pu / cell - tx - 0.5f, uy = pv / cell - ty - 0.5f;
+                            float sgn = ((tx + ty) & 1) == 0 ? 1f : -1f;
+                            float a = (ux + sgn * uy) * 0.7071f, b = (ux - sgn * uy) * 0.7071f;      // eixo do losango
+                            float e = (a * a) / (0.36f * 0.36f) + (b * b) / (0.09f * 0.09f);
+                            tread = Mathf.Clamp01(1f - e);
+                            tread = Mathf.Sqrt(tread);
+                        }
+                        float big = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 1.5f)), 5, s.seed + 1);
+                        float mid = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 8)), 4, s.seed + 2);
+                        float fine = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 40)), 3, s.seed + 3);
+                        // escorridos: ruído esticado na vertical, mais forte logo abaixo de uma emenda horizontal
+                        float strk = Fbm(u, v, Mathf.Max(1, Mathf.RoundToInt(m * 3)), 4, s.seed + 4, 18f, 1f);
+                        float belowSeam = Mathf.Clamp01(1f - (th - ly) / (th * 0.8f));               // v cresce para cima: perto do topo da chapa
+                        float streak = Mathf.Clamp01((strk - 0.5f) * 4f) * s.streaks * (0.35f + 0.65f * belowSeam);
+                        float rustM = Mathf.Clamp01((big * 0.6f + mid * 0.4f - (1f - s.rust * 0.55f)) * 4f);
+                        rustM = Mathf.Max(rustM, Mathf.Clamp01(rv * 1.5f) * s.rust);                    // rebite enferrujado
+                        rustM = Mathf.Max(rustM, weld * s.rust * 0.6f * mid);
+                        Color paint = Color.Lerp(s.a, s.b, rnd * 0.5f + mid * 0.5f) * (0.92f + fine * 0.16f);
+                        Color rustC = s.rustColor * (0.75f + fine * 0.5f);
+                        c = Color.Lerp(paint, rustC, rustM);
+                        c = Color.Lerp(c, s.rustColor * 0.55f, streak * 0.8f);
+                        if (s.kind == Kind.DeckPlate) c = Color.Lerp(c, s.b * 1.25f, tread * 0.35f * (1f - rustM));  // topos gastos
+                        if (seam) c = s.groutColor;
+                        h = seam ? 0f : 0.55f + weld * 0.25f + rv * 0.4f + tread * 0.45f + (fine - 0.5f) * 0.06f + rustM * (mid - 0.5f) * 0.15f;
+                        g = seam ? s.groutSmooth : Mathf.Lerp(s.smooth, 0.08f, rustM) + tread * 0.12f;
+                        curMetal = s.metal * (1f - rustM * 0.85f) * (seam ? 0.3f : 1f);
+                        break;
+                    }
                     default: // Pavers: blocos de concreto com junta de areia
                     {
                         float tw = m / cellsU; int cx = Mathf.FloorToInt(pu / tw), cy = Mathf.FloorToInt(pv / tw);
@@ -220,6 +279,7 @@ namespace TheDelivery.EditorTools
                     }
                 }
                 int i = y * N + x; col[i] = c; height[i] = h; gloss[i] = Mathf.Clamp01(g);
+                if (metalMap != null) metalMap[i] = curMetal;
             }
 
             string td = $"{Dir}/{s.name}";
@@ -236,7 +296,8 @@ namespace TheDelivery.EditorTools
                 float hd = height[((y + N - 1) % N) * N + x], hu = height[((y + 1) % N) * N + x];
                 var n = new Vector3((hl - hr) * k, (hd - hu) * k, 1f).normalized;
                 nrm[y * N + x] = new Color(n.x * 0.5f + 0.5f, n.y * 0.5f + 0.5f, n.z * 0.5f + 0.5f, 1f);
-                ms[y * N + x] = new Color(0f, 0f, 0f, gloss[y * N + x]);
+                float mtl = metalMap != null ? metalMap[y * N + x] : 0f;
+                ms[y * N + x] = new Color(mtl, mtl, mtl, gloss[y * N + x]);
             }
             var nT = new Texture2D(N, N, TextureFormat.RGBA32, false, true); nT.SetPixels(nrm); nT.Apply();
             File.WriteAllBytes($"{td}/normal.png", nT.EncodeToPNG());

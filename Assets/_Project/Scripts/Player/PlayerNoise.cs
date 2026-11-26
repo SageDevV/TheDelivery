@@ -28,6 +28,17 @@ namespace TheDelivery.Player
         /// <summary>Raio de ruído emitido neste frame. 0 = silêncio.</summary>
         public float CurrentNoiseRadius { get; private set; }
 
+        /// <summary>Multiplica o ruído dos passos (ex.: a água do Ato 5 espirra). 1 = normal.</summary>
+        public float Multiplier { get; set; } = 1f;
+        private float burstRadius, burstUntil;
+
+        /// <summary>Um barulho ALTO e curto que não é passo (ex.: a partida de um gerador): vale por <paramref name="seconds"/> s.</summary>
+        public void EmitBurst(float radius, float seconds)
+        {
+            burstRadius = Mathf.Max(burstRadius * (Time.time < burstUntil ? 1f : 0f), radius);
+            burstUntil = Mathf.Max(burstUntil, Time.time + seconds);
+        }
+
         private PlayerController playerController;
 
         private void Awake()
@@ -37,7 +48,8 @@ namespace TheDelivery.Player
 
         private void Update()
         {
-            CurrentNoiseRadius = CalculateNoiseRadius();
+            CurrentNoiseRadius = CalculateNoiseRadius() * Multiplier;
+            if (Time.time < burstUntil) CurrentNoiseRadius = Mathf.Max(CurrentNoiseRadius, burstRadius);
         }
 
         /// <summary>

@@ -42,6 +42,10 @@ namespace TheDelivery.Player
         private float speed;
         private bool shown = true;
 
+        public Animator BodyAnimator => bodyAnimator;
+        public Animator ShadowAnimator => shadowAnimator;
+        public bool IsShown => shown;
+
         private void Awake()
         {
             if (player == null) player = GetComponentInParent<PlayerController>();

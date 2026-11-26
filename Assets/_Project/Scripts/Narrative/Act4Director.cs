@@ -313,6 +313,18 @@ namespace TheDelivery.Narrative
         [SerializeField] private float ambushRadius = 1.5f;
         [Tooltip("Som da batida na cabeça (placeholder).")]
         [SerializeField] private AudioClip headHitSound;
+        [Tooltip("O corpo dela batendo no piso no fim da queda (2026-11-26). Vazio = queda muda.")]
+        [SerializeField] private AudioClip bodyFallSound;
+        [Header("Beat 8 - O killer de pé na frente dela, caída")]
+        [Tooltip("Depois da queda, o killer (o modelo do vulto) entra no quadro e para de pé na frente da Clear, em contraluz: ele ainda está no apartamento (2026-11-26).")]
+        [SerializeField] private bool killerStandsOver = true;
+        [Tooltip("Segundos no chão antes de ele aparecer.")]
+        [SerializeField] private float killerOverDelay = 1.4f;
+        [Tooltip("Distância (m) dos pés dele até a cabeça dela quando para.")]
+        [SerializeField] private float killerOverDistance = 1.35f;
+        private bool killerArrived;
+        private Canvas lidsCanvas;
+        private RectTransform upperLid, lowerLid;
         [Tooltip("Tempo (s) de tela preta após a porrada, antes do epílogo.")]
         [SerializeField] private float blackoutDuration = 4f;
 
@@ -1925,16 +1937,12 @@ namespace TheDelivery.Narrative
             //    não é mais reerguido aqui (a sirene migrou para sources próprios), então
             //    um PlayOneShot ali sairia MUDO. Mesmo canal/razão do "baque" das luzes.
             playerController.CanMove = false;
+            // As luzes do giroflex CONTINUAM batendo nas janelas com ela caída (pedido do usuário, 2026-11-26):
+            // só apagam junto com a sirene, no apagão final (depois do StopSirenLoop do groggy).
 
-            // A reviravolta: o falso alívio quebra. TODAS as luzes de sirene se apagam
-            // no instante da emboscada — tanto as das viaturas (sirenEffects) quanto a
-            // da janela (parkedSirenEffects). O som da sirene segue no fundo e só encerra
-            // no fim do groggy (StopSirenLoop, mais abaixo).
-            StopSirenEffects(sirenEffects);
-            StopSirenEffects(parkedSirenEffects);
 
-            if (sfxAudioSource != null && headHitSound != null)
-                sfxAudioSource.PlayOneShot(headHitSound);
+            if (headHitSound != null)
+                JumpscareAudio.Play(headHitSound, 1f, 0.1f, 1.6f, 3.5f); // abaixa sirene/chuva: o golpe na frente de tudo
             else
                 Debug.LogWarning("[Act4Director] PORRADA: sfxAudioSource ou headHitSound ausente; sem som da batida.", this);
             Debug.Log("[Act4Director] PORRADA - player cai inconsciente");
@@ -1946,20 +1954,23 @@ namespace TheDelivery.Narrative
             StartCoroutine(BlurVisionOnImpact());
             yield return CollapseCameraToFloor();
 
-            // 8. Visão turva SUSTENTADA no chão (groggy) por um tempo longo (10-20s)
-            //    ANTES do apagão — o protagonista fica caído, consciência se esvaindo
-            //    aos poucos. Com um sway sutil (respiração + cabeça pesada) para a
-            //    imagem não ficar congelada/morta durante a espera.
-            yield return GroggyOnFloor(groggyOnFloorDuration);
+            if (killerStandsOver) StartCoroutine(KillerStandsOver());
+            // 8. Caída, a visão turva: o killer vem e fica PARADO na frente dela. O balanço do groggy continua por
+            //    baixo de tudo até o olho fechar.
+            StartCoroutine(GroggyOnFloor(groggyOnFloorDuration + 12f));
+            yield return new WaitForSeconds(Mathf.Max(0f, groggyOnFloorDuration));
+            for (float w = 0f; killerStandsOver && !killerArrived && w < 10f; w += Time.deltaTime) yield return null;
+            yield return new WaitForSeconds(1.5f);                          // ele ali, parado, olhando para ela
 
-            // 9. A sirene ACABA (fade out): o som da esperança se esvai junto com a
-            //    consciência. Logo em cima vem a tela preta para encerrar.
-            yield return StopSirenLoop();
+            // 9. Ela luta para manter os olhos abertos e eles fecham de vez; a sirene some junto.
+            StartCoroutine(StopSirenLoop());
+            yield return EyesClose();
+            StopSirenEffects(sirenEffects);
+            StopSirenEffects(parkedSirenEffects);
 
-            // 10. Só então a tela apaga, num fade mais lento (perda final de consciência).
-            yield return FadeBlackScreen(0f, 1f, blackoutFadeDuration);
-            if (blackScreen != null)
-                blackScreen.blocksRaycasts = true;
+            // 10. Olho fechado = tela preta (as pálpebras saem, o preto fica para o corte).
+            if (blackScreen != null) { blackScreen.alpha = 1f; blackScreen.blocksRaycasts = true; }
+            SetLids(0f);
 
             // Segura a tela preta um tempo (inconsciente), agora em silêncio (a sirene
             // já se encerrou antes do apagão).
@@ -2198,6 +2209,10 @@ namespace TheDelivery.Narrative
         /// </summary>
         private IEnumerator CollapseCameraToFloor()
         {
+            // Queda em 3 tempos (refeita em 2026-11-26: a versão antiga deslizava 1,5 s numa curva suave, sem peso):
+            //  1. o GOLPE: a cabeça é jogada para a frente, tremor forte e um piscar de consciência (tela escurece e volta);
+            //  2. os JOELHOS cedem: a altura cai até a metade, acelerando, com o corpo tombando de lado;
+            //  3. o corpo DESPENCA: acelera até o chão, bate (som do corpo no piso), dá um quique curto e treme de novo.
             Transform cam = playerController.CameraHolder;
             if (cam == null)
             {
@@ -2205,26 +2220,286 @@ namespace TheDelivery.Narrative
                 yield break;
             }
 
-            Vector3 fromPos = cam.localPosition;
-            Quaternion fromRot = cam.localRotation;
-            float yaw = fromRot.eulerAngles.y;
+            Vector3 p0 = cam.localPosition;
+            Vector3 e0 = cam.localRotation.eulerAngles;
+            float yaw = e0.y, pitch0 = Mathf.DeltaAngle(0f, e0.x), roll0 = Mathf.DeltaAngle(0f, e0.z);
+            float floorY = collapseFloorHeight;
+            float kneeY = Mathf.Lerp(floorY, p0.y, 0.55f);
 
-            Vector3 toPos = new Vector3(fromPos.x, collapseFloorHeight, fromPos.z);
-            Quaternion toRot = Quaternion.Euler(collapsePitch, yaw, collapseRoll);
-
-            float dur = Mathf.Max(0.0001f, collapseDuration);
-            float elapsed = 0f;
-            while (elapsed < dur)
+            float shake = 0f;                       // amplitude atual do tremor (graus), decai sozinha
+            float seed = Random.value * 100f;
+            void Apply(float y, float fwd, float pitch, float roll)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / dur));
-                cam.localPosition = Vector3.Lerp(fromPos, toPos, t);
-                cam.localRotation = Quaternion.Slerp(fromRot, toRot, t);
-                yield return null;
+                float t = Time.time * 38f + seed;
+                float sx = (Mathf.PerlinNoise(t, 0f) - 0.5f) * 2f * shake;
+                float sz = (Mathf.PerlinNoise(0f, t) - 0.5f) * 2f * shake;
+                cam.localPosition = new Vector3(p0.x, y, p0.z + fwd);
+                cam.localRotation = Quaternion.Euler(pitch + sx, yaw, roll + sz);
+            }
+            IEnumerator Phase(float dur, System.Action<float> step)
+            {
+                float el = 0f;
+                while (el < dur)
+                {
+                    el += Time.deltaTime;
+                    shake = Mathf.MoveTowards(shake, 0f, Time.deltaTime * 9f);
+                    step(Mathf.Clamp01(el / dur));
+                    yield return null;
+                }
             }
 
-            cam.localPosition = toPos;
-            cam.localRotation = toRot;
+            // 1. O golpe: tranco para a frente/baixo, tremor forte e um piscar de tela preta.
+            shake = 8f;
+            if (blackScreen != null) StartCoroutine(ImpactBlink());
+            StartCoroutine(FovPunch());
+            float hitPitch = pitch0 + 34f, hitRoll = roll0 + 14f;
+            yield return Phase(0.06f, k => Apply(p0.y - 0.09f * k, 0.14f * k, Mathf.Lerp(pitch0, hitPitch, k), Mathf.Lerp(roll0, hitRoll, k)));
+            yield return Phase(0.22f, k => Apply(p0.y - 0.09f, 0.14f * (1f - k * 0.5f), Mathf.Lerp(hitPitch, hitPitch - 9f, k), hitRoll));
+
+            // 2. Os joelhos cedem: cai até a altura dos joelhos acelerando; o corpo começa a tombar.
+            float buckPitch = hitPitch - 4f, buckRoll = hitRoll + 16f;
+            yield return Phase(0.42f, k =>
+            {
+                float a = k * k;                    // acelera (sem perna para segurar)
+                Apply(Mathf.Lerp(p0.y - 0.09f, kneeY, a), 0.07f, Mathf.Lerp(hitPitch - 9f, buckPitch, k), Mathf.Lerp(hitRoll, buckRoll, a));
+            });
+
+            // 3. Despenca até o chão: queda livre e o tombo de lado.
+            yield return Phase(0.3f, k =>
+            {
+                float a = k * k;
+                Apply(Mathf.Lerp(kneeY, floorY, a), 0.045f, Mathf.Lerp(buckPitch, collapsePitch, a), Mathf.Lerp(buckRoll, collapseRoll, a));
+            });
+
+            // Batida no chão: som do corpo, tremor e um quique curto da cabeça.
+            if (bodyFallSound != null)
+            {
+                // fonte PRÓPRIA, criada agora: o abaixamento do golpe (JumpscareAudio) não a pega, e o baque soa inteiro
+                var fallGo = new GameObject("BodyFallSfx");
+                var fallSrc = fallGo.AddComponent<AudioSource>();
+                fallSrc.spatialBlend = 0f; fallSrc.priority = 0; fallSrc.PlayOneShot(bodyFallSound, 1f);
+                Destroy(fallGo, bodyFallSound.length + 0.2f);
+            }
+            shake = 3.2f;
+            yield return Phase(0.1f, k => Apply(floorY + 0.05f * Mathf.Sin(k * Mathf.PI * 0.5f), 0.045f, collapsePitch - 3f * k, collapseRoll + 3f * k));
+            yield return Phase(0.22f, k => Apply(floorY + 0.05f * (1f - k), 0.045f, collapsePitch - 3f * (1f - k), collapseRoll + 3f * (1f - k)));
+            yield return Phase(0.35f, k => Apply(floorY, 0.045f, collapsePitch, collapseRoll));
+
+            shake = 0f;
+            cam.localPosition = new Vector3(p0.x, floorY, p0.z + 0.045f);
+            cam.localRotation = Quaternion.Euler(collapsePitch, yaw, collapseRoll);
+        }
+
+        /// <summary>
+        /// Ela caída, a visão turva: o killer entra no quadro andando devagar e para de pé na frente dela, olhando para
+        /// baixo. Uma luz fraca atrás dele (no corredor) o deixa em contraluz e estica a sombra dele sobre ela. Usa o
+        /// modelo do vulto do Beat 3 (só animação, sem IA).
+        /// </summary>
+        private IEnumerator KillerStandsOver()
+        {
+            killerArrived = false;
+            yield return new WaitForSeconds(Mathf.Max(0f, killerOverDelay));
+            if (shadowFigure == null) yield break;
+            Transform body = playerController.transform;
+            Vector3 fwd = body.forward; fwd.y = 0f;
+            if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
+            fwd.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, fwd);
+            Vector3 floor = body.position;
+            Vector3 stop = floor + fwd * killerOverDistance + right * 0.15f;
+            if (UnityEngine.AI.NavMesh.SamplePosition(stop, out var hs, 1f, UnityEngine.AI.NavMesh.AllAreas)) stop = hs.position;
+
+            // Ele vem de FORA do apartamento (corredor do prédio), abre a porta da frente, entra e atravessa a sala até
+            // ela. Começa atrás da porta FECHADA: o jogador nunca o vê surgir.
+            Door aptDoor = null;
+            foreach (var dd in FindObjectsByType<Door>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (dd.name == "ApartmentDoor") { aptDoor = dd; break; }
+            Vector3 doorC = aptDoor != null ? DoorCenter(aptDoor) : (frontDoorPoint != null ? frontDoorPoint.position : stop + fwd * 3.5f);
+            Vector3 normal = aptDoor != null ? aptDoor.transform.forward : fwd; normal.y = 0f; normal.Normalize();
+            var corridor = GameObject.Find("BuildingCorridor");
+            Vector3 corridorRef = corridor != null ? corridor.transform.position : doorC + normal;
+            Vector3 outDir = Vector3.Dot(corridorRef - doorC, normal) >= 0f ? normal : -normal;   // para fora (corredor)
+            Vector3 Snap(Vector3 v, float r) => UnityEngine.AI.NavMesh.SamplePosition(v, out var h, r, UnityEngine.AI.NavMesh.AllAreas) ? h.position : v;
+            Vector3 origin = Snap(doorC + outDir * 3.2f, 2f);
+            Vector3 outside = Snap(doorC + outDir * 0.75f, 1f);
+            Vector3 inside = Snap(doorC - outDir * 0.85f, 1f);
+
+            // a porta tem de estar FECHADA (se estiver aberta e ela não a enxergar, fecha sem animação)
+            if (aptDoor != null && aptDoor.IsOpen && !SeenByCamera(doorC)) aptDoor.SetOpenInstant(false);
+
+            EnsureShadowIsScriptedOnly();
+            shadowFigure.transform.position = origin;
+            FaceTowards(shadowFigure.transform, outside);
+            shadowFigure.SetActive(true);
+            Debug.Log($"[Act4Director] Killer vem de fora: corredor {origin} -> porta {doorC} (aberta={aptDoor != null && aptDoor.IsOpen}) -> sala -> ela.");
+            // contraluz: uma luz fraca e fria atrás do ponto onde ele vai parar, apontada para ela, com sombra
+            var lightGo = new GameObject("KillerBacklight");
+            var bl = lightGo.AddComponent<Light>();
+            bl.type = LightType.Spot; bl.spotAngle = 70f; bl.range = 9f; bl.intensity = 0f;
+            bl.color = new Color(0.62f, 0.68f, 0.85f); bl.shadows = LightShadows.Soft; bl.shadowStrength = 1f;
+            Vector3 lightPos = stop + fwd * 2.4f + Vector3.up * 2.1f;
+            lightGo.transform.position = lightPos;
+            lightGo.transform.rotation = Quaternion.LookRotation((floor + Vector3.up * 0.2f) - lightPos);
+
+            float speed = Mathf.Max(0.4f, shadowWalkSpeed * 0.75f);
+            IEnumerator WalkTo(Vector3 target)
+            {
+                SetShadowWalking(true);
+                while ((shadowFigure.transform.position - target).sqrMagnitude > 0.02f * 0.02f)
+                {
+                    Vector3 d = target - shadowFigure.transform.position; d.y = 0f;
+                    if (d.sqrMagnitude > 0.0001f)
+                        shadowFigure.transform.rotation = Quaternion.Slerp(shadowFigure.transform.rotation, Quaternion.LookRotation(d), 6f * Time.deltaTime);
+                    shadowFigure.transform.position = Vector3.MoveTowards(shadowFigure.transform.position, target, speed * Time.deltaTime);
+                    yield return null;
+                }
+            }
+
+            // 1. no corredor, até a porta
+            yield return WalkTo(outside);
+            // 2. para, e a porta abre (o rangido da própria porta)
+            if (aptDoor != null && aptDoor.IsClosed)
+            {
+                SetShadowWalking(false);
+                yield return new WaitForSeconds(0.6f);
+                aptDoor.IsLocked = false;
+                aptDoor.Open();
+                for (float t = 0f; t < 2.5f && !aptDoor.IsOpen; t += Time.deltaTime) yield return null;
+                yield return new WaitForSeconds(0.4f);
+            }
+            // 3. entra
+            yield return WalkTo(inside);
+            // 4. atravessa a sala pela NavMesh até a frente dela; a contraluz acende enquanto ele vem
+            var path = new UnityEngine.AI.NavMeshPath();
+            UnityEngine.AI.NavMesh.CalculatePath(inside, stop, UnityEngine.AI.NavMesh.AllAreas, path);
+            var corners = path.corners != null && path.corners.Length >= 2 ? path.corners : new[] { inside, stop };
+            for (int k = 1; k < corners.Length; k++)
+            {
+                var walkK = WalkTo(corners[k]);
+                while (walkK.MoveNext())
+                {
+                    bl.intensity = Mathf.MoveTowards(bl.intensity, 3.2f, 1.2f * Time.deltaTime);
+                    yield return walkK.Current;
+                }
+            }
+            SetShadowWalking(false);
+            killerArrived = true;
+            for (float t = 0f; t < 0.6f; t += Time.deltaTime)              // vira de frente para ela, parado
+            {
+                Vector3 d = floor - shadowFigure.transform.position; d.y = 0f;
+                if (d.sqrMagnitude > 0.0001f)
+                    shadowFigure.transform.rotation = Quaternion.Slerp(shadowFigure.transform.rotation, Quaternion.LookRotation(d), 5f * Time.deltaTime);
+                bl.intensity = Mathf.MoveTowards(bl.intensity, 3.2f, 2.5f * Time.deltaTime);
+                yield return null;
+            }
+        }
+
+        /// <summary>Centro da folha da porta (o pivô do Door costuma ficar na dobradiça).</summary>
+        private static Vector3 DoorCenter(Door d)
+        {
+            var rs = d.GetComponentsInChildren<Renderer>();
+            if (rs.Length == 0) return d.transform.position;
+            var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+            return new Vector3(b.center.x, d.transform.position.y, b.center.z);
+        }
+
+        /// <summary>A câmera vê este ponto do chão (o tronco de quem estiver ali): dentro do quadro e sem parede no meio.</summary>
+        private bool SeenByCamera(Vector3 floorPoint)
+        {
+            var cam = Camera.main;
+            if (cam == null) return false;
+            foreach (float h in new[] { 0.2f, 1.0f, 1.7f })                // pés, tronco, cabeça
+            {
+                Vector3 p = floorPoint + Vector3.up * h;
+                Vector3 vp = cam.WorldToViewportPoint(p);
+                if (vp.z <= 0f || vp.x < -0.05f || vp.x > 1.05f || vp.y < -0.05f || vp.y > 1.05f) continue;
+                Vector3 o = cam.transform.position; Vector3 dir = p - o; float dist = dir.magnitude;
+                bool blocked = false;
+                foreach (var hit in Physics.RaycastAll(o, dir / dist, dist - 0.05f, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    if (hit.transform.IsChildOf(playerController.transform) || (shadowFigure != null && hit.transform.IsChildOf(shadowFigure.transform))) continue;
+                    blocked = true; break;
+                }
+                if (!blocked) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Os olhos dela fechando (pálpebras, como no pesadelo: duas faixas pretas que comem a tela de cima e de baixo,
+        /// não um fade). Uma piscada pesada que reabre; outra que já não abre direito; e o fechamento final, devagar.
+        /// </summary>
+        private IEnumerator EyesClose()
+        {
+            IEnumerator Lid(float from, float to, float dur, bool falling)
+            {
+                for (float t = 0f; t < dur; t += Time.deltaTime)
+                {
+                    float u = Mathf.Clamp01(t / dur);
+                    float k = falling ? 1f - (1f - u) * (1f - u) : Mathf.SmoothStep(0f, 1f, u);   // cai em estalo, sobe com esforço
+                    SetLids(Mathf.Lerp(from, to, k));
+                    yield return null;
+                }
+                SetLids(to);
+            }
+            yield return Lid(0f, 1f, 0.45f, true);       // piscada pesada
+            yield return new WaitForSeconds(0.35f);
+            yield return Lid(1f, 0f, 1.1f, false);       // reabre: ele continua ali
+            yield return new WaitForSeconds(1.3f);
+            yield return Lid(0f, 1f, 0.6f, true);        // de novo...
+            yield return new WaitForSeconds(0.6f);
+            yield return Lid(1f, 0.42f, 1.4f, false);    // ...e já não abre direito
+            yield return new WaitForSeconds(1.2f);
+            yield return Lid(0.42f, 1f, 2.2f, false);    // fecha de vez, devagar
+            yield return new WaitForSeconds(0.4f);
+        }
+
+        /// <summary>Altura das pálpebras: 0 = olho aberto, 1 = fechado. O Canvas é montado na primeira vez.</summary>
+        private void SetLids(float closed)
+        {
+            closed = Mathf.Clamp01(closed);
+            if (lidsCanvas == null)
+            {
+                if (closed <= 0f) return;
+                var go = new GameObject("Act4Eyelids", typeof(Canvas));
+                lidsCanvas = go.GetComponent<Canvas>();
+                lidsCanvas.renderMode = RenderMode.ScreenSpaceOverlay; lidsCanvas.sortingOrder = 30000;
+                RectTransform Bar(string n)
+                {
+                    var b = new GameObject(n, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                    b.transform.SetParent(go.transform, false);
+                    var img = b.GetComponent<UnityEngine.UI.Image>(); img.color = Color.black; img.raycastTarget = false;
+                    var rt = (RectTransform)b.transform; rt.offsetMin = rt.offsetMax = Vector2.zero;
+                    return rt;
+                }
+                upperLid = Bar("UpperLid"); lowerLid = Bar("LowerLid");
+            }
+            lidsCanvas.gameObject.SetActive(closed > 0f);
+            float half = 0.5f * closed + (closed >= 1f ? 0.02f : 0f);      // fechado: as duas se sobrepõem no meio
+            upperLid.anchorMin = new Vector2(0f, 1f - half); upperLid.anchorMax = new Vector2(1f, 1f);
+            lowerLid.anchorMin = new Vector2(0f, 0f); lowerLid.anchorMax = new Vector2(1f, half);
+        }
+
+        /// <summary>O apagão de meio segundo do golpe: a tela escurece de uma vez e a consciência volta, turva.</summary>
+        private IEnumerator ImpactBlink()
+        {
+            if (blackScreen == null) yield break;
+            float a0 = blackScreen.alpha;
+            blackScreen.alpha = 1f;                                   // apaga de vez por um instante
+            yield return new WaitForSeconds(0.12f);
+            for (float t = 0f; t < 0.5f; t += Time.deltaTime) { blackScreen.alpha = Mathf.Lerp(0.85f, a0, t / 0.5f); yield return null; }
+            blackScreen.alpha = a0;
+        }
+
+        /// <summary>O "soco" de zoom do golpe: o campo de visão fecha de uma vez e volta devagar.</summary>
+        private IEnumerator FovPunch()
+        {
+            var c = Camera.main;
+            if (c == null) yield break;
+            float f0 = c.fieldOfView;
+            c.fieldOfView = f0 - 14f;
+            for (float t = 0f; t < 0.6f; t += Time.deltaTime) { c.fieldOfView = Mathf.Lerp(f0 - 14f, f0, Mathf.SmoothStep(0f, 1f, t / 0.6f)); yield return null; }
+            c.fieldOfView = f0;
         }
 
         /// <summary>

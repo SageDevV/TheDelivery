@@ -659,6 +659,16 @@ namespace TheDelivery.AI
             TransitionTo(AIState.Patrol);
         }
 
+        /// <summary>Volta à FSM já desconfiado, indo investigar <paramref name="point"/> (ex.: um barulho forte que o
+        /// diretor sabe que ele ouviu de longe, como um gerador ligando no Ato 5).</summary>
+        public void InvestigateFromDirector(Vector3 point)
+        {
+            enabled = true;
+            if (patrol != null) patrol.PausePatrol();
+            investigationPoint = point;
+            TransitionTo(AIState.Suspicious);
+        }
+
         /// <summary>
         /// Define o destino do agente evitando chamadas redundantes: quando
         /// <paramref name="force"/> é false, só reemite se o alvo se moveu além de

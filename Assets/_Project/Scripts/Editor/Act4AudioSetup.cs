@@ -93,6 +93,7 @@ namespace TheDelivery.EditorTools
                 Set(dir, "footstepsLeavingSound", Clip("KillerStepLeaving_01"));
                 SetArray(dir, "footstepsLeavingSequence", Enumerable.Range(1, 5).Select(i => (Object)Clip($"KillerStepLeaving_{i:00}")).ToArray());
                 Set(dir, "headHitSound", Clip("Act4HeadHit"));
+                Set(dir, "bodyFallSound", Clip("Act4BodyFall"));
                 SetArray(dir, "deadPhoneTapSounds", Enumerable.Range(1, 3).Select(i => (Object)Clip($"PhoneTap_{i:00}")).ToArray());
                 Set(dir, "phoneDialSound", Clip("PhoneDialRing"));
                 Set(dir, "operatorMurmurSound", Clip("OperatorMuffled"));
