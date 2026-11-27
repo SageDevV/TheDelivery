@@ -66,7 +66,8 @@ namespace TheDelivery.EditorTools
             n += 2;
 
             // água: passos de quem anda dentro dela
-            foreach (var wz in R.GetComponentsInChildren<WaterZone>(true)) SetArr(wz, "wadeSteps", Many("ShipWadeStep", 6));
+            var dripMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Ship/Ship_Drip.mat");
+            foreach (var wz in R.GetComponentsInChildren<WaterZone>(true)) { SetArr(wz, "wadeSteps", Many("ShipWadeStep", 6)); Set(wz, "splashMaterial", dripMat); }
             n++;
 
             // geradores
@@ -98,6 +99,7 @@ namespace TheDelivery.EditorTools
             {
                 SetArr(dir, "signalClips", new[] { C("ShipDistantSlam"), C("ShipDistantSteps"), C("ShipLeninHumming") }.Where(c => c != null).ToArray());
                 SetArr(dir, "shipFootsteps", Many("ShipClearStep", 8));
+                Set(dir, "flashlightClick", C("PhoneTap_01"));
                 n += 4;
             }
 

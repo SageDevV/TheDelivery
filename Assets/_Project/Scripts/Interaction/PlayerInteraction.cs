@@ -32,6 +32,10 @@ namespace TheDelivery.Interaction
         /// <summary>Objeto atualmente no foco da mira (null se nenhum). Reavaliado por frame.</summary>
         public IInteractable Current { get; private set; }
 
+        /// <summary>A tecla de interagir foi apertada NESTE quadro sem nada interativo na mira (ex.: no Ato 5, o F
+        /// sem alvo liga/desliga a lanterna do celular). Falso quando a interação está desligada (cutscenes).</summary>
+        public bool PressedOnNothing { get; private set; }
+
         /// <summary>Habilita/desabilita a interação inteira (cutscenes). Espelha o padrão de PlayerController.CanMove.</summary>
         public bool InteractionEnabled { get; set; } = true;
 
@@ -74,13 +78,16 @@ namespace TheDelivery.Interaction
         {
             if (!InteractionEnabled)
             {
+                PressedOnNothing = false;
                 ClearFocus();
                 return;
             }
 
             DetectTarget();
 
-            if (Current != null && Current.CanInteract && interactAction.WasPressedThisFrame())
+            bool pressed = interactAction.WasPressedThisFrame();
+            PressedOnNothing = pressed && (Current == null || !Current.CanInteract);
+            if (Current != null && Current.CanInteract && pressed)
                 Current.Interact(this);
         }
 

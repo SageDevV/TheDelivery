@@ -397,7 +397,294 @@ def build_cargo():
     parts["Bunk"] = K.PARTS[s:]
     return group(parts)
 
-ALL = {"machines": build_machines, "cell": build_cell, "cargo": build_cargo}[GROUP]()
+
+# =================================================================== MATERIAIS EXTRAS (dressing, 2026-11-26)
+import mathutils
+
+def mats_extra(M):
+    M['orange'] = K.material("SafetyOrange", lin((0.85, 0.32, 0.06)), rough=0.6, dirt=0.6, dirt_color=lin((0.2, 0.12, 0.06)), rust=0.25, streaks=0.3, color_var=0.1)
+    M['red'] = K.material("ExtRed", lin((0.55, 0.06, 0.04)), rough=0.4, metal=0.2, dirt=0.6, wear=0.5, wear_color=lin((0.25, 0.22, 0.2)), rust=0.5)
+    M['white'] = K.material("SignWhite", lin((0.82, 0.80, 0.74)), rough=0.6, dirt=0.7, rust=0.45, streaks=0.5)
+    M['signyellow'] = K.material("SignYellow", lin((0.80, 0.62, 0.08)), rough=0.6, dirt=0.6, rust=0.45, streaks=0.4)
+    M['signgreen'] = K.material("SignGreen", lin((0.05, 0.38, 0.16)), rough=0.6, dirt=0.6, rust=0.4, streaks=0.4)
+    M['rope'] = K.material("Rope", lin((0.55, 0.46, 0.30)), rough=0.95, dirt=0.7, dirt_color=lin((0.2, 0.15, 0.08)), bump=0.6, bump_scale=120.0)
+    M['tarp'] = K.material("Tarp", lin((0.22, 0.27, 0.18)), rough=0.85, dirt=0.7, dirt_color=lin((0.14, 0.12, 0.08)), color_var=0.15, bump=0.4, bump_scale=30.0)
+    M['sack'] = K.material("Burlap", lin((0.46, 0.38, 0.25)), rough=0.95, dirt=0.8, color_var=0.15, bump=0.5, bump_scale=90.0)
+    M['paper'] = K.material("OldPaper", lin((0.75, 0.70, 0.56)), rough=0.9, dirt=0.6, dirt_color=lin((0.35, 0.28, 0.16)), color_var=0.12)
+    M['bottle'] = K.material("BottleGlass", lin((0.10, 0.22, 0.10)), rough=0.15, dirt=0.4)
+    M['bakelite'] = K.material("Bakelite", lin((0.12, 0.08, 0.05)), rough=0.35, dirt=0.5)
+    M['lampglass'] = K.material("LampGlassOff", lin((0.55, 0.55, 0.50)), rough=0.25, dirt=0.8, dirt_color=lin((0.2, 0.18, 0.12)))
+    M['grate'] = K.material("Grating", lin((0.18, 0.18, 0.17)), rough=0.5, metal=0.6, dirt=0.6, rust=0.6)
+    return M
+
+def stencil(s, x, y, z, size, mat):
+    return K.text(s, x, y, z, size, mat, rot=(math.pi / 2, 0, 0))
+
+def xform(objs, m):
+    # primitivos (cilindro, anel) têm origem onde nasceram: leva a posição para a malha antes de girar no mundo
+    for o in objs:
+        o.data.transform(mathutils.Matrix.Translation(o.location)); o.location = (0, 0, 0)
+        o.data.transform(m)
+
+# =================================================================== STRUCTURE
+def build_structure():
+    M = mats_extra(mats()); parts = {}
+    # BulkheadDoor: porta estanque 0,9 x 1,7 em moldura 1,3 x 2,2 (frente -Y), entreaberta 35° na dobradiça (x=-0,45)
+    s = len(K.PARTS)
+    box(-0.65, -0.45, -0.1, 0.1, 0, 2.2, M['hulldark'], bevel=0.02)
+    box(0.45, 0.65, -0.1, 0.1, 0, 2.2, M['hulldark'], bevel=0.02)
+    box(-0.65, 0.65, -0.1, 0.1, 2.0, 2.2, M['hulldark'], bevel=0.02)
+    box(-0.65, 0.65, -0.1, 0.1, 0, 0.25, M['hulldark'], bevel=0.02)
+    for z in (0.6, 1.6): cyl(-0.47, -0.12, z, 0.05, 0.22, M['oily'], verts=14)
+    s2 = len(K.PARTS)
+    box(-0.45, 0.45, -0.03, 0.03, 0.27, 1.98, M['hull'], bevel=0.03)
+    box(-0.41, 0.41, -0.06, -0.03, 0.31, 1.94, M['hulldark'], bevel=0.01)
+    torus(0.0, -0.1, 1.12, 0.16, 0.02, M['steel'], rot=(math.pi / 2, 0, 0), maj=24, mnr=6)
+    cyl(0.0, -0.08, 1.12, 0.03, 0.06, M['steel'], axis='Y', verts=12)
+    for a in range(4):
+        ang = a * math.pi / 2
+        box(0.15 * math.cos(ang) - 0.012, 0.15 * math.cos(ang) + 0.012, -0.11, -0.09, 1.12 + 0.15 * math.sin(ang) - 0.012, 1.12 + 0.15 * math.sin(ang) + 0.012, M['steel'])
+    for zz in (0.5, 1.75): box(0.33, 0.45, -0.08, -0.03, zz - 0.04, zz + 0.04, M['steel'])
+    T = mathutils.Matrix.Translation((-0.45, -0.1, 0)) @ mathutils.Matrix.Rotation(math.radians(-35), 4, 'Z') @ mathutils.Matrix.Translation((0.45, 0.1, 0))
+    xform(K.PARTS[s2:], T)
+    stencil("ESTANQUE", 0.0, -0.105, 2.08, 0.08, M['stencil'])
+    parts["BulkheadDoor"] = K.PARTS[s:]
+    # Porthole: escotilha redonda (de parede, frente -Y, origem no centro de trás)
+    s = len(K.PARTS)
+    torus(0, -0.03, 0.0, 0.24, 0.035, M['brass'], rot=(math.pi / 2, 0, 0), maj=32, mnr=8)
+    cyl(0, -0.02, 0.0, 0.215, 0.012, M['bottle'], axis='Y', verts=32)
+    for k in range(8):
+        a = k * math.pi / 4
+        cyl(0.3 * math.cos(a), -0.02, 0.3 * math.sin(a), 0.016, 0.03, M['brass'], axis='Y', verts=8)
+    box(0.26, 0.34, -0.06, -0.01, -0.04, 0.04, M['brass'])
+    parts["Porthole"] = K.PARTS[s:]
+    # WallLadder: escada de parede 3,2 m
+    s = len(K.PARTS)
+    for x in (-0.22, 0.22): box(x - 0.025, x + 0.025, -0.02, 0.02, 0, 3.2, M['steel'])
+    for k in range(11): cyl(0, 0, 0.25 + k * 0.28, 0.014, 0.44, M['steel'], axis='X', verts=8)
+    for z in (0.4, 2.8):
+        for x in (-0.22, 0.22): box(x - 0.02, x + 0.02, 0.02, 0.15, z - 0.02, z + 0.02, M['steel'])
+    parts["WallLadder"] = K.PARTS[s:]
+    # SteelStairs: 8 degraus, sobe 2,4 m em 3 m (+Y), 1 m de largura, corrimão dos dois lados
+    s = len(K.PARTS)
+    L, H = 3.0, 2.4; ang = math.atan2(H, L); Ls = math.hypot(L, H)
+    for x in (-0.52, 0.48):
+        b = box(x, x + 0.04, 0, Ls, -0.18, 0.0, M['hulldark'])
+        b.data.transform(mathutils.Matrix.Rotation(ang, 4, 'X'))
+    for k in range(8):
+        y = (k + 0.5) * L / 8; z = (k + 1) * H / 8
+        box(-0.48, 0.48, y - 0.17, y + 0.17, z - 0.03, z, M['grate'])
+    for x in (-0.5, 0.5):
+        for k in range(4):
+            y = k * L / 3; z = y * H / L
+            cyl(x, y, z + 0.5, 0.018, 1.0, M['steel'], verts=8)
+        r = box(x - 0.02, x + 0.02, 0, Ls, -0.02, 0.02, M['steel'])
+        r.data.transform(mathutils.Matrix.Translation((0, 0, 1.0)) @ mathutils.Matrix.Rotation(ang, 4, 'X'))   # passa no topo dos postes
+    parts["SteelStairs"] = K.PARTS[s:]
+    # CatwalkRail: guarda-corpo 2 m
+    s = len(K.PARTS)
+    for x in (-1.0, 0.0, 1.0): cyl(x, 0, 0.55, 0.022, 1.1, M['signyellow'], verts=10)
+    for z in (0.55, 1.08): cyl(0, 0, z, 0.02, 2.0, M['signyellow'], axis='X', verts=10)
+    box(-1.0, 1.0, -0.004, 0.004, 0.0, 0.12, M['signyellow'])
+    parts["CatwalkRail"] = K.PARTS[s:]
+    # WallLamp: luminária de antepara com gaiola, apagada
+    s = len(K.PARTS)
+    box(-0.11, 0.11, -0.04, 0.0, -0.11, 0.11, M['hulldark'], bevel=0.01)
+    cyl(0, -0.1, 0, 0.075, 0.12, M['lampglass'], axis='Y', verts=20)
+    for k in range(6):
+        a = k * math.pi / 3
+        box(0.085 * math.cos(a) - 0.005, 0.085 * math.cos(a) + 0.005, -0.17, -0.04, 0.085 * math.sin(a) - 0.005, 0.085 * math.sin(a) + 0.005, M['steel'])
+    torus(0, -0.17, 0, 0.085, 0.006, M['steel'], rot=(math.pi / 2, 0, 0), maj=20, mnr=5)
+    parts["WallLamp"] = K.PARTS[s:]
+    # VentDuct: duto 0,5 x 0,35, 3 m (X)
+    s = len(K.PARTS)
+    box(-1.5, 1.5, -0.25, 0.25, -0.175, 0.175, M['galv'], bevel=0.01)
+    for x in (-1.0, 0.0, 1.0): box(x - 0.02, x + 0.02, -0.27, 0.27, -0.195, 0.195, M['steel'])
+    box(1.2, 1.5, -0.26, -0.24, -0.12, 0.12, M['black'])
+    for k in range(5): box(1.22 + k * 0.055, 1.24 + k * 0.055, -0.27, -0.25, -0.11, 0.11, M['steel'])
+    parts["VentDuct"] = K.PARTS[s:]
+    # BreakerPanel: quadro de disjuntores aberto
+    s = len(K.PARTS)
+    box(-0.3, 0.3, -0.18, 0.0, -0.45, 0.45, M['lockergrey'], bevel=0.01)
+    box(-0.27, 0.27, -0.181, -0.17, -0.42, 0.42, M['black'])
+    for r_ in range(4):
+        for c_ in range(6):
+            box(-0.22 + c_ * 0.085, -0.17 + c_ * 0.085, -0.2, -0.17, 0.3 - r_ * 0.2, 0.36 - r_ * 0.2, M['bakelite'])
+            dz = 0.02 if (r_ + c_) % 3 else -0.02
+            box(-0.2 + c_ * 0.085, -0.19 + c_ * 0.085, -0.22, -0.2, 0.32 - r_ * 0.2 + dz, 0.34 - r_ * 0.2 + dz, M['white'])
+    box(0.3, 0.32, -0.75, -0.18, -0.45, 0.45, M['lockergrey'])
+    cyl(0, -0.09, 0.7, 0.025, 0.5, M['steel'], verts=10)
+    parts["BreakerPanel"] = K.PARTS[s:]
+    # ValvePipe: cano vertical 3 m com válvula e manômetro
+    s = len(K.PARTS)
+    cyl(0, 0, 1.5, 0.07, 3.0, M['rustbare'], verts=16)
+    for z in (0.9, 2.1): cyl(0, 0, z, 0.1, 0.05, M['steel'], verts=16)
+    cyl(0, -0.12, 1.3, 0.05, 0.16, M['steel'], axis='Y', verts=12)
+    torus(0, -0.22, 1.3, 0.13, 0.016, M['red'], rot=(math.pi / 2, 0, 0), maj=24, mnr=6)
+    cyl(0.12, -0.03, 1.65, 0.06, 0.03, M['steel'], axis='Y', verts=18)
+    cyl(0.12, -0.05, 1.65, 0.05, 0.006, M['gauge'], axis='Y', verts=18)
+    parts["ValvePipe"] = K.PARTS[s:]
+    return group(parts)
+
+# =================================================================== DECK (carga e convés)
+def build_deck():
+    M = mats_extra(mats()); parts = {}
+    s = len(K.PARTS)
+    torus(0, -0.06, 0, 0.3, 0.07, M['orange'], rot=(math.pi / 2, 0, 0), maj=36, mnr=12)
+    for k in range(4):
+        a = k * math.pi / 2 + math.pi / 4
+        torus(0.3 * math.cos(a), -0.06, 0.3 * math.sin(a), 0.073, 0.012, M['white'], rot=(0, -a, 0), maj=14, mnr=4)
+    stencil("ESTRELA DO SUL", 0, -0.135, 0.0, 0.04, M['black'])
+    cyl(0, 0, 0.42, 0.01, 0.08, M['steel'], axis='Y', verts=8)
+    parts["LifeRing"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.25, 0.25, -0.08, 0.0, -0.3, 0.25, M['orange'], bevel=0.05, seg=3)
+    box(-0.06, 0.06, -0.09, -0.07, -0.3, 0.25, M['black'])
+    for z in (-0.15, 0.05): box(-0.25, 0.25, -0.09, -0.08, z, z + 0.03, M['white'])
+    cyl(0, 0, 0.32, 0.01, 0.1, M['steel'], axis='Y', verts=8)
+    parts["LifeJacket"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    cyl(0, 0, 0.3, 0.08, 0.55, M['red'], verts=20, bevel=0.01)
+    cone(0, 0, 0.6, 0.08, 0.04, 0.06, M['red'], verts=20)
+    cyl(0, 0, 0.66, 0.025, 0.06, M['steel'], verts=12)
+    box(-0.06, 0.06, -0.015, 0.015, 0.68, 0.71, M['black'])
+    cyl(0.07, -0.02, 0.5, 0.012, 0.35, M['black'], verts=8)
+    box(-0.1, 0.1, 0.08, 0.1, 0.15, 0.45, M['steel'])
+    parts["FireExtinguisher"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    for k in range(6): torus(0, 0, 0.03 + k * 0.035, 0.32 - (k % 2) * 0.02, 0.025, M['rope'], maj=28, mnr=6)
+    parts["RopeCoil"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    rnd = random.Random(3)
+    for k in range(40):
+        a = rnd.random() * math.tau; rr = rnd.random() * 0.35; z = 0.03 + rnd.random() * 0.12 * (1 - rr / 0.35)
+        torus(rr * math.cos(a), rr * math.sin(a), z, 0.045, 0.012, M['oily'], rot=(rnd.random() * 3, rnd.random() * 3, rnd.random() * 3), maj=10, mnr=4)
+    parts["ChainPile"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    for k in range(22):
+        torus(0, 0, -0.045 - k * 0.075, 0.045, 0.012, M['oily'], rot=(math.pi / 2, 0, (k % 2) * math.pi / 2), maj=10, mnr=4)
+    hook = torus(0, 0, -1.82, 0.08, 0.02, M['steel'], rot=(math.pi / 2, 0, 0), maj=16, mnr=6)
+    cyl(0, 0, 0.0, 0.05, 0.03, M['steel'], verts=10)
+    parts["HangingChain"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    for k in range(7): box(-0.6, 0.6, -0.5 + k * 0.155, -0.5 + k * 0.155 + 0.1, 0.122, 0.144, M['wood'])
+    for y in (-0.45, 0, 0.45): box(-0.6, 0.6, y - 0.05, y + 0.05, 0.0, 0.122, M['wood'])
+    parts["Pallet"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    for (x, y, z, rz) in ((-0.3, 0, 0, 5), (0.3, 0.02, 0, -8), (0, 0, 0.2, 12), (-0.05, 0.42, 0, 80)):
+        # saco de estopa: um "travesseiro" (esfera achatada, cintura apertada nas pontas)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=12, radius=1.0)
+        b = bpy.context.active_object
+        for v in b.data.vertices:
+            v.co.x *= 0.33; v.co.y *= 0.21 * (1.0 - 0.25 * abs(v.co.x / 0.33) ** 3); v.co.z = v.co.z * 0.13 * (1.0 - 0.3 * abs(v.co.x / 0.33) ** 2)
+            v.co.z = max(v.co.z, -0.1)
+        b.data.transform(mathutils.Matrix.Translation((x, y, z + 0.1)) @ mathutils.Matrix.Rotation(math.radians(rz), 4, 'Z'))
+        K._finish(b, M['sack'])
+    parts["SackPile"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.6, 0.6, -0.5, 0.5, 0, 1.0, M['wood'], bevel=0.01)
+    me = bpy.data.meshes.new("tarp"); bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=30, y_segments=26, size=0.95)
+    for v in bm.verts:
+        x, y = v.co.x, v.co.y * 0.88
+        dx = max(0.0, abs(x) - 0.625); dy = max(0.0, abs(y) - 0.525); d = math.hypot(dx, dy)   # o topo passa da borda do caixote
+        if d <= 0: z = 1.03 + 0.012 * math.sin(x * 9) * math.cos(y * 7)
+        else:
+            z = 1.03 - d * 9.0 + 0.025 * math.sin(x * 17 + y * 11)
+            if dx > 0: x = math.copysign(0.63 + min(dx, 0.3) * 0.08, x)
+            if dy > 0: y = math.copysign(0.53 + min(dy, 0.3) * 0.08, y)
+        v.co = Vector((x, y, max(z, 0.06 + 0.04 * math.sin(x * 23 + y * 19))))
+    bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=0.01)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.to_mesh(me); bm.free()
+    ob = bpy.data.objects.new("tarp", me); bpy.context.collection.objects.link(ob); K._finish(ob, M['tarp'])
+    parts["TarpCrate"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.25, 0.25, -0.11, 0.11, 0, 0.2, M['red'], bevel=0.01)
+    box(-0.25, 0.25, -0.11, 0.11, 0.2, 0.26, M['red'], bevel=0.01)
+    box(-0.12, 0.12, -0.015, 0.015, 0.26, 0.3, M['black'])
+    parts["Toolbox"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.15, 0.12, -0.012, 0.012, 0, 0.012, M['steel'])
+    torus(0.15, 0, 0.006, 0.03, 0.01, M['steel'], maj=12, mnr=4)
+    box(-0.2, -0.15, -0.025, 0.025, 0, 0.014, M['steel'])
+    parts["Wrench"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    cyl(0, 0, 0.12, 0.08, 0.24, M['contblue'], verts=20)
+    cyl(0.03, 0, 0.255, 0.015, 0.03, M['steel'], verts=8)
+    parts["OilCan"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    rnd = random.Random(9)
+    for k in range(3):
+        b = box(-0.8, 0.8, -0.07, 0.07, -0.015, 0.015, M['floorwood'])
+        b.data.transform(mathutils.Matrix.Translation((rnd.uniform(-0.5, 0.5), rnd.uniform(-0.6, 0.6), 0)) @ mathutils.Matrix.Rotation(rnd.uniform(0, 3.1), 4, 'Z'))
+    parts["FloatingPlanks"] = K.PARTS[s:]
+    return group(parts)
+
+# =================================================================== CREW (tripulação e sinalização)
+def build_crew():
+    M = mats_extra(mats()); parts = {}
+    s = len(K.PARTS)
+    box(-1.0, 1.0, -0.4, 0.4, 0.72, 0.76, M['lockergrey'], bevel=0.01)
+    for x in (-0.9, 0.9):
+        for y in (-0.32, 0.32): box(x - 0.025, x + 0.025, y - 0.025, y + 0.025, 0, 0.72, M['steel'])
+    for y in (-0.75, 0.75):
+        box(-1.0, 1.0, y - 0.15, y + 0.15, 0.44, 0.47, M['wood'])
+        for x in (-0.9, 0.9): box(x - 0.02, x + 0.02, y - 0.02, y + 0.02, 0, 0.44, M['steel'])
+    for (x, y) in ((-0.4, 0.1), (0.3, -0.15), (0.6, 0.2)): cyl(x, y, 0.81, 0.04, 0.1, M['galv'], verts=14)
+    parts["MessTable"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    for x in (-0.2, 0.2):
+        for y in (-0.2, 0.2): box(x - 0.02, x + 0.02, y - 0.02, y + 0.02, 0, 0.45, M['steel'])
+    box(-0.22, 0.22, -0.22, 0.22, 0.45, 0.48, M['wood'])
+    for x in (-0.2, 0.2): box(x - 0.02, x + 0.02, 0.18, 0.22, 0.48, 0.9, M['steel'])
+    box(-0.22, 0.22, 0.18, 0.22, 0.7, 0.88, M['wood'])
+    xform(K.PARTS[s:], mathutils.Matrix.Translation((0, 0, 0.22)) @ mathutils.Matrix.Rotation(math.radians(90), 4, 'Y') @ mathutils.Matrix.Translation((0, 0, -0.22)))
+    parts["ChairTipped"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.6, 0.6, -0.3, 0.3, 0.72, 0.76, M['wood'])
+    for x in (-0.55, 0.55):
+        for y in (-0.25, 0.25): box(x - 0.025, x + 0.025, y - 0.025, y + 0.025, 0, 0.72, M['wood'])
+    box(-0.25, 0.25, -0.12, 0.12, 0.76, 1.04, M['bakelite'], bevel=0.02)
+    box(-0.2, 0.05, -0.125, -0.12, 0.84, 0.99, M['paper'])
+    for x in (0.1, 0.18): cyl(x, -0.13, 0.9, 0.025, 0.03, M['steel'], axis='Y', verts=12)
+    cyl(0.2, 0.0, 1.15, 0.006, 0.25, M['steel'], verts=6)
+    box(-0.5, -0.3, -0.1, 0.1, 0.76, 0.78, M['paper'])
+    parts["RadioDesk"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.18, 0.18, -0.006, 0.0, -0.25, 0.25, M['paper'])
+    stencil("MARÇO", 0, -0.008, 0.18, 0.05, M['black'])
+    for r_ in range(4):
+        for c_ in range(6):
+            box(-0.15 + c_ * 0.05, -0.12 + c_ * 0.05, -0.009, -0.007, 0.08 - r_ * 0.07, 0.1 - r_ * 0.07, M['bakelite'] if (r_ * 6 + c_) < 17 else M['red'])
+    parts["Calendar"] = K.PARTS[s:]
+    s = len(K.PARTS)
+    box(-0.12, 0.12, -0.01, 0.0, -0.17, 0.17, M['wood'])
+    box(-0.1, 0.1, -0.012, -0.01, -0.15, 0.12, M['paper'])
+    box(-0.04, 0.04, -0.02, -0.01, 0.12, 0.16, M['steel'])
+    parts["Clipboard"] = K.PARTS[s:]
+    for nm, txt, mat, txtmat, w in (("SignEngine", "CASA DE MÁQUINAS", 'signyellow', 'black', 0.9), ("SignDanger", "PERIGO  ALTA TENSÃO", 'signyellow', 'black', 0.9),
+                                    ("SignExit", "SAÍDA DE EMERGÊNCIA", 'signgreen', 'white', 0.9), ("SignHold", "PORÃO 1", 'white', 'black', 0.6),
+                                    ("SignQuarters", "ALOJAMENTO", 'white', 'black', 0.7)):
+        s = len(K.PARTS)
+        box(-w / 2, w / 2, -0.008, 0.0, -0.1, 0.1, M[mat], bevel=0.004)
+        stencil(txt, 0, -0.011, 0.0, 0.055 if len(txt) > 12 else 0.08, M[txtmat])
+        for x in (-w / 2 + 0.03, w / 2 - 0.03): cyl(x, -0.009, 0.06, 0.008, 0.004, M['steel'], axis='Y', verts=6)
+        parts[nm] = K.PARTS[s:]
+    s = len(K.PARTS)
+    rnd = random.Random(4)
+    for k in range(5):
+        x, y = rnd.uniform(-0.3, 0.3), rnd.uniform(-0.3, 0.3)
+        if k < 3:
+            cyl(x, y, 0.11, 0.035, 0.22, M['bottle'], verts=12); cyl(x, y, 0.26, 0.013, 0.08, M['bottle'], verts=8)
+        else:
+            b = cyl(0, 0, 0.0, 0.035, 0.22, M['bottle'], axis='X', verts=12)
+            b.data.transform(mathutils.Matrix.Translation((x, y, 0.035)) @ mathutils.Matrix.Rotation(rnd.uniform(0, 3), 4, 'Z'))
+    parts["Bottles"] = K.PARTS[s:]
+    return group(parts)
+
+ALL = {"machines": build_machines, "cell": build_cell, "cargo": build_cargo,
+       "structure": build_structure, "deck": build_deck, "crew": build_crew}[GROUP]()
 
 # ------------------------------------------------------------------ prévias
 def _scene_setup(w=1600, h=700):
@@ -428,7 +715,9 @@ def preview_lineup():
     bpy.data.objects.remove(cam)
 
 HEROES = {"machines": ["Generator", "GateLeaf", "EngineBlock"], "cell": ["CellDoor", "Bucket", "LoosePanel"],
-          "cargo": ["ContainerOpen", "Locker", "Crate"]}[GROUP]
+          "cargo": ["ContainerOpen", "Locker", "Crate"],
+          "structure": ["BulkheadDoor", "SteelStairs", "BreakerPanel"], "deck": ["LifeRing", "TarpCrate", "ChainPile"],
+          "crew": ["MessTable", "RadioDesk", "SignDanger"]}[GROUP]
 
 def preview_heroes():
     sc = bpy.context.scene; sc.render.resolution_x, sc.render.resolution_y = 600, 600

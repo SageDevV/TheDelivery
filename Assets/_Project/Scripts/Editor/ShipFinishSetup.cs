@@ -49,7 +49,7 @@ namespace TheDelivery.EditorTools
             AssetDatabase.Refresh();
             Directory.CreateDirectory(MeshDir);
             meshes = new Dictionary<string, Mesh>(); mats = new Dictionary<string, Material>();
-            foreach (var g in new[] { "Machines", "Cell", "Cargo" }) Load(g);
+            foreach (var g in new[] { "Machines", "Cell", "Cargo", "Structure", "Deck", "Crew" }) Load(g);
             lampMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Ship/Ship_Lamp.mat");
             if (meshes.TryGetValue("GeneratorLamp", out var gl))
             {
@@ -109,11 +109,12 @@ namespace TheDelivery.EditorTools
                     // água com shader próprio: anéis de gota e ondulação no relevo (não textura), iluminada pela lanterna
                     var wm = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Ship/Ship_Water.mat");
                     var wsh = Shader.Find("TheDelivery/ShipWater");
-                    if (wm && wsh) { wm.shader = wsh; wm.SetColor("_BaseColor", new Color(0.06f, 0.07f, 0.065f)); wm.SetFloat("_Smoothness", 0.93f); EditorUtility.SetDirty(wm); }
+                    if (wm && wsh) { wm.shader = wsh; wm.SetColor("_BaseColor", new Color(0.06f, 0.07f, 0.065f)); wm.SetFloat("_Smoothness", 0.93f); wm.SetFloat("_RippleSpeed", 0.45f); wm.SetFloat("_RippleLife", 2.8f); EditorUtility.SetDirty(wm); }
                     else log.AppendLine("FALTA shader TheDelivery/ShipWater");
                     if (water.GetComponent<TheDelivery.Act5.WaterRipples>() == null) water.gameObject.AddComponent<TheDelivery.Act5.WaterRipples>();
                 }
 
+                FinishDressing(R);
                 ShipDripsSetup.Build(R, log);
                 ShipAudioSetup.Apply(R, scene, log);
 
@@ -233,6 +234,17 @@ namespace TheDelivery.EditorTools
             var bucket = g.Find("Bucket"); if (bucket) Swap(bucket.gameObject, "Bucket", new Vector3(-25.3f, 0f, -12.7f), Yaw(30f));
             var panel = g.Find("LoosePanel");
             if (panel) { Swap(panel.gameObject, "LoosePanel", new Vector3(-25.665f, 0.3f, -15.6f), Yaw(90f)); GameObjectUtility.SetStaticEditorFlags(panel.gameObject, 0); }
+            // peças baixas do puzzle: a área de interação sobe até a altura da mão (alcance do jogador = 1,3 m;
+            // sem isto era preciso encostar e olhar para os pés para pegar o balde/colchão/chapa)
+            void Reach(Transform t, Vector3 center, Vector3 size)
+            {
+                if (t == null) return;
+                var bc = t.GetComponent<BoxCollider>(); if (bc == null) bc = t.gameObject.AddComponent<BoxCollider>();
+                bc.center = center; bc.size = size;
+            }
+            Reach(bucket, new Vector3(0f, 0.5f, 0f), new Vector3(0.55f, 1.0f, 0.55f));
+            Reach(mat, new Vector3(0f, 0.4f, 0f), new Vector3(1.9f, 0.8f, 0.9f));
+            Reach(panel, new Vector3(0f, 0.3f, 0.25f), new Vector3(0.7f, 0.8f, 0.5f));
             log.AppendLine("Cela: grades, porta, chave, poste, colchão, balde e chapa.");
         }
 
@@ -361,6 +373,91 @@ namespace TheDelivery.EditorTools
             Child(g, "PipeRun_Quarters", "PipeRun", new Vector3(21f, 3.05f, -21.3f), Yaw(0f), collider: false);
             Child(g, "PipeRun_Cargo", "PipeRun", new Vector3(-12f, 7.2f, 19.3f), Yaw(0f), collider: false);
             log.AppendLine($"{n} peças de entulho trocadas + 5 feixes de canos.");
+        }
+
+        // =============================================================================================== decoração (2026-11-26)
+        /// <summary>Os 33 assets extras (estrutura, carga/convés, tripulação/placas) espalhados sala por sala. Paredes:
+        /// faces internas a 0,3 m da divisa das salas (paredes recuadas). Peças de parede: origem atrás, viradas para dentro
+        /// (parede norte → yaw 180, sul → 0, oeste → 90, leste → 270).</summary>
+        private static void FinishDressing(Transform R)
+        {
+            var g = new GameObject("Dressing").transform; g.SetParent(R, false);
+            int n = 0;
+            // col: 0 = sem colisor, 1 = caixa, 2 = malha
+            void P(string mesh, float x, float y, float z, float yaw, int col = 0, string name = null)
+            {
+                if (!meshes.ContainsKey(mesh)) { log.AppendLine("SEM malha " + mesh); return; }
+                var go = Child(g, name ?? mesh, mesh, new Vector3(x, y, z), Yaw(yaw), collider: col > 0, meshCollider: col == 2);
+                if (col == 0) { var nm = go.AddComponent<Unity.AI.Navigation.NavMeshModifier>(); nm.ignoreFromBuild = true; }
+                n++;
+            }
+            // ---- estrutura
+            P("BulkheadDoor", -17f, 0f, -14f, 90f, 2);                         // saída do bloco das celas para o corredor
+            foreach (float x in new[] { 10f, 15f, 20f, 25f }) P("Porthole", x, 2.0f, 19.69f, 180f);
+            foreach (float x in new[] { -20f, -12f, -4f }) P("Porthole", x, 3.2f, 19.69f, 180f);
+            foreach (float x in new[] { 18f, 23f }) P("Porthole", x, 1.8f, -21.69f, 0f);
+            P("WallLadder", -25.69f, 0f, 4f, 90f);
+            P("WallLadder", 13.69f, 0f, -9f, 270f);
+            // escada de degraus + passarela na casa de máquinas, junto à parede sul
+            P("SteelStairs", 9f, 0f, -21f, 90f, 2);
+            var plat = GameObject.CreatePrimitive(PrimitiveType.Cube); plat.name = "CatwalkPlatform"; plat.transform.SetParent(g, false);
+            plat.transform.position = new Vector3(4.6f, 2.35f, -20.95f); plat.transform.localScale = new Vector3(2.8f, 0.1f, 1.4f);
+            Metric(plat.GetComponent<MeshRenderer>(), AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Surfaces/ShipDeckPlate.mat"));
+            P("CatwalkRail", 4.4f, 2.4f, -20.28f, 0f, 1);
+            P("CatwalkRail", 3.25f, 2.4f, -21.0f, 90f, 1, "CatwalkRail_End");
+            foreach (var (x, y, z, yaw) in new[] { (-14f, 2.2f, -15.19f, 0f), (-7f, 2.2f, -12.81f, 180f), (-3.69f, 3.5f, -6f, 90f), (13.69f, 3.5f, -18f, 270f),
+                                                   (17f, 2.4f, -21.69f, 0f), (24f, 2.4f, -2.31f, 180f), (-25.69f, 4f, 12f, 90f), (5.69f, 4f, 2f, 270f), (-10.69f, 2.2f, -5f, 90f) })
+                P("WallLamp", x, y, z, yaw);
+            P("VentDuct", -12f, 2.65f, -14.85f, 0f);
+            P("VentDuct", 21f, 3.2f, -12f, 0f);
+            P("VentDuct", -12f, 7.3f, 10f, 90f);
+            P("VentDuct", -12f, 7.3f, 13f, 90f, 0, "VentDuct_B");
+            P("BreakerPanel", 3f, 1.4f, -2.31f, 180f, 1);
+            P("BreakerPanel", -14f, 1.4f, -12.81f, 180f, 1, "BreakerPanel_Corridor");
+            P("ValvePipe", 13.4f, 0f, -6.5f, 270f, 1);
+            P("ValvePipe", -3.4f, 0f, -10f, 90f, 1, "ValvePipe_W");
+            P("ValvePipe", 27.4f, -0.9f, 4f, 270f, 1, "ValvePipe_Flood");
+            // ---- carga e convés
+            P("LifeRing", 14.31f, 1.6f, -6f, 90f);
+            P("LifeRing", 5.69f, 1.6f, 7f, 270f, 0, "LifeRing_Cargo");
+            P("LifeRing", 33f, 0.75f, -2.16f, 180f, 0, "LifeRing_Deck");
+            P("LifeJacket", 19f, 1.5f, -21.69f, 0f);
+            P("LifeJacket", 19.7f, 1.45f, -21.69f, 0f, 0, "LifeJacket_B");
+            P("FireExtinguisher", -6f, 0f, -15.1f, 0f);
+            P("FireExtinguisher", 12f, 0f, -21.6f, 0f, 0, "FireExtinguisher_Engine");
+            P("FireExtinguisher", 26f, 0f, -2.4f, 180f, 0, "FireExtinguisher_Quarters");
+            P("RopeCoil", 36f, 0f, -12f, 0f);
+            P("RopeCoil", -24f, 0f, 0.6f, 30f, 0, "RopeCoil_Cargo");
+            P("ChainPile", -6f, 0f, 18.4f, 0f);
+            P("ChainPile", 8f, 0f, -3f, 40f, 0, "ChainPile_Engine");
+            P("HangingChain", -16f, 7.95f, 12f, 0f);
+            P("HangingChain", 0f, 7.95f, 4f, 30f, 0, "HangingChain_B");
+            P("HangingChain", 7f, 5.95f, -11f, 0f, 0, "HangingChain_Engine");
+            P("Pallet", -2f, 0f, 0.4f, 10f, 1);
+            P("Pallet", -18f, 0f, 18.6f, 0f, 1, "Pallet_B");
+            P("SackPile", -18f, 0.144f, 18.6f, 0f, 1);
+            P("TarpCrate", -12f, 0f, 17.4f, 15f, 1);
+            P("TarpCrate", 2f, 0f, 18f, -10f, 1, "TarpCrate_B");
+            P("Toolbox", 0.5f, 0f, -21.2f, 0f, 1);
+            P("Wrench", 1.2f, 0f, -19.8f, 35f);
+            P("OilCan", -3.1f, 0f, -20.9f, 0f);
+            P("FloatingPlanks", 14f, -0.035f, 14f, 0f);
+            P("FloatingPlanks", 22f, -0.035f, 6f, 70f, 0, "FloatingPlanks_B");
+            P("FloatingPlanks", 10.5f, -0.035f, 17f, 140f, 0, "FloatingPlanks_C");
+            // ---- tripulação e placas
+            P("MessTable", 20f, 0f, -10f, 0f, 1);
+            P("ChairTipped", 22.2f, 0f, -11.3f, 25f);
+            P("RadioDesk", 27.3f, 0f, -17.2f, 270f, 1);
+            P("Calendar", 14.31f, 1.6f, -9f, 90f);
+            P("Clipboard", 13.69f, 1.4f, -4f, 270f);
+            P("SignEngine", -4.31f, 2.6f, -14f, 270f);
+            P("SignDanger", 3f, 2.6f, -2.32f, 180f);
+            P("SignExit", 27.69f, 2.3f, -11.2f, 270f);
+            P("SignHold", -10f, 2.65f, -1.69f, 0f);
+            P("SignQuarters", 13.69f, 2.6f, -12f, 270f);
+            P("Bottles", 17f, 0f, -7f, 0f);
+            P("Bottles", -21f, 0f, 8f, 60f, 0, "Bottles_Cargo");
+            log.AppendLine($"{n} peças de decoração espalhadas.");
         }
 
         // =============================================================================================== UV em metros

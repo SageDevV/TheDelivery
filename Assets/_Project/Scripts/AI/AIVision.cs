@@ -33,6 +33,15 @@ namespace TheDelivery.AI
         [Tooltip("Layer(s) que bloqueiam a visão (paredes, móveis).")]
         [SerializeField] private LayerMask obstacleMask;
 
+        [Header("Luz da jogadora (Ato 5)")]
+        [Tooltip("Com a lanterna do celular acesa (PlayerLight.On), ele a enxerga de MUITO mais longe: no breu a luz denuncia.")]
+        [SerializeField] private float lightSpotRadius = 22f;
+        [Tooltip("Ângulo de visão para a LUZ (bem mais aberto que o normal: uma luz no escuro chama atenção de lado).")]
+        [SerializeField] private float lightViewAngle = 220f;
+
+        /// <summary>Viu a jogadora por causa da luz acesa (fora do alcance/ângulo normal).</summary>
+        public bool SawByLight { get; private set; }
+
         [Header("Debug")]
         [Tooltip("Desenha o cone de visão e a linha de detecção na Scene View.")]
         [SerializeField] private bool showVisionGizmos = true;
@@ -85,9 +94,15 @@ namespace TheDelivery.AI
         /// </summary>
         private bool CheckVision()
         {
+            SawByLight = false;
             if (PlayerTransform == null)
             {
                 return false;
+            }
+            if (PlayerLight.On && !(PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden) && CheckLight())
+            {
+                SawByLight = true;
+                return true;
             }
 
             if (PlayerHiding.Instance != null && PlayerHiding.Instance.IsHidden)
@@ -120,6 +135,21 @@ namespace TheDelivery.AI
                 return IsInLayerMask(hit.collider.gameObject.layer, playerMask);
             }
 
+            return false;
+        }
+
+        /// <summary>A lanterna acesa no breu: visível de longe e de lado, mas não através de paredes.</summary>
+        private bool CheckLight()
+        {
+            Vector3 origin = GetEyePosition();
+            Vector3 target = PlayerTransform.position + Vector3.up * 1.3f;     // a luz está na mão, à altura do peito
+            Vector3 to = target - origin;
+            float d = to.magnitude;
+            if (d > lightSpotRadius) return false;
+            Vector3 dir = to / Mathf.Max(d, 0.0001f);
+            if (Vector3.Angle(transform.forward, dir) > lightViewAngle * 0.5f) return false;
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, d + 0.5f, obstacleMask | playerMask, QueryTriggerInteraction.Ignore))
+                return IsInLayerMask(hit.collider.gameObject.layer, playerMask);
             return false;
         }
 

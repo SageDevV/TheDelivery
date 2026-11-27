@@ -106,8 +106,8 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RippleFreq: 55
-    - _RippleLife: 2.4
-    - _RippleSpeed: 0.32
+    - _RippleLife: 2.8
+    - _RippleSpeed: 0.45
     - _RippleStrength: 1
     - _Smoothness: 0.93
     - _SmoothnessTextureChannel: 0

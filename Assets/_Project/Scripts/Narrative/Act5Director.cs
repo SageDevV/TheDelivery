@@ -62,6 +62,8 @@ namespace TheDelivery.Narrative
         [SerializeField] private GameObject phoneModel;
         [Tooltip("Passos da Clear no piso de aço do navio (trocam os do prefab).")]
         [SerializeField] private AudioClip[] shipFootsteps;
+        [Tooltip("Clique ao ligar/desligar a lanterna (F sem alvo).")]
+        [SerializeField] private AudioClip flashlightClick;
         private PhoneFlashlight flashlight;
 
         private CanvasGroup black;
@@ -75,7 +77,7 @@ namespace TheDelivery.Narrative
             if (playerController == null) playerController = FindAnyObjectByType<PlayerController>();
             BuildOverlay();
             // a ÚNICA luz que ela carrega: a lanterna do celular, na mão direita
-            if (Camera.main != null) flashlight = PhoneFlashlight.Create(Camera.main, phoneModel, playerController);
+            if (Camera.main != null) flashlight = PhoneFlashlight.Create(Camera.main, phoneModel, playerController, flashlightClick);
             if (shipFootsteps != null && shipFootsteps.Length > 0 && playerController != null) playerController.SetFootstepSurface(shipFootsteps);
             // noite fechada: sem céu (a cena não tem skybox) o fundo é a cor da névoa, não o azul padrão da câmera
             var cam = Camera.main;
@@ -121,20 +123,119 @@ namespace TheDelivery.Narrative
         };
 
         // ------------------------------------------------------------------ beats
+        /// <summary>
+        /// O DESPERTAR (2026-11-26): ela está caída de lado no chão da cela, atordoada. As pálpebras abrem com esforço,
+        /// a visão inclinada balança, a lanterna do celular caída rente ao chão. Ela se apoia, senta e levanta, erguendo o
+        /// celular na mão até a posição de sempre. Só então anda.
+        /// </summary>
         private IEnumerator BeatWake()
         {
             playerController.CanMove = false;
+            Transform cam = playerController.CameraHolder;
+            float eye = playerController.EyeHeight;
+            if (flashlight != null) flashlight.Raise = 0f;
+            // caída de lado, a cabeça no aço, olhando para as grades
+            Vector3 lyingPos = new Vector3(0.05f, 0.2f, 0f); Quaternion lyingRot = Quaternion.Euler(4f, -8f, 78f);
+            Vector3 sitPos = new Vector3(0f, 0.85f, -0.1f); Quaternion sitRot = Quaternion.Euler(22f, 6f, 8f);
+            Vector3 standPos = new Vector3(0f, eye, 0f); Quaternion standRot = Quaternion.Euler(6f, 0f, 0f);
+            if (cam != null) { cam.localPosition = lyingPos; cam.localRotation = lyingRot; }
+            SetLids(1f);
             black.alpha = 1f;
-            yield return new WaitForSeconds(wakeBlack);
+            yield return new WaitForSeconds(wakeBlack * 0.6f);
+            black.alpha = 0f;                                         // daqui em diante, quem fecha a vista são as pálpebras
+
+            bool swaying = true;
+            IEnumerator Sway()
+            {
+                float ph = Random.value * 6f;
+                while (swaying && cam != null)
+                {
+                    float t = Time.time * 0.9f + ph;
+                    cam.localRotation = cam.localRotation * Quaternion.Euler(Mathf.Sin(t * 0.7f) * 0.04f, Mathf.Sin(t * 0.5f) * 0.03f, Mathf.Sin(t) * 0.05f);
+                    yield return null;
+                }
+            }
+            IEnumerator Lid(float from, float to, float dur, bool falling)
+            {
+                for (float t = 0f; t < dur; t += Time.deltaTime)
+                {
+                    float u = Mathf.Clamp01(t / dur);
+                    SetLids(Mathf.Lerp(from, to, falling ? 1f - (1f - u) * (1f - u) : Mathf.SmoothStep(0f, 1f, u)));
+                    yield return null;
+                }
+                SetLids(to);
+            }
+            IEnumerator Move(Vector3 p0, Quaternion r0, Vector3 p1, Quaternion r1, float dur, float raise0, float raise1)
+            {
+                for (float t = 0f; t < dur && cam != null; t += Time.deltaTime)
+                {
+                    float k = Mathf.SmoothStep(0f, 1f, t / dur);
+                    cam.localPosition = Vector3.Lerp(p0, p1, k);
+                    cam.localRotation = Quaternion.Slerp(r0, r1, k);
+                    if (flashlight != null) flashlight.Raise = Mathf.Lerp(raise0, raise1, k);
+                    yield return null;
+                }
+                if (cam != null) { cam.localPosition = p1; cam.localRotation = r1; }
+                if (flashlight != null) flashlight.Raise = raise1;
+            }
+
+            // os olhos abrem com esforço: abre um pouco, pesa, fecha, abre de novo
+            yield return Lid(1f, 0.55f, 1.6f, false);
+            Coroutine sway = StartCoroutine(Sway());
+            yield return new WaitForSeconds(0.7f);
+            yield return Lid(0.55f, 1f, 0.5f, true);
+            yield return new WaitForSeconds(0.6f);
             Think("...Onde... eu estou?");
-            yield return Fade(1f, 0f, wakeFade);
+            yield return Lid(1f, 0.25f, 1.8f, false);
+            yield return new WaitForSeconds(1.2f);
+            yield return Lid(0.25f, 0.7f, 0.35f, true);
+            yield return Lid(0.7f, 0f, 1.2f, false);
             yield return WaitThought();
+            swaying = false; if (sway != null) StopCoroutine(sway);
+
+            // apoia o corpo e senta (zonza: a cabeça pende um pouco para a frente)
+            yield return Move(cam != null ? cam.localPosition : lyingPos, cam != null ? cam.localRotation : lyingRot, sitPos, sitRot, 2.2f, 0f, 0.35f);
             Think("Isso balança... é um navio?");
+            yield return new WaitForSeconds(1.4f);
+            yield return Lid(0f, 0.6f, 0.25f, true);                  // uma tontura
+            yield return Lid(0.6f, 0f, 0.6f, false);
             yield return WaitThought();
-            Think("Estou trancada. A chave... está ali fora.");
+
+            // levanta, erguendo o celular
+            yield return Move(sitPos, sitRot, standPos, standRot, 2.0f, 0.35f, 1f);
+            playerController.SyncCameraState(6f, eye);
+            SetLids(0f);
             playerController.CanMove = true;
+            Think("Estou trancada. A chave... está ali fora.");
             yield return WaitThought();
             AdvanceToBeat(Act5Beat.CellPuzzle);
+        }
+
+        // pálpebras (0 = aberto, 1 = fechado), como no Ato 4
+        private Canvas lidsCanvas; private RectTransform upperLid, lowerLid;
+        private void SetLids(float closed)
+        {
+            closed = Mathf.Clamp01(closed);
+            if (lidsCanvas == null)
+            {
+                if (closed <= 0f) return;
+                var go = new GameObject("Act5Eyelids", typeof(Canvas));
+                lidsCanvas = go.GetComponent<Canvas>();
+                lidsCanvas.renderMode = RenderMode.ScreenSpaceOverlay; lidsCanvas.sortingOrder = 30000;
+                RectTransform Bar(string n)
+                {
+                    var b = new GameObject(n, typeof(RectTransform), typeof(Image));
+                    b.transform.SetParent(go.transform, false);
+                    var img = b.GetComponent<Image>(); img.color = Color.black; img.raycastTarget = false;
+                    var rt = (RectTransform)b.transform; rt.offsetMin = rt.offsetMax = Vector2.zero;
+                    return rt;
+                }
+                upperLid = Bar("UpperLid"); lowerLid = Bar("LowerLid");
+            }
+            lidsCanvas.gameObject.SetActive(closed > 0f);
+            float half = 0.5f * closed + (closed >= 1f ? 0.02f : 0f);
+            upperLid.anchorMin = new Vector2(0f, 1f - half); upperLid.anchorMax = new Vector2(1f, 1f);
+            lowerLid.anchorMin = new Vector2(0f, 0f); lowerLid.anchorMax = new Vector2(1f, half);
         }
 
         private bool cellOpen;

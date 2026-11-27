@@ -1,6 +1,6 @@
 // Água parada do porão inundado (Ato 5, 2026-11-26). Superfície escura e lisa, iluminada pela URP (PBR): no breu só
 // aparece onde a lanterna do celular ou um LED bate. O relevo é ANALÍTICO, sem textura: (1) ondulação lenta e sutil da
-// água "viva"; (2) até 16 anéis de gota (_Ripples: x, z, instante, amplitude), cada um um pacote de 2–3 cristas que se
+// água "viva"; (2) até 24 anéis de gota (_Ripples: x, z, instante, amplitude), cada um um pacote de 2–3 cristas que se
 // abre a _RippleSpeed m/s, alarga e perde força — o brilho da lanterna escorre pelas cristas como na água de verdade.
 Shader "TheDelivery/ShipWater"
 {
@@ -44,8 +44,9 @@ Shader "TheDelivery/ShipWater"
                 half _Smoothness, _Metallic;
                 float _WaveStrength, _RippleStrength, _RippleSpeed, _RippleFreq, _RippleLife;
             CBUFFER_END
-            float4 _Ripples[16];
-            float _RippleNow;     // relógio do script (o mesmo dos instantes em _Ripples)
+            float4 _Ripples[24];
+            float _RippleNow;
+            float4 _Wader;        // quem anda na água: x, z, intensidade (0 = parada/fora), direção do passo em w (radianos)     // relógio do script (o mesmo dos instantes em _Ripples)
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
             struct Varyings { float4 positionCS : SV_POSITION; float3 positionWS : TEXCOORD0; float fogFactor : TEXCOORD1; };
@@ -73,8 +74,24 @@ Shader "TheDelivery/ShipWater"
                 g += float2(3.7, 3.7) * cos(a3) * 0.0025;
                 g *= _WaveStrength;
 
+                // ondas contínuas saindo das pernas de quem anda na água (acompanham a caminhada)
+                if (_Wader.z > 0.001)
+                {
+                    float2 d = p - _Wader.xy;
+                    float dist = length(d) + 1e-4;
+                    float2 dir = float2(sin(_Wader.w), cos(_Wader.w));
+                    float ahead = 0.65 + 0.35 * dot(d / dist, dir);              // mais forte à frente (a água empurrada)
+                    float env = exp(-dist * 3.4) * saturate(dist * 6.0) * _Wader.z * ahead;
+                    float ang = atan2(d.y, d.x);
+                    // irregular: a frente da onda treme com o ângulo e o tempo (pernas não são um ponto)
+                    float ph = dist * 44.0 - _RippleNow * 7.5 + sin(ang * 3.0 + _RippleNow * 1.3) * 0.9 + sin(ang * 7.0 - _RippleNow * 2.1) * 0.35;
+                    float breakup = 0.6 + 0.4 * sin(ang * 5.0 + dist * 9.0 + _RippleNow * 0.7);
+                    g += (d / dist) * env * cos(ph) * 0.26 * breakup;
+                    crest += env * sin(ph) * 0.75 * breakup;
+                }
+
                 [unroll]
-                for (int k = 0; k < 16; k++)
+                for (int k = 0; k < 24; k++)
                 {
                     float4 r = _Ripples[k];
                     float age = _RippleNow - r.z;
@@ -86,7 +103,7 @@ Shader "TheDelivery/ShipWater"
                     float w = 0.025 + 0.07 * age;                             // o pacote alarga com o tempo
                     float env = exp(-(x * x) / (w * w)) * step(x, w * 1.2);   // nada na frente da frente de onda
                     float life = 1.0 - age / _RippleLife;
-                    float amp = r.w * life * life / (1.0 + dist * 6.0);
+                    float amp = r.w * life * life / (1.0 + dist * 2.5);
                     float freq = _RippleFreq / (1.0 + age * 0.6);             // cristas se espaçam ao abrir
                     float dhdr = amp * env * freq * cos(x * freq) * 0.03;
                     g += (d / dist) * dhdr * _RippleStrength;

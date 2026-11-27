@@ -24,19 +24,42 @@ namespace TheDelivery.Act5
         private Transform cam, root, beamPivot;
         private Light beam, glow;
         private PlayerController player;
+        private TheDelivery.Interaction.PlayerInteraction interaction;
+        private AudioClip toggleClip;
+        private AudioSource clickSource;
         private float bob;
+        /// <summary>0 = o celular caído na mão junto ao chão (ela deitada); 1 = erguido na posição de sempre.</summary>
+        public float Raise { get; set; } = 1f;
+        private static readonly Vector3 LowPosition = new Vector3(0.22f, -0.42f, 0.30f);
+        private static readonly Vector3 LowEuler = new Vector3(55f, -25f, 30f);
         private Quaternion beamRot;
 
         public Light Beam => beam;
-        public bool On { get => beam != null && beam.enabled; set { if (beam != null) beam.enabled = value; if (glow != null) glow.enabled = value; } }
+        public bool On { get => beam != null && beam.enabled; set { if (beam != null) beam.enabled = value; } }   // a tela continua acesa (fraca) com a lanterna apagada
 
-        public static PhoneFlashlight Create(Camera camera, GameObject phonePrefab, PlayerController pc)
+        public static PhoneFlashlight Create(Camera camera, GameObject phonePrefab, PlayerController pc, AudioClip toggleClip = null)
         {
             var go = new GameObject("PhoneFlashlight");
             go.transform.SetParent(camera.transform, false);
             var pf = go.AddComponent<PhoneFlashlight>();
             pf.Build(camera.transform, phonePrefab, pc);
+            pf.toggleClip = toggleClip;
+            pf.interaction = pc != null ? pc.GetComponentInChildren<TheDelivery.Interaction.PlayerInteraction>(true) : null;
+            pf.clickSource = go.AddComponent<AudioSource>();
+            pf.clickSource.playOnAwake = false; pf.clickSource.spatialBlend = 0f; pf.clickSource.volume = 0.7f;
             return pf;
+        }
+
+        /// <summary>F (a tecla de interagir) sem nada interativo na mira liga/desliga a lanterna. Só com ela livre:
+        /// não escondida, não em cutscene, já de pé.</summary>
+        private void HandleToggle()
+        {
+            if (interaction == null || !interaction.PressedOnNothing) return;
+            if (player != null && !player.CanMove) return;
+            var hiding = PlayerHiding.Instance;
+            if (hiding != null && (hiding.IsHidden || hiding.IsTransitioning || hiding.IsCaptured)) return;
+            On = !On;
+            if (toggleClip != null && clickSource != null) { clickSource.pitch = On ? 1.08f : 0.94f; clickSource.PlayOneShot(toggleClip); }
         }
 
         private void Build(Transform camera, GameObject phonePrefab, PlayerController pc)
@@ -98,16 +121,23 @@ namespace TheDelivery.Act5
         private void Update()
         {
             if (cam == null) return;
+            HandleToggle();
+            TheDelivery.AI.PlayerLight.On = On && isActiveAndEnabled;
             // balanço ao andar
             bool moving = player != null && player.IsMoving;
             bob += Time.deltaTime * (moving ? 7.5f : 1.2f);
             float amp = moving ? 0.008f : 0.002f;
-            root.localPosition = Vector3.Lerp(root.localPosition, holdPosition + new Vector3(Mathf.Sin(bob) * amp, Mathf.Abs(Mathf.Cos(bob)) * amp, 0f), 1f - Mathf.Exp(-12f * Time.deltaTime));
+            float r = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(Raise));
+            Vector3 target = Vector3.Lerp(LowPosition, holdPosition, r) + new Vector3(Mathf.Sin(bob) * amp, Mathf.Abs(Mathf.Cos(bob)) * amp, 0f) * r;
+            root.localPosition = Vector3.Lerp(root.localPosition, target, 1f - Mathf.Exp(-12f * Time.deltaTime));
+            root.localRotation = Quaternion.Slerp(root.localRotation, Quaternion.Slerp(Quaternion.Euler(LowEuler), Quaternion.Euler(holdEuler), r), 1f - Mathf.Exp(-12f * Time.deltaTime));
             // o feixe segue o olhar com um leve atraso (a mão não é uma câmera)
             beamRot = Quaternion.Slerp(beamRot, cam.rotation, 1f - Mathf.Exp(-lag * Time.deltaTime));
             beamPivot.position = root.TransformPoint(new Vector3(0f, phoneLength * 0.45f, 0.01f));
             beamPivot.rotation = beamRot;
         }
+
+        private void OnDisable() => TheDelivery.AI.PlayerLight.On = false;
 
         private static Bounds LocalBounds(Transform root, Renderer[] rs)
         {
