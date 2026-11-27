@@ -109,3 +109,6 @@ InitTestScene*.unity*
 # Pacotes originais baixados do Meshy (o FBX extraido e o que entra no projeto)
 /[Aa]ssets/Imports/MeshyImports/*.zip
 /[Aa]ssets/Imports/MeshyImports/*.zip.meta
+
+# Cache dos scripts do Blender
+__pycache__/
