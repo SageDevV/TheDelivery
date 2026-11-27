@@ -9,6 +9,7 @@ using TheDelivery.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 
 namespace TheDelivery.Narrative
 {
@@ -144,17 +145,6 @@ namespace TheDelivery.Narrative
             yield return new WaitForSeconds(wakeBlack * 0.6f);
             black.alpha = 0f;                                         // daqui em diante, quem fecha a vista são as pálpebras
 
-            bool swaying = true;
-            IEnumerator Sway()
-            {
-                float ph = Random.value * 6f;
-                while (swaying && cam != null)
-                {
-                    float t = Time.time * 0.9f + ph;
-                    cam.localRotation = cam.localRotation * Quaternion.Euler(Mathf.Sin(t * 0.7f) * 0.04f, Mathf.Sin(t * 0.5f) * 0.03f, Mathf.Sin(t) * 0.05f);
-                    yield return null;
-                }
-            }
             IEnumerator Lid(float from, float to, float dur, bool falling)
             {
                 for (float t = 0f; t < dur; t += Time.deltaTime)
@@ -181,7 +171,6 @@ namespace TheDelivery.Narrative
 
             // os olhos abrem com esforço: abre um pouco, pesa, fecha, abre de novo
             yield return Lid(1f, 0.55f, 1.6f, false);
-            Coroutine sway = StartCoroutine(Sway());
             yield return new WaitForSeconds(0.7f);
             yield return Lid(0.55f, 1f, 0.5f, true);
             yield return new WaitForSeconds(0.6f);
@@ -191,7 +180,6 @@ namespace TheDelivery.Narrative
             yield return Lid(0.25f, 0.7f, 0.35f, true);
             yield return Lid(0.7f, 0f, 1.2f, false);
             yield return WaitThought();
-            swaying = false; if (sway != null) StopCoroutine(sway);
 
             // apoia o corpo e senta (zonza: a cabeça pende um pouco para a frente)
             yield return Move(cam != null ? cam.localPosition : lyingPos, cam != null ? cam.localRotation : lyingRot, sitPos, sitRot, 2.2f, 0f, 0.35f);
@@ -258,7 +246,8 @@ namespace TheDelivery.Narrative
         private IEnumerator BeatHunt()
         {
             if (signalsRoutine != null) { StopCoroutine(signalsRoutine); signalsRoutine = null; }
-            WakeLenin();
+            // LateUpdate waits for a safe placement even if the player powers the gate first.
+            while (lenin != null && !lenin.activeSelf) yield return null;
             if (huntSting != null) JumpscareAudio.Play(huntSting);
             yield return new WaitForSeconds(0.6f);
             Think("Ele está aqui.");
@@ -277,18 +266,38 @@ namespace TheDelivery.Narrative
         private IEnumerator BeatExit()
         {
             // o gancho para o Ato 6: ele não vem atrás. Fica parado no portão, olhando para ela.
+            playerController.CanMove = false;
             var ai = lenin != null ? lenin.GetComponent<AntagonistAI>() : null;
             if (ai != null) ai.SuspendForDirector();
             var agent = lenin != null ? lenin.GetComponent<UnityEngine.AI.NavMeshAgent>() : null;
             if (agent != null) agent.enabled = false;
             if (lenin != null && leninWatchPoint != null)
             {
-                lenin.SetActive(true);
-                lenin.transform.SetPositionAndRotation(leninWatchPoint.position, leninWatchPoint.rotation);
+                // The player can cross the exit walking backwards, looking directly at the gate.
+                // Mask a visible departure or destination, then frame the deck before the reveal.
+                var cam = Camera.main;
+                bool masked = cam == null || InCamera(cam, leninWatchPoint.position)
+                    || (lenin.activeSelf && InCamera(cam, lenin.transform.position));
+                if (masked)
+                {
+                    yield return Fade(0f, 1f, 0.22f);
+                    Vector3 deck = playerController.transform.position - leninWatchPoint.position;
+                    deck.y = 0f;
+                    if (deck.sqrMagnitude > 0.01f)
+                        playerController.transform.rotation = Quaternion.LookRotation(deck);
+                    playerController.CameraHolder.localRotation = Quaternion.identity;
+                    playerController.SyncCameraState(0f, playerController.EyeHeight);
+                }
+                cam = Camera.main;
+                if (cam != null && !InCamera(cam, leninWatchPoint.position))
+                {
+                    lenin.transform.SetPositionAndRotation(leninWatchPoint.position, leninWatchPoint.rotation);
+                    lenin.SetActive(true);
+                }
+                if (masked) yield return Fade(1f, 0f, 0.35f);
                 var anim = lenin.GetComponentInChildren<Animator>();
                 if (anim != null) { anim.SetFloat("Speed", 0f); anim.SetBool("IsChasing", false); }
             }
-            playerController.CanMove = false;
             yield return new WaitForSeconds(1.2f);
             // ela olha para trás
             Transform body = playerController.transform;
@@ -336,6 +345,7 @@ namespace TheDelivery.Narrative
             int total = generators != null ? generators.Length : 5;
             if (gate != null) gate.SetPowered(running);
             Debug.Log($"[Act5Director] Gerador {g.Id} ligado: {running}/{total}");
+            if (running == huntAtGenerator) FindAnyObjectByType<AmbientOneShots>()?.PlayNow();
             if (running >= total) { AdvanceToBeat(Act5Beat.Powered); return; }
             if (running >= huntAtGenerator && CurrentBeat == Act5Beat.Explore) { AdvanceToBeat(Act5Beat.Hunt); return; }
             if (CurrentBeat == Act5Beat.Explore)
@@ -349,38 +359,61 @@ namespace TheDelivery.Narrative
         // ------------------------------------------------------------------ o Lenin
         private const float minSpawnDistance = 10f;
 
-        private void WakeLenin()
+        // Conservative envelope of the animated body, including arms and a margin at screen edges.
+        private static readonly Vector3 spawnBodySize = new Vector3(2.2f, 2.6f, 2.2f);
+        private readonly Plane[] viewPlanes = new Plane[6];
+        private float nextSpawnCheck;
+
+        private static Bounds BodyAt(Vector3 feet) =>
+            new Bounds(feet + Vector3.up * 1.15f, spawnBodySize);
+
+        private bool InCamera(Camera cam, Vector3 feet)
         {
-            if (lenin == null) return;
-            Vector3 p = playerController.transform.position;
-            Transform best = null; float bestScore = float.MinValue;
-            if (leninSpawnPoints != null)
-                foreach (var s in leninSpawnPoints)
-                {
-                    if (s == null) continue;
-                    float d = Vector3.Distance(s.position, p);
-                    bool seen = Seen(s.position);
-                    // escondido, a ~16 m e NUNCA colado nela (< 10 m ele a pegaria antes de ela reagir)
-                    float score = (seen ? -100f : 0f) - Mathf.Abs(d - 16f) - (d < minSpawnDistance ? 500f : 0f);
-                    if (score > bestScore) { bestScore = score; best = s; }
-                }
-            if (best != null) lenin.transform.SetPositionAndRotation(best.position, best.rotation);
-            lenin.SetActive(true);
-            var agent = lenin.GetComponent<UnityEngine.AI.NavMeshAgent>();
-            if (agent != null) { agent.enabled = true; agent.Warp(lenin.transform.position); }
-            // ele ouviu o 3º gerador: vem investigar onde ela está, depois procura e patrulha
-            var ai = lenin.GetComponent<AntagonistAI>();
-            if (ai != null) ai.InvestigateFromDirector(p);
-            Debug.Log($"[Act5Director] O Lenin acordou em {(best != null ? best.name : "-")} — a caçada começou.");
+            GeometryUtility.CalculateFrustumPlanes(cam, viewPlanes);
+            return GeometryUtility.TestPlanesAABB(viewPlanes, BodyAt(feet));
         }
 
-        private bool Seen(Vector3 floorPoint)
+        private void LateUpdate()
         {
-            var cam = Camera.main; if (cam == null) return false;
-            Vector3 c = floorPoint + Vector3.up * 1.2f;
-            Vector3 vp = cam.WorldToViewportPoint(c);
-            if (vp.z <= 0f || vp.x < 0f || vp.x > 1f || vp.y < 0f || vp.y > 1f) return false;
-            return !Physics.Linecast(cam.transform.position, c, ~0, QueryTriggerInteraction.Ignore);
+            if ((CurrentBeat != Act5Beat.Hunt && CurrentBeat != Act5Beat.Powered) ||
+                lenin == null || lenin.activeSelf || Time.timeScale == 0f || Time.time < nextSpawnCheck) return;
+
+            nextSpawnCheck = Time.time + 0.12f;
+            var cam = Camera.main;
+            if (cam == null || leninSpawnPoints == null) return;
+            GeometryUtility.CalculateFrustumPlanes(cam, viewPlanes);
+            var agent = lenin.GetComponent<NavMeshAgent>();
+            if (agent == null) return;
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            Vector3 player = playerController.transform.position;
+            Transform best = null;
+            Vector3 placement = default;
+            float bestError = float.PositiveInfinity;
+            foreach (var marker in leninSpawnPoints)
+            {
+                if (marker == null || !NavMesh.SamplePosition(marker.position, out var hit, 1.5f, filter)) continue;
+                float distance = Vector3.Distance(player, hit.position);
+                if (distance < minSpawnDistance || GeometryUtility.TestPlanesAABB(viewPlanes, BodyAt(hit.position))) continue;
+
+                float error = Mathf.Abs(distance - 16f);
+                if (error >= bestError) continue;
+                bestError = error;
+                best = marker;
+                placement = hit.position;
+            }
+            if (best == null) return;
+
+            lenin.transform.SetPositionAndRotation(placement, best.rotation);
+            lenin.SetActive(true);
+            agent.enabled = true;
+            if (!agent.Warp(placement) || GeometryUtility.TestPlanesAABB(viewPlanes, BodyAt(lenin.transform.position)))
+            {
+                lenin.SetActive(false);
+                return;
+            }
+            var ai = lenin.GetComponent<AntagonistAI>();
+            if (ai != null) ai.InvestigateFromDirector(player);
+            Debug.Log($"[Act5Director] O Lenin acordou em {best.name} — a caçada começou.");
         }
 
         private IEnumerator Signals()

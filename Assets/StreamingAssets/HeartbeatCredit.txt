@@ -1,0 +1,4 @@
+Batimento cardíaco da Clear — efeito sonoro da biblioteca ElevenLabs (elevenlabs.io).
+https://elevenlabs.io/sound-effects/heartbeat
+Original: https://api.elevenlabs.io/v1/shared-sound-generations/3HJNnKS5CLNcqGb0Nm2U/audio
+Edição para The Delivery: seleção de três batidas, equalização e fades.

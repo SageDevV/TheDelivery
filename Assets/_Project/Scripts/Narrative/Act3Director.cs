@@ -443,6 +443,7 @@ namespace TheDelivery.Narrative
 
         private void Start()
         {
+            ProximityHeartbeat.Track(deliveryman);
             if (!HasRequiredReferences())
                 return;
 

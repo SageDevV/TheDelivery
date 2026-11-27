@@ -1605,6 +1605,10 @@ namespace TheDelivery.Narrative
                 return;
             }
 
+            ProximityHeartbeat.Track(creatureObject);
+            ProximityHeartbeat.Track(creatureAttackObject);
+            ProximityHeartbeat.Track(creatureGrabObject);
+
             // A criatura não pode estar visível antes da hora: começa inativa.
             if (creatureObject != null)
                 creatureObject.SetActive(false);

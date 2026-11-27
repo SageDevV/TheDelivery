@@ -14,6 +14,8 @@ namespace TheDelivery.Act5
         private static readonly int RipplesId = Shader.PropertyToID("_Ripples");
         private static readonly int NowId = Shader.PropertyToID("_RippleNow");
         private static readonly int WaderId = Shader.PropertyToID("_Wader");
+        private static readonly int SloshId = Shader.PropertyToID("_ShipSlosh");
+        public float Slosh { get; set; }
         private Vector4 wader;
 
         /// <summary>Quem anda na água (a Clear): posição, intensidade 0..1 (0 = parada/fora) e direção do passo.</summary>
@@ -59,6 +61,7 @@ namespace TheDelivery.Act5
             mpb.SetVectorArray(RipplesId, data);
             mpb.SetFloat(NowId, Time.timeSinceLevelLoad);
             mpb.SetVector(WaderId, wader);
+            mpb.SetVector(SloshId, new Vector4(Slosh, rend.bounds.center.x, 0f, 0f));
             rend.SetPropertyBlock(mpb);
         }
     }

@@ -69378,7 +69378,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 12
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &433588027
 Transform:
@@ -84612,6 +84612,7 @@ GameObject:
   - component: {fileID: 475198172}
   - component: {fileID: 475198174}
   - component: {fileID: 475198173}
+  - component: {fileID: 475198175}
   m_Layer: 0
   m_Name: ShipAudio
   m_TagString: Untagged
@@ -84634,6 +84635,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1125891692}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &475198175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 475198171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a197eb716a464cf5ba520f4bddf77ce2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Act5.ShipMotion
+  chains:
+  - {fileID: 433588027}
+  - {fileID: 1717764759}
+  - {fileID: 756284365}
+  water: {fileID: 254957040}
 --- !u!114 &475198173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -123214,7 +123232,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 12
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &756284365
 Transform:
@@ -209741,7 +209759,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 12
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1717764759
 Transform:

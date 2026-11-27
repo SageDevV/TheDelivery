@@ -3511,6 +3511,7 @@ GameObject:
   - component: {fileID: 6285348304546250852}
   - component: {fileID: 8952066514642642680}
   - component: {fileID: 3721136112876340239}
+  - component: {fileID: 6220130589147718043}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -4145,3 +4146,21 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: c747ec91581cfd04894ea33f5774e811, type: 3}
   m_PrefabInstance: {fileID: 3137769580164655807}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6220130589147718043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8608346235461898063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73be565d2d804f5aa96dda9cfdbe5bec, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TheDelivery.Player.ProximityHeartbeat
+  heartbeats:
+  - {fileID: 8300000, guid: 767a0766769b4cbc982ee5ff238b2520, type: 3}
+  - {fileID: 8300000, guid: 61d2c0c24b0b455d9620daa3b95bcec8, type: 3}
+  - {fileID: 8300000, guid: 2c429815e9cd452d9916e43687a80e1e, type: 3}
+  audibleDistance: 12
+  closestDistance: 2

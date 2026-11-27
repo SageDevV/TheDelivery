@@ -1,3 +1,4 @@
+using TheDelivery.Act5;
 using System.Collections.Generic;
 using TheDelivery.Core;
 using TMPro;
@@ -67,7 +68,8 @@ namespace TheDelivery.UI
         private const string UiActionMapName = "UI";
 
         private GameObject root;        // Canvas inteiro (ligado/desligado ao abrir/fechar)
-        private Button resumeButton;
+        private Button resumeButton, motionButton, titleButton, exitButton;
+        private TextMeshProUGUI motionLabel;
         private EventSystem ownEventSystem; // fallback para cenas sem EventSystem
 
         // Estado guardado ao pausar, restaurado ao resumir.
@@ -179,6 +181,15 @@ namespace TheDelivery.UI
             // Só quando falta — dois EventSystems ativos geram aviso e disputam o foco.
             ownEventSystem.gameObject.SetActive(EventSystem.current == null);
 
+            bool onShip = FindAnyObjectByType<ShipMotion>() != null;
+            motionButton.gameObject.SetActive(onShip);
+            if (onShip)
+            {
+                RefreshMotionLabel();
+                SetVerticalNavigation(resumeButton, motionButton, titleButton, exitButton);
+            }
+            else SetVerticalNavigation(resumeButton, titleButton, exitButton);
+
             root.SetActive(true);
 
             // Foco no Resumir: navegação por teclado/gamepad funciona de cara.
@@ -286,6 +297,16 @@ namespace TheDelivery.UI
 
         // --- Construção da UI ----------------------------------------------
 
+        private void RefreshMotionLabel()
+        {
+            motionLabel.text = ShipMotion.CameraComfort switch
+            {
+                ShipMotion.Comfort.Reduced => "BALANÇO: REDUZIDO",
+                ShipMotion.Comfort.Off => "BALANÇO: DESLIGADO",
+                _ => "BALANÇO: NORMAL"
+            };
+        }
+
         private void BuildUI()
         {
             // Canvas overlay, escalado por resolução de referência 1920x1080.
@@ -336,11 +357,18 @@ namespace TheDelivery.UI
             CreateStamp(column, theme);
             CreateSubtitle(column, theme);
             resumeButton = CreateItem("ResumeButton", column, resumeText, Resume, theme);
-            Button titleButton = CreateItem("TitleScreenButton", column, titleScreenText, ReturnToTitle, theme);
-            Button exitButton = CreateItem("ExitButton", column, exitText, ExitGame, theme);
+            motionButton = CreateItem("CameraMotionButton", column, "", () =>
+            {
+                ShipMotion.CycleComfort();
+                RefreshMotionLabel();
+            }, theme);
+            motionLabel = motionButton.transform.Find("Label").GetComponent<TextMeshProUGUI>();
+            titleButton = CreateItem("TitleScreenButton", column, titleScreenText, ReturnToTitle, theme);
+            exitButton = CreateItem("ExitButton", column, exitText, ExitGame, theme);
 
-            // Navegação explícita em ciclo entre os três botões (teclado/gamepad).
-            SetVerticalNavigation(resumeButton, titleButton, exitButton);
+            // Fit the active rows when the ship adds its comfort setting.
+            var fitter = column.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // EventSystem de reserva, desligado até uma pausa precisar dele.
             var esGo = new GameObject("PauseEventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));

@@ -466,6 +466,7 @@ namespace TheDelivery.Narrative
 
         private void Start()
         {
+            ProximityHeartbeat.Track(shadowFigure);
             if (!HasRequiredReferences())
                 return;
 

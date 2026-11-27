@@ -14,6 +14,8 @@ namespace TheDelivery.Act5
         [SerializeField] private float volume = 0.8f;
         [SerializeField] private Vector2 pitch = new Vector2(0.85f, 1.05f);
 
+        public event System.Action Played;
+
         private AudioSource src;
         private float next;
 
@@ -27,13 +29,19 @@ namespace TheDelivery.Act5
 
         private void Update()
         {
-            if (clips == null || clips.Length == 0 || Time.time < next) return;
+            if (Time.time >= next) PlayNow();
+        }
+
+        public void PlayNow()
+        {
+            if (src == null || clips == null || clips.Length == 0) return;
             next = Time.time + Random.Range(interval.x, interval.y);
             var cam = Camera.main; Vector3 c = cam != null ? cam.transform.position : transform.position;
             Vector2 d = Random.insideUnitCircle.normalized * Random.Range(distance.x, distance.y);
             src.transform.position = c + new Vector3(d.x, Random.Range(1f, 4f), d.y);
             src.pitch = Random.Range(pitch.x, pitch.y);
             src.PlayOneShot(clips[Random.Range(0, clips.Length)], volume);
+            Played?.Invoke();
         }
     }
 }

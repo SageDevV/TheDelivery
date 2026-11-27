@@ -474,6 +474,7 @@ namespace TheDelivery.Narrative
 
             IsRunning = true;
 
+            if (leaningActor != null) ProximityHeartbeat.Track(leaningActor.gameObject);
             EnsureWhistleSource();
             EnsureCallSource();
             WarnAboutZeroedFields();

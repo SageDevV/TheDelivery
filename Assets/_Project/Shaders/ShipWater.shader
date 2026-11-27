@@ -20,6 +20,17 @@ Shader "TheDelivery/ShipWater"
         Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "Queue" = "Geometry" }
         LOD 200
 
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        float4 _ShipSlosh; // amplitude and world X of the flooded hold center
+        float3 SloshingPosition(float3 positionOS)
+        {
+            float3 p = TransformObjectToWorld(positionOS);
+            p.y += (p.x - _ShipSlosh.y) * _ShipSlosh.x * 0.0035;
+            return p;
+        }
+        ENDHLSL
+
         Pass
         {
             Name "ForwardLit"
@@ -54,7 +65,7 @@ Shader "TheDelivery/ShipWater"
             Varyings vert(Attributes v)
             {
                 Varyings o;
-                o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
+                o.positionWS = SloshingPosition(v.positionOS.xyz);
                 o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.fogFactor = ComputeFogFactor(o.positionCS.z);
                 return o;
@@ -73,6 +84,10 @@ Shader "TheDelivery/ShipWater"
                 g += float2(-0.7, 1.9) * cos(a2) * 0.008;
                 g += float2(3.7, 3.7) * cos(a3) * 0.0025;
                 g *= _WaveStrength;
+                // Long returning swell under the existing drip rings and footsteps.
+                float wave = (p.x - _ShipSlosh.y) * 1.2 + 0.28 * sin(p.y * 0.8) + _ShipSlosh.x * 1.4;
+                g.x += _ShipSlosh.x * (0.0035 + 0.06 * cos(wave));
+                crest += 0.055 * max(0.0, _ShipSlosh.x * sin(wave));
 
                 // ondas contínuas saindo das pernas de quem anda na água (acompanham a caminhada)
                 if (_Wader.z > 0.001)
@@ -157,7 +172,7 @@ Shader "TheDelivery/ShipWater"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             struct Attributes { float4 positionOS : POSITION; };
             struct Varyings { float4 positionCS : SV_POSITION; };
-            Varyings vert(Attributes v) { Varyings o; o.positionCS = TransformObjectToHClip(v.positionOS.xyz); return o; }
+            Varyings vert(Attributes v) { Varyings o; o.positionCS = TransformWorldToHClip(SloshingPosition(v.positionOS.xyz)); return o; }
             half frag(Varyings i) : SV_Target { return 0; }
             ENDHLSL
         }

@@ -388,6 +388,7 @@ namespace TheDelivery.EditorTools
             {
                 if (!meshes.ContainsKey(mesh)) { log.AppendLine("SEM malha " + mesh); return; }
                 var go = Child(g, name ?? mesh, mesh, new Vector3(x, y, z), Yaw(yaw), collider: col > 0, meshCollider: col == 2);
+                if (mesh == "HangingChain") GameObjectUtility.SetStaticEditorFlags(go, 0);
                 if (col == 0) { var nm = go.AddComponent<Unity.AI.Navigation.NavMeshModifier>(); nm.ignoreFromBuild = true; }
                 n++;
             }

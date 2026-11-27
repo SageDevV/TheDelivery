@@ -154,6 +154,7 @@ namespace TheDelivery.AI
         // chamar ResumeFromDirector no MESMO quadro, antes do Start (salto de debug ao Beat 7).
         private void Awake()
         {
+            ProximityHeartbeat.Track(gameObject);
             if (agent == null) agent = GetComponent<NavMeshAgent>();
             if (patrol == null) patrol = GetComponent<PatrolBehavior>();
             if (vision == null) vision = GetComponent<AIVision>();

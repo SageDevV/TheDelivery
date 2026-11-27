@@ -55,6 +55,14 @@ namespace TheDelivery.EditorTools
             var groans = amb.AddComponent<AmbientOneShots>();
             SetArr(groans, "clips", Many("ShipHullGroan", 4)); n += 2;
 
+            var motion = new SerializedObject(amb.AddComponent<ShipMotion>());
+            var chains = R.Find("Dressing").Cast<Transform>().Where(t => t.name.StartsWith("HangingChain")).ToArray();
+            var chainRefs = motion.FindProperty("chains");
+            chainRefs.arraySize = chains.Length;
+            for (int i = 0; i < chains.Length; i++) chainRefs.GetArrayElementAtIndex(i).objectReferenceValue = chains[i];
+            motion.FindProperty("water").objectReferenceValue = R.GetComponentInChildren<WaterRipples>();
+            motion.ApplyModifiedPropertiesWithoutUndo();
+
             // gotas
             var metal = Many("ShipDripMetal", 4); var water = Many("ShipDripWater", 4);
             foreach (var de in R.GetComponentsInChildren<DripEmitter>(true))
