@@ -112,3 +112,6 @@ InitTestScene*.unity*
 
 # Cache dos scripts do Blender
 __pycache__/
+
+# Estado local da interface do Obsidian
+/the-delivery/.obsidian/workspace.json

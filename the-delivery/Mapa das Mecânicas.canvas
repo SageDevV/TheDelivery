@@ -1,0 +1,566 @@
+{
+	"nodes": [
+		{
+			"id": "title",
+			"type": "text",
+			"text": "# The Delivery\nMapa de atos e mecânicas",
+			"x": -40,
+			"y": -760,
+			"width": 520,
+			"height": 120,
+			"color": "1"
+		},
+		{
+			"id": "hub",
+			"type": "file",
+			"file": "00 Mapa do Jogo.md",
+			"x": 560,
+			"y": -760,
+			"width": 340,
+			"height": 120,
+			"color": "1"
+		},
+		{
+			"id": "gH",
+			"type": "group",
+			"label": "História (ordem dos atos)",
+			"x": -40,
+			"y": -560,
+			"width": 2760,
+			"height": 260,
+			"color": "1"
+		},
+		{
+			"id": "p",
+			"type": "file",
+			"file": "Atos/Prólogo - O Pesadelo.md",
+			"x": 0,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "a1",
+			"type": "file",
+			"file": "Atos/Ato 1 - A Cafeteria.md",
+			"x": 390,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "j",
+			"type": "file",
+			"file": "Atos/Interlúdio - A Caminhada.md",
+			"x": 780,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "a2",
+			"type": "file",
+			"file": "Atos/Ato 2 - A Recepção.md",
+			"x": 1170,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "a3",
+			"type": "file",
+			"file": "Atos/Ato 3 - O Apartamento.md",
+			"x": 1560,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "a4",
+			"type": "file",
+			"file": "Atos/Ato 4 - A Caçada.md",
+			"x": 1950,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "a5",
+			"type": "file",
+			"file": "Atos/Ato 5 - A Fuga.md",
+			"x": 2340,
+			"y": -500,
+			"width": 320,
+			"height": 160,
+			"color": "1"
+		},
+		{
+			"id": "gJ",
+			"type": "group",
+			"label": "Jogador",
+			"x": -40,
+			"y": 0,
+			"width": 680,
+			"height": 560,
+			"color": "4"
+		},
+		{
+			"id": "mov",
+			"type": "file",
+			"file": "Mecânicas/Movimento em primeira pessoa.md",
+			"x": 0,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "fol",
+			"type": "file",
+			"file": "Mecânicas/Fôlego (estamina).md",
+			"x": 330,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "int",
+			"type": "file",
+			"file": "Mecânicas/Interação.md",
+			"x": 0,
+			"y": 330,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "corpo",
+			"type": "file",
+			"file": "Mecânicas/Corpo em primeira pessoa.md",
+			"x": 330,
+			"y": 330,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "gF",
+			"type": "group",
+			"label": "Furtividade e caçada",
+			"x": 720,
+			"y": 0,
+			"width": 1000,
+			"height": 560,
+			"color": "2"
+		},
+		{
+			"id": "ruido",
+			"type": "file",
+			"file": "Mecânicas/Ruído e audição.md",
+			"x": 760,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "esc",
+			"type": "file",
+			"file": "Mecânicas/Esconderijos.md",
+			"x": 1090,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "mic",
+			"type": "file",
+			"file": "Mecânicas/Microfone no esconderijo.md",
+			"x": 1410,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "ia",
+			"type": "file",
+			"file": "Mecânicas/IA do antagonista.md",
+			"x": 920,
+			"y": 330,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "cap",
+			"type": "file",
+			"file": "Mecânicas/Captura e Game Over.md",
+			"x": 1300,
+			"y": 330,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "gA",
+			"type": "group",
+			"label": "Ambiente",
+			"x": 1800,
+			"y": 0,
+			"width": 680,
+			"height": 560,
+			"color": "6"
+		},
+		{
+			"id": "noite",
+			"type": "file",
+			"file": "Ambiente/Anoitecer e toque de recolher.md",
+			"x": 1840,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "mus",
+			"type": "file",
+			"file": "Ambiente/Música e ambiente sonoro.md",
+			"x": 2160,
+			"y": 60,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "chuva",
+			"type": "file",
+			"file": "Ambiente/Chuva.md",
+			"x": 1840,
+			"y": 330,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "vis",
+			"type": "file",
+			"file": "Ambiente/Tratamento visual (VHS e visão turva).md",
+			"x": 2160,
+			"y": 330,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "gN",
+			"type": "group",
+			"label": "Narrativa",
+			"x": -40,
+			"y": 660,
+			"width": 1360,
+			"height": 280,
+			"color": "5"
+		},
+		{
+			"id": "beats",
+			"type": "file",
+			"file": "Mecânicas/Máquina de beats.md",
+			"x": 0,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "pens",
+			"type": "file",
+			"file": "Mecânicas/Pensamentos (voz interna).md",
+			"x": 330,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "dia",
+			"type": "file",
+			"file": "Mecânicas/Diálogos (legendas).md",
+			"x": 660,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "inv",
+			"type": "file",
+			"file": "Mecânicas/Inventário e itens.md",
+			"x": 990,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "gE",
+			"type": "group",
+			"label": "Estrutura",
+			"x": 1400,
+			"y": 660,
+			"width": 680,
+			"height": 280,
+			"color": "3"
+		},
+		{
+			"id": "save",
+			"type": "file",
+			"file": "Mecânicas/Save, checkpoints e seleção de atos.md",
+			"x": 1440,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "menu",
+			"type": "file",
+			"file": "Mecânicas/Menus (início e pausa).md",
+			"x": 1760,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "pers",
+			"type": "file",
+			"file": "Personagens.md",
+			"x": 2160,
+			"y": 720,
+			"width": 280,
+			"height": 150
+		},
+		{
+			"id": "m_lanterna",
+			"type": "file",
+			"file": "Mecânicas/Lanterna do celular.md",
+			"x": 2340,
+			"y": -240,
+			"width": 320,
+			"height": 120,
+			"color": "1"
+		},
+		{
+			"id": "m_geradores",
+			"type": "file",
+			"file": "Mecânicas/Geradores e portão.md",
+			"x": 2700,
+			"y": -240,
+			"width": 320,
+			"height": 120,
+			"color": "1"
+		}
+	],
+	"edges": [
+		{
+			"id": "e1",
+			"fromNode": "p",
+			"fromSide": "right",
+			"toNode": "a1",
+			"toSide": "left",
+			"color": "1"
+		},
+		{
+			"id": "e2",
+			"fromNode": "a1",
+			"fromSide": "right",
+			"toNode": "j",
+			"toSide": "left",
+			"color": "1"
+		},
+		{
+			"id": "e3",
+			"fromNode": "j",
+			"fromSide": "right",
+			"toNode": "a2",
+			"toSide": "left",
+			"color": "1"
+		},
+		{
+			"id": "e4",
+			"fromNode": "a2",
+			"fromSide": "right",
+			"toNode": "a3",
+			"toSide": "left",
+			"color": "1"
+		},
+		{
+			"id": "e5",
+			"fromNode": "a3",
+			"fromSide": "right",
+			"toNode": "a4",
+			"toSide": "left",
+			"color": "1"
+		},
+		{
+			"id": "e6",
+			"fromNode": "a4",
+			"fromSide": "right",
+			"toNode": "a5",
+			"toSide": "left",
+			"color": "1"
+		},
+		{
+			"id": "e7",
+			"fromNode": "fol",
+			"fromSide": "left",
+			"toNode": "mov",
+			"toSide": "right",
+			"label": "limita a corrida"
+		},
+		{
+			"id": "e8",
+			"fromNode": "mov",
+			"fromSide": "right",
+			"toNode": "ruido",
+			"toSide": "left",
+			"label": "estado define o raio"
+		},
+		{
+			"id": "e9",
+			"fromNode": "ruido",
+			"fromSide": "bottom",
+			"toNode": "ia",
+			"toSide": "top",
+			"label": "ouve através das paredes"
+		},
+		{
+			"id": "e10",
+			"fromNode": "esc",
+			"fromSide": "right",
+			"toNode": "mic",
+			"toSide": "left",
+			"label": "liga só escondida"
+		},
+		{
+			"id": "e11",
+			"fromNode": "mic",
+			"fromSide": "bottom",
+			"toNode": "ia",
+			"toSide": "top",
+			"label": "barulho crítico"
+		},
+		{
+			"id": "e12",
+			"fromNode": "esc",
+			"fromSide": "bottom",
+			"toNode": "ia",
+			"toSide": "top",
+			"label": "visto entrando = comprometido"
+		},
+		{
+			"id": "e13",
+			"fromNode": "ia",
+			"fromSide": "right",
+			"toNode": "cap",
+			"toSide": "left",
+			"label": "estado Attack"
+		},
+		{
+			"id": "e14",
+			"fromNode": "beats",
+			"fromSide": "right",
+			"toNode": "pens",
+			"toSide": "left",
+			"label": "dispara"
+		},
+		{
+			"id": "e15",
+			"fromNode": "beats",
+			"fromSide": "top",
+			"toNode": "int",
+			"toSide": "bottom",
+			"label": "arma objetos"
+		},
+		{
+			"id": "e16",
+			"fromNode": "save",
+			"fromSide": "left",
+			"toNode": "beats",
+			"toSide": "right",
+			"label": "retoma o beat"
+		},
+		{
+			"id": "e17",
+			"fromNode": "menu",
+			"fromSide": "left",
+			"toNode": "save",
+			"toSide": "right",
+			"label": "Carregar / Atos"
+		},
+		{
+			"id": "e18",
+			"fromNode": "cap",
+			"fromSide": "bottom",
+			"toNode": "menu",
+			"toSide": "top",
+			"label": "volta ao início"
+		},
+		{
+			"id": "e19",
+			"fromNode": "p",
+			"fromSide": "bottom",
+			"toNode": "vis",
+			"toSide": "top",
+			"label": "visão turva",
+			"color": "1"
+		},
+		{
+			"id": "e20",
+			"fromNode": "j",
+			"fromSide": "bottom",
+			"toNode": "noite",
+			"toSide": "top",
+			"label": "anoitecer",
+			"color": "1"
+		},
+		{
+			"id": "e21",
+			"fromNode": "a4",
+			"fromSide": "bottom",
+			"toNode": "ia",
+			"toSide": "top",
+			"label": "a caçada",
+			"color": "1"
+		},
+		{
+			"id": "e22",
+			"fromNode": "a4",
+			"fromSide": "bottom",
+			"toNode": "chuva",
+			"toSide": "top",
+			"label": "chuva + apagão",
+			"color": "1"
+		},
+		{
+			"id": "e23",
+			"fromNode": "a5",
+			"fromSide": "bottom",
+			"toNode": "ia",
+			"toSide": "top",
+			"label": "sequestrador",
+			"color": "1"
+		},
+		{
+			"id": "e24",
+			"fromNode": "hub",
+			"fromSide": "bottom",
+			"toNode": "p",
+			"toSide": "top"
+		},
+		{
+			"id": "e_a5_m_lanterna",
+			"fromNode": "a5",
+			"fromSide": "bottom",
+			"toNode": "m_lanterna",
+			"toSide": "top"
+		},
+		{
+			"id": "e_a5_m_geradores",
+			"fromNode": "a5",
+			"fromSide": "bottom",
+			"toNode": "m_geradores",
+			"toSide": "top"
+		}
+	]
+}
